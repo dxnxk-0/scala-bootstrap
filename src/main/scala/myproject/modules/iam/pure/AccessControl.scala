@@ -1,4 +1,6 @@
-package myproject.identity
+package myproject.modules.iam.pure
+
+import myproject.modules.iam.{Guest, User}
 
 trait AccessControl {
 

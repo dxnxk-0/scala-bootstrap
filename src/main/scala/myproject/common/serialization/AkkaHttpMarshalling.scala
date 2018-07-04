@@ -2,8 +2,8 @@ package myproject.common.serialization
 
 import java.util.UUID
 
-import akka.http.scaladsl.model.{ContentType, HttpCharsets, MediaType}
 import akka.http.scaladsl.model.MediaTypes.`application/json`
+import akka.http.scaladsl.model.{ContentType, HttpCharsets, MediaType}
 import akka.http.scaladsl.server.Directives.mapResponseEntity
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import myproject.common.serialization.JSONSerializer._

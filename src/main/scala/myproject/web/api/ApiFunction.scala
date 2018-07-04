@@ -3,7 +3,7 @@ package myproject.web.api
 import myproject.audit.AuditData
 import myproject.common.serialization.ReifiedDataWrapper
 import myproject.common.{DefaultExecutionContext, InvalidContextException, NotImplementedException}
-import myproject.identity.User
+import myproject.modules.iam.User
 
 import scala.concurrent.Future
 import scala.language.implicitConversions

@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import myproject.common.TimeManagement
-import myproject.identity.User
+import myproject.modules.iam.User
 
 case class AuditData(ipAddress: Option[String], userInfo: Option[AuditUserInfo])
 

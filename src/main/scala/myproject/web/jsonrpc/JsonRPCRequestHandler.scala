@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.typesafe.scalalogging.Logger
 import myproject.common.serialization.ReifiedDataWrapper
-import myproject.identity.User
+import myproject.modules.iam.User
 import myproject.web.api.ApiMapper
 import myproject.web.jsonrpc.JsonRPCErrorCodes.RPCCodes
 

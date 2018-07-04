@@ -2,7 +2,7 @@ package myproject.modules.dummy.api
 
 import myproject.audit.AuditData
 import myproject.common.serialization.ReifiedDataWrapper
-import myproject.identity.User
+import myproject.modules.iam.User
 import myproject.web.api.ApiFunction
 
 import scala.concurrent.Future

@@ -3,7 +3,8 @@ package myproject.web.api
 import myproject.audit.{AuditData, AuditUserInfo}
 import myproject.common.serialization.ReifiedDataWrapper
 import myproject.common.{AccessRefusedException, AuthenticationNeededException, DefaultExecutionContext, ObjectNotFoundException}
-import myproject.identity.{AccessControl, Guest, User}
+import myproject.modules.iam.pure.AccessControl
+import myproject.modules.iam.{Guest, User}
 
 import scala.concurrent.Future
 

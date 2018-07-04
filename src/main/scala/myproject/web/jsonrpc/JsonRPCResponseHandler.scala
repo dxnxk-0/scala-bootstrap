@@ -6,8 +6,8 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.Logger
 import myproject.common._
-import myproject.common.serialization.{InvalidTypeException, JSONConfig, MissingKeyException, NullValueException}
 import myproject.common.serialization.JSONSerializer._
+import myproject.common.serialization.{InvalidTypeException, JSONConfig, MissingKeyException, NullValueException}
 import myproject.web.jsonrpc.JsonRPCErrorCodes.RPCCodes
 
 import scala.util.{Success, Try}

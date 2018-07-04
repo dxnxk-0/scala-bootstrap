@@ -1,4 +1,4 @@
-package myproject.identity
+package myproject.modules.iam
 
 import java.util.UUID
 

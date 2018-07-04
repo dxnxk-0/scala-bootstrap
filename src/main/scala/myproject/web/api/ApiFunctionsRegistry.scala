@@ -1,8 +1,8 @@
 package myproject.web.api
 
 import myproject.common.UnexpectedErrorException
-import myproject.identity.ApiLogin
 import myproject.modules.dummy.api.ApiWelcome
+import myproject.modules.iam.api.ApiLogin
 
 object ApiFunctionsRegistry {
   val Functions = scala.collection.mutable.Set[ApiFunction]()

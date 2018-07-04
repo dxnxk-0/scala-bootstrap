@@ -2,7 +2,6 @@ package myproject.web.api
 
 import myproject.audit.AuditData
 import myproject.common.serialization.ReifiedDataWrapper
-import myproject.common.serialization.ReifiedDataWrapper._
 
 import scala.concurrent.Future
 

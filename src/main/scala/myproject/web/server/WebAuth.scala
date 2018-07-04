@@ -2,9 +2,9 @@ package myproject.web.server
 
 import akka.http.scaladsl.server.Directives.AsyncAuthenticatorPF
 import akka.http.scaladsl.server.directives.Credentials
-import myproject.common.{AuthenticationFailedException, DefaultExecutionContext}
 import myproject.common.security.JWT
-import myproject.identity.{ApiUser, Guest, User}
+import myproject.common.{AuthenticationFailedException, DefaultExecutionContext}
+import myproject.modules.iam.{ApiUser, Guest, User}
 
 import scala.concurrent.Future
 
