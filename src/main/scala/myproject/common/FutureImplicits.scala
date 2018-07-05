@@ -1,4 +1,4 @@
-package test
+package myproject.common
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}

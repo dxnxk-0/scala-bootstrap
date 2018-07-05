@@ -74,7 +74,7 @@ trait JsonRPCResponseHandler {
     }
   }
 
-  def completeOpRpcBatch(result: Try[List[RPCResponse]])(implicit logger: Logger, jsonConfig: JSONConfig = JSONConfig(false)): Route = { ctx =>
+  def completeOpRpcBatch(result: Try[Seq[RPCResponse]])(implicit logger: Logger, jsonConfig: JSONConfig = JSONConfig(false)): Route = { ctx =>
     result match {
       case Success(batchResponse) => ctx.complete(batchResponse.filterNot(r => r.isInstanceOf[RPCNotificationResponse]))
       case e => // A batch is always successful

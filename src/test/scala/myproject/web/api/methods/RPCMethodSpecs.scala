@@ -5,9 +5,7 @@ import myproject.web.api.RPCApiTestHelper
 
 abstract class RPCMethodSpecs(val function: String, val needAuthentication: Boolean = true) extends RPCApiTestHelper {
 
-  val functionName = "function"
-
-  behavior of functionName
+  behavior of function
 
   it should "forbid or allow unauthenticated access" in {
     postRpc(generateRPCPayload(function, Map())) ~> check {

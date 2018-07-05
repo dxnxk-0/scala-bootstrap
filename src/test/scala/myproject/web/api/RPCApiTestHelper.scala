@@ -10,9 +10,9 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import myproject.common.serialization.JSONSerializer._
 import myproject.web.controllers.JsonRPCController
 import myproject.web.jsonrpc.RPCRequest
-import test.UnitSpec
+import test.DatabaseSpec
 
-trait RPCApiTestHelper extends UnitSpec with ScalatestRouteTest with JsonRPCController {
+trait RPCApiTestHelper extends DatabaseSpec with ScalatestRouteTest with JsonRPCController {
 
   def postRpc(payload: String, token: Option[String] = None, euid: Option[UUID] = None): RouteTestResult = {
     val post = Post("/api/rpc" + euid.map(i => s"?euid=$i").getOrElse(""), HttpEntity(MediaTypes.`application/json`, payload.getBytes(StandardCharsets.UTF_8)))
@@ -25,5 +25,5 @@ trait RPCApiTestHelper extends UnitSpec with ScalatestRouteTest with JsonRPCCont
     postWithAuth ~> Route.seal(JsonRPCRoute)
   }
 
-  def generateRPCPayload(method: String, params: AnyRef, id: Option[Int] = Some(1)) = toJson(RPCRequest("welcome", params, id))
+  def generateRPCPayload(method: String, params: AnyRef, id: Option[Int] = Some(1)) = toJson(RPCRequest(method, params, id))
 }

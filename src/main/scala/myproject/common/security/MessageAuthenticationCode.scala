@@ -3,7 +3,7 @@ package myproject.common.security
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-object MessageAuthenticationCode {
+trait MessageAuthenticationCode {
 
   object Algorithms extends Enumeration {
     val Sha256 = Value("HmacSHA256")

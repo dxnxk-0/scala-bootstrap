@@ -7,7 +7,7 @@ sealed trait UserGeneric {
   val login: String
 }
 
-case class User(id: UUID, login: String, password: Option[String])
+case class User(id: UUID, login: String, hashedPassword: String)
   extends UserGeneric
 
 case class Guest() extends UserGeneric {

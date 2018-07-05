@@ -42,4 +42,9 @@ libraryDependencies ++= Seq(
   // Tests
   "org.scalatest"                    %% "scalatest"               % "3.0.5"  % "test",
   "com.typesafe.akka"                %% "akka-testkit"            % "2.5.13" % "test",
-  "com.typesafe.akka"                %% "akka-http-testkit"       % "10.1.3" % "test")
+  "com.typesafe.akka"                %% "akka-http-testkit"       % "10.1.3" % "test",
+
+  // Database
+  "com.typesafe.slick"               %% "slick"                   % "3.2.3",
+  "com.typesafe.slick"               %% "slick-hikaricp"          % "3.2.3",
+  "com.h2database"                   %  "h2"                      % "1.4.197")

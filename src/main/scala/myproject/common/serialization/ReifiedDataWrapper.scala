@@ -4,6 +4,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, YearMonth}
 import java.util.{Currency, Locale, UUID}
 
+import myproject.common.CustomException
 import uk.gov.hmrc.emailaddress.EmailAddress
 
 import scala.util.Try
@@ -13,19 +14,19 @@ import scala.util.Try
   * Setting the option to None will be done by setting the value to null. The caller will wrap the extractor with
   * [[ReifiedDataWrapper.asOpt]] or [[ReifiedDataWrapper.missingKeyOrNullAsOption]]
   */
-case class NullValueException(msg: String) extends Exception
+case class NullValueException(msg: String) extends CustomException(msg)
 
 /**
   * Exception spawned when the requested [[ReifiedDataWrapper]] key does not exist. If the field is optional,
   * the call to the extractor should be wrapped by [[ReifiedDataWrapper.missingKeyAsOption]]
   */
-case class MissingKeyException(msg: String) extends Exception
+case class MissingKeyException(msg: String) extends CustomException(msg)
 
 /**
   * Exception spawned when the extractor in a [[ReifiedDataWrapper]] find a value with a type which does not
   * correspond to the expected one.
   */
-case class InvalidTypeException(msg: String) extends Exception
+case class InvalidTypeException(msg: String) extends CustomException(msg)
 
 /**
   * This object allows a typed access to an opaque value, such as a json de-serialized object.

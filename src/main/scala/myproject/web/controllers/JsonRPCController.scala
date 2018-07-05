@@ -27,7 +27,7 @@ trait JsonRPCController extends JsonRPCRequestHandler with JsonRPCResponseHandle
         optionalHeaderValueByName("Remote-Address") { ip =>
           parameters('euid.as[UUID].?) { euid =>
             respondWithJsonContentType {
-              authenticateOAuth2PFAsync(realm = "rpc-api", authenticator = jwtAuthenticator) { user =>
+              authenticateOAuth2Async(realm = "rpc-api", authenticator = jwtAuthenticator) { user =>
                 post {
                   entity(as[RPCRequest]) { req =>
                     onComplete(processRpcRequest(user, req, ip, euid)) { res =>
@@ -36,7 +36,7 @@ trait JsonRPCController extends JsonRPCRequestHandler with JsonRPCResponseHandle
                   } ~
                   entity(as[Seq[RPCRequest]]) { batch =>
                     onComplete(processBatchRpcRequest(user, batch, ip, euid)) { res =>
-                      completeOpRpc(res)
+                      completeOpRpcBatch(res)
                     }
                   }
                 }

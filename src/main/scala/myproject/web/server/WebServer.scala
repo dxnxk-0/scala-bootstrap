@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-object WebServer extends App with Routes with JsonRPCController with DefaultExecutionContext {
+object WebServer extends App with Routes with JsonRPCController with DefaultExecutionContext with EnvInit {
 
   private implicit val system = ActorSystem("actor-system")
   private implicit val materializer = ActorMaterializer()
@@ -21,6 +21,8 @@ object WebServer extends App with Routes with JsonRPCController with DefaultExec
 
   val iface = Config.server.interface
   val port = Config.server.port
+
+  initEnv()
 
   Http().bindAndHandle(httpRoutes, iface, port)
 

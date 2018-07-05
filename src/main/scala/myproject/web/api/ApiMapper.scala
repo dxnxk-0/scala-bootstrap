@@ -31,9 +31,7 @@ trait ApiMapper extends {} with DefaultExecutionContext with AccessControl {
             case Right(_) => Future.successful(effectiveUser)
             case Left(msg) => Future.failed(AccessRefusedException(msg))
           }
-        } getOrElse Future.successful(rUser) flatMap { implicit eUser =>
-          function.process(params, eUser, AuditData(clientIp, Some(AuditUserInfo(rUser, eUser))))
-        }
+        } getOrElse Future.successful(rUser) flatMap { implicit eUser => function.process(params, eUser, AuditData(clientIp, Some(AuditUserInfo(rUser, eUser)))) }
     }
 
     /* We search a function with the corresponding name and execute it */

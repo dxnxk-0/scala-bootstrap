@@ -1,25 +1,25 @@
 package myproject.web.server
 
-import akka.http.scaladsl.server.Directives.AsyncAuthenticatorPF
+import akka.http.scaladsl.server.Directives.AsyncAuthenticator
 import akka.http.scaladsl.server.directives.Credentials
 import myproject.common.security.JWT
-import myproject.common.{AuthenticationFailedException, DefaultExecutionContext}
-import myproject.modules.iam.dao.UserDAO
+import myproject.common.{DefaultExecutionContext, ObjectNotFoundException}
+import myproject.database.Database
 import myproject.modules.iam.{Guest, User, UserGeneric}
 
 import scala.concurrent.Future
 
-trait WebAuth extends DefaultExecutionContext with UserDAO {
+trait WebAuth extends DefaultExecutionContext with Database with JWT {
 
-  private def authenticate(token: String): Future[User] = {
-    Future(JWT.extractToken(token)) flatMap {
-      case Left(e) => throw AuthenticationFailedException(e.msg) // Future.failed
-      case Right(payload) => getById(payload.uid)
+  private def authenticate(token: String): Future[Option[User]] = {
+    Future(extractToken(token)) flatMap {
+      case Left(_) => Future.successful(None)
+      case Right(payload) =>
+        getById(payload.uid) map (Some(_)) recover { case ObjectNotFoundException(_) => None }
     }
   }
-
-  def jwtAuthenticator: AsyncAuthenticatorPF[UserGeneric] = {
-    case Credentials.Missing => Future.successful(Guest())
+  def jwtAuthenticator: AsyncAuthenticator[UserGeneric] = {
+    case Credentials.Missing => Future.successful(Some(Guest()))
     case Credentials.Provided(token) => authenticate(token)
   }
 }

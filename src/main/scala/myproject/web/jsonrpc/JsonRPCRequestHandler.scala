@@ -32,7 +32,7 @@ trait JsonRPCRequestHandler extends ApiMapper with JsonRPCResponseHandler {
         Future.successful(RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.invalidRequest.id, s"parameters missing or malformed")))
 
       /* Calling method */
-      case method => callRpcMethod(req, method, user, None, clientIp) recover throwableToRPCResponse(req) andThen { //TODO: Implement effective user
+      case method => callRpcMethod(req, method, user, None, clientIp).recover(throwableToRPCResponse(req)).andThen { //TODO: Implement effective user
         case Success(res: RPCResponseError) =>
           logger.error(s"[${clientIp.getOrElse("-")}] [${user.login}] [${execTime}ms] [failed] [${req.method}] error:${res.error.message}")
         case Success(_: RPCResponseSuccess) =>
@@ -42,9 +42,9 @@ trait JsonRPCRequestHandler extends ApiMapper with JsonRPCResponseHandler {
     }
   }
 
-  def processBatchRpcRequest(user: UserGeneric, batch: Seq[RPCRequest], clientIp: Option[String], euid: Option[UUID]): Future[RPCResponse] = ???
+  def processBatchRpcRequest(user: UserGeneric, batch: Seq[RPCRequest], clientIp: Option[String], euid: Option[UUID]): Future[Seq[RPCResponse]] = ???
 
-  private def callRpcMethod(req: RPCRequest, methodName: String, realUser: UserGeneric, effectiveUser: Option[User], clientIp: Option[String]) = {
+  private def callRpcMethod(req: RPCRequest, methodName: String, realUser: UserGeneric, effectiveUser: Option[User], clientIp: Option[String]): Future[RPCResponse] = {
     dispatchRequest(realUser, effectiveUser, methodName, clientIp)(new ReifiedDataWrapper(req.params)) map { result =>
       if (req.id.isEmpty)
         RPCNotificationResponse()

@@ -4,7 +4,6 @@ import myproject.modules.iam.User
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt
 
 trait Authentication {
-  type LoginError = String
 
   def loginPassword(user: User, candidate: String, hashedPassword: String): Option[User] =
     if(checkPassword(candidate, hashedPassword)) Some(user) else None

@@ -5,15 +5,15 @@ import java.util.UUID
 import myproject.audit.AuditData
 import myproject.common.serialization.ReifiedDataWrapper
 import myproject.common.serialization.ReifiedDataWrapper.asOpt
+import myproject.database.Database
 import myproject.modules.iam.UserGeneric
-import myproject.modules.iam.dao.UserDAO
 import myproject.modules.iam.domain.UserFunctions
 import myproject.modules.iam.dto.UserDTO
 import myproject.web.api.ApiFunction
 
 import scala.concurrent.Future
 
-case object ApiSaveUser extends ApiFunction with UserDAO with UserDTO with UserFunctions {
+case object ApiSaveUser extends ApiFunction with Database with UserDTO with UserFunctions {
   override val name = "save_user"
   override val description = "Save a user in database"
 
