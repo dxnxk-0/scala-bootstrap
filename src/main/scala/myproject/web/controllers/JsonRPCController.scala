@@ -1,14 +1,15 @@
-package myproject.web.jsonrpc
+package myproject.web.controllers
 
 import java.util.UUID
 
 import akka.http.scaladsl.server.RejectionHandler
 import com.typesafe.scalalogging.Logger
 import myproject.common.serialization.AkkaHttpMarshalling
+import myproject.web.jsonrpc.{JsonRPCRequestHandler, JsonRPCResponseHandler, RPCRequest}
 import myproject.web.server.{Rejections, WebAuth}
 import org.slf4j.LoggerFactory
 
-trait JsonRPCRoute extends JsonRPCRequestHandler with JsonRPCResponseHandler with AkkaHttpMarshalling with Rejections with WebAuth {
+trait JsonRPCController extends JsonRPCRequestHandler with JsonRPCResponseHandler with AkkaHttpMarshalling with Rejections with WebAuth {
 
   import akka.http.scaladsl.server.Directives._
   import akka.http.scaladsl.server.Route

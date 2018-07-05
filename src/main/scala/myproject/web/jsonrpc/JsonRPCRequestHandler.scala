@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.typesafe.scalalogging.Logger
 import myproject.common.serialization.ReifiedDataWrapper
-import myproject.modules.iam.User
+import myproject.modules.iam.{User, UserGeneric}
 import myproject.web.api.ApiMapper
 import myproject.web.jsonrpc.JsonRPCErrorCodes.RPCCodes
 
@@ -13,7 +13,7 @@ import scala.util.{Success, Try}
 
 trait JsonRPCRequestHandler extends ApiMapper with JsonRPCResponseHandler {
 
-  def processRpcRequest(user: User, req: RPCRequest, clientIp: Option[String], euid: Option[UUID])(implicit logger: Logger): Future[RPCResponse] = {
+  def processRpcRequest(user: UserGeneric, req: RPCRequest, clientIp: Option[String], euid: Option[UUID])(implicit logger: Logger): Future[RPCResponse] = {
 
     /* Computing request execution time */
     val start = System.currentTimeMillis
@@ -42,9 +42,9 @@ trait JsonRPCRequestHandler extends ApiMapper with JsonRPCResponseHandler {
     }
   }
 
-  def processBatchRpcRequest(user: User, batch: Seq[RPCRequest], clientIp: Option[String], euid: Option[UUID]): Future[RPCResponse] = ???
+  def processBatchRpcRequest(user: UserGeneric, batch: Seq[RPCRequest], clientIp: Option[String], euid: Option[UUID]): Future[RPCResponse] = ???
 
-  private def callRpcMethod(req: RPCRequest, methodName: String, realUser: User, effectiveUser: Option[User], clientIp: Option[String]) = {
+  private def callRpcMethod(req: RPCRequest, methodName: String, realUser: UserGeneric, effectiveUser: Option[User], clientIp: Option[String]) = {
     dispatchRequest(realUser, effectiveUser, methodName, clientIp)(new ReifiedDataWrapper(req.params)) map { result =>
       if (req.id.isEmpty)
         RPCNotificationResponse()

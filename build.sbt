@@ -33,4 +33,13 @@ libraryDependencies ++= Seq(
   // Json
   "com.fasterxml.jackson.core"       %  "jackson-databind"        % "2.9.5",
   "com.fasterxml.jackson.module"     %% "jackson-module-scala"    % "2.9.5",
-  "com.fasterxml.jackson.datatype"   %  "jackson-datatype-jsr310" % "2.9.5")
+  "com.fasterxml.jackson.datatype"   %  "jackson-datatype-jsr310" % "2.9.5",
+
+  // Encryption
+  "org.bouncycastle"                 % "bcprov-ext-jdk15on"       % "1.59",
+  "org.bouncycastle"                 % "bcpg-jdk15on"             % "1.59",
+
+  // Tests
+  "org.scalatest"                    %% "scalatest"               % "3.0.5"  % "test",
+  "com.typesafe.akka"                %% "akka-testkit"            % "2.5.13" % "test",
+  "com.typesafe.akka"                %% "akka-http-testkit"       % "10.1.3" % "test")

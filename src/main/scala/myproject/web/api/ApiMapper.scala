@@ -3,15 +3,15 @@ package myproject.web.api
 import myproject.audit.{AuditData, AuditUserInfo}
 import myproject.common.serialization.ReifiedDataWrapper
 import myproject.common.{AccessRefusedException, AuthenticationNeededException, DefaultExecutionContext, ObjectNotFoundException}
-import myproject.modules.iam.pure.AccessControl
-import myproject.modules.iam.{Guest, User}
+import myproject.modules.iam.domain.AccessControl
+import myproject.modules.iam.{Guest, User, UserGeneric}
 
 import scala.concurrent.Future
 
 trait ApiMapper extends {} with DefaultExecutionContext with AccessControl {
 
   def dispatchRequest(
-    realUser: User,
+    realUser: UserGeneric,
     effectiveUserOpt: Option[User],
     functionName: String,
     clientIp: Option[String])(implicit params: ReifiedDataWrapper): Future[Any] = {
@@ -23,7 +23,7 @@ trait ApiMapper extends {} with DefaultExecutionContext with AccessControl {
       case Guest() =>
         Future.failed(AuthenticationNeededException(s"Access to function `${function.name}` requires valid authentication"))
 
-      case rUser =>
+      case rUser: User =>
         effectiveUserOpt map { effectiveUser =>
           canLogin(effectiveUser) flatMap { _ =>
             canImpersonate(rUser, effectiveUserOpt.get)

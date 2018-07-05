@@ -6,13 +6,13 @@ import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
 import myproject.Config
 import myproject.common.DefaultExecutionContext
-import myproject.web.jsonrpc.JsonRPCRoute
+import myproject.web.controllers.JsonRPCController
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-object WebServer extends App with Routes with JsonRPCRoute with DefaultExecutionContext {
+object WebServer extends App with Routes with JsonRPCController with DefaultExecutionContext {
 
   private implicit val system = ActorSystem("actor-system")
   private implicit val materializer = ActorMaterializer()

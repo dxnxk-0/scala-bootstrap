@@ -2,9 +2,9 @@ package myproject.web.api
 
 import myproject.common.UnexpectedErrorException
 import myproject.modules.dummy.api.ApiWelcome
-import myproject.modules.iam.api.ApiLogin
+import myproject.modules.iam.api.{ApiLogin, ApiSaveUser}
 
-object ApiFunctionsRegistry {
+trait ApiFunctionsRegistry {
   val Functions = scala.collection.mutable.Set[ApiFunction]()
 
   def register(function: ApiFunction) = {
@@ -13,8 +13,12 @@ object ApiFunctionsRegistry {
     else
       Functions.add(function)
   }
+}
+
+object ApiFunctionsRegistry extends ApiFunctionsRegistry {
 
   ////////////// Register API functions below
   register(ApiWelcome)
   register(ApiLogin)
+  register(ApiSaveUser)
 }
