@@ -1,18 +1,15 @@
 package myproject.web.jsonrpc
 
-import akka.http.scaladsl.marshalling.{Marshaller, ToEntityMarshaller}
-import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.Logger
 import myproject.common._
-import myproject.common.serialization.JSONSerializer._
-import myproject.common.serialization.{InvalidTypeException, JSONConfig, MissingKeyException, NullValueException}
+import myproject.common.serialization._
 import myproject.web.jsonrpc.JsonRPCErrorCodes.RPCCodes
 
 import scala.util.{Success, Try}
 
-trait JsonRPCResponseHandler {
+trait JsonRPCResponseHandler extends AkkaHttpMarshalling {
 
   def rpcErrorCodeToHttpStatus(code: RPCCodes.Value) = code match {
     case RPCCodes.forbidden               => StatusCodes.Forbidden
@@ -54,11 +51,8 @@ trait JsonRPCResponseHandler {
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.internalError.id, s"Cannot map RPC response from an unknown type ($unknown)"))
   }
 
-  implicit final def jsonMarshaller[A: Manifest]: ToEntityMarshaller[A] =
-    Marshaller.
-      withFixedContentType(`application/json`) { v =>
-        toJson(v)
-      }
+  implicit val respondJsonSingle = jsonMarshaller[RPCResponse]
+  implicit val respondJsonBatch = jsonMarshaller[Seq[RPCResponse]]
 
   def completeOpRpc(result: Try[RPCResponse])(implicit logger: Logger, jsonConfig: JSONConfig = JSONConfig(false)): Route = ctx => {
     result match {

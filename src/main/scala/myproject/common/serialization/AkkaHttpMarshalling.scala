@@ -2,28 +2,29 @@ package myproject.common.serialization
 
 import java.util.UUID
 
-import akka.http.scaladsl.model.MediaTypes.`application/json`
-import akka.http.scaladsl.model.{ContentType, HttpCharsets, MediaType}
+import akka.http.scaladsl.marshalling.{Marshaller, ToEntityMarshaller}
+import akka.http.scaladsl.model.MediaTypes.{`application/json`, `text/html`}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives.mapResponseEntity
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import myproject.common.serialization.JSONSerializer._
 
 trait AkkaHttpMarshalling {
-  /**
-    * Provides an Akka-Http Json unmarshaller
-    * @tparam A the requested type
-    * @return the unmarshaller
-    */
-  protected def getJsonUnmarshaller[A: Manifest] = Unmarshaller
+
+  protected def jsonUnmarshaller[A: Manifest] = Unmarshaller
     .stringUnmarshaller
     .forContentTypes(`application/json`)
     .map(_.fromJson[A])
 
-  /**
-    * Provides a UUID from String Akka-Http Unmarshaller
-    * @return the unmarshaller
-    */
-  protected def getUuidFromStringUnmarshaller = Unmarshaller.strict[String, UUID] { s =>
+  protected def jsonMarshaller[A: Manifest]: ToEntityMarshaller[A] =
+    Marshaller.
+      withFixedContentType(`application/json`) { v =>
+        HttpEntity(ContentTypes.`application/json`, toJson(v))
+      }
+
+  protected def htmlMarshaller: ToEntityMarshaller[String] = Marshaller.stringMarshaller(`text/html`)
+
+  protected def uuidFromStringUnmarshaller = Unmarshaller.strict[String, UUID] { s =>
     UUID.fromString(s)
   }
 

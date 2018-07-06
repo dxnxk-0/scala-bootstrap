@@ -47,4 +47,7 @@ libraryDependencies ++= Seq(
   // Database
   "com.typesafe.slick"               %% "slick"                   % "3.2.3",
   "com.typesafe.slick"               %% "slick-hikaricp"          % "3.2.3",
-  "com.h2database"                   %  "h2"                      % "1.4.197")
+  "com.h2database"                   %  "h2"                      % "1.4.197",
+
+  // Views
+  "com.lihaoyi"                      %% "scalatags"               % "0.6.7")

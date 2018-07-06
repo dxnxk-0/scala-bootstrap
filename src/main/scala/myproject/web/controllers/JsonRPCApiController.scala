@@ -2,22 +2,19 @@ package myproject.web.controllers
 
 import java.util.UUID
 
-import akka.http.scaladsl.server.RejectionHandler
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.{RejectionHandler, Route}
 import com.typesafe.scalalogging.Logger
 import myproject.common.serialization.AkkaHttpMarshalling
 import myproject.web.jsonrpc.{JsonRPCRequestHandler, JsonRPCResponseHandler, RPCRequest}
 import myproject.web.server.{Rejections, WebAuth}
 import org.slf4j.LoggerFactory
 
-trait JsonRPCController extends JsonRPCRequestHandler with JsonRPCResponseHandler with AkkaHttpMarshalling with Rejections with WebAuth {
+trait JsonRPCApiController extends JsonRPCRequestHandler with JsonRPCResponseHandler with AkkaHttpMarshalling with Rejections with WebAuth {
 
-  import akka.http.scaladsl.server.Directives._
-  import akka.http.scaladsl.server.Route
-
-
-  private implicit val rpcSerializer = getJsonUnmarshaller[RPCRequest]
-  private implicit val rpcBatchSerializer = getJsonUnmarshaller[Seq[RPCRequest]]
-  private implicit val uuidFromStringUnmarshaller = getUuidFromStringUnmarshaller
+  private implicit val rpcSerializer = jsonUnmarshaller[RPCRequest]
+  private implicit val rpcBatchSerializer = jsonUnmarshaller[Seq[RPCRequest]]
+  private implicit val uuidUnmarshaller = uuidFromStringUnmarshaller
 
   implicit private val logger = Logger(LoggerFactory.getLogger("jsonrpc-api"))
 
@@ -26,7 +23,7 @@ trait JsonRPCController extends JsonRPCRequestHandler with JsonRPCResponseHandle
       handleRejections(RejectionHandler.default) { // As soon as the URL match we don't want to evaluate other URLs
         optionalHeaderValueByName("Remote-Address") { ip =>
           parameters('euid.as[UUID].?) { euid =>
-            respondWithJsonContentType {
+            //respondWithJsonContentType {
               authenticateOAuth2Async(realm = "rpc-api", authenticator = jwtAuthenticator) { user =>
                 post {
                   entity(as[RPCRequest]) { req =>
@@ -41,7 +38,7 @@ trait JsonRPCController extends JsonRPCRequestHandler with JsonRPCResponseHandle
                   }
                 }
               }
-            }
+            //}
           }
         }
       }
