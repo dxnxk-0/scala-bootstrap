@@ -30,7 +30,7 @@ case object ApiLogin extends ApiFunction with Database with UserDTO with Authent
 
     for {
       user <- getByLoginName(login)
-      _    <- checkLogin(loginPassword(user, candidate, user.hashedPassword))
+      _    <- checkLogin(loginPassword(user, candidate))
     } yield Map("whoami" -> user.serialize, "token" -> createToken(user.login, user.id, Some(Config.jwtTimeToLive.seconds)))
   }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<configuration scan="true" scanPeriod="30 seconds" debug="true">
+<configuration scan="true" scanPeriod="30 seconds" debug="false">
 
     <jmxConfigurator/>
     <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
@@ -22,7 +22,7 @@
         </encoder>
     </appender>
 
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </root>

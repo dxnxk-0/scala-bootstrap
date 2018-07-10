@@ -23,22 +23,20 @@ trait JsonRPCApiController extends JsonRPCRequestHandler with JsonRPCResponseHan
       handleRejections(RejectionHandler.default) { // As soon as the URL match we don't want to evaluate other URLs
         optionalHeaderValueByName("Remote-Address") { ip =>
           parameters('euid.as[UUID].?) { euid =>
-            //respondWithJsonContentType {
-              authenticateOAuth2Async(realm = "rpc-api", authenticator = jwtAuthenticator) { user =>
-                post {
-                  entity(as[RPCRequest]) { req =>
-                    onComplete(processRpcRequest(user, req, ip, euid)) { res =>
-                      completeOpRpc(res)
-                    }
-                  } ~
-                  entity(as[Seq[RPCRequest]]) { batch =>
-                    onComplete(processBatchRpcRequest(user, batch, ip, euid)) { res =>
-                      completeOpRpcBatch(res)
-                    }
+            authenticateOAuth2Async(realm = "rpc-api", authenticator = jwtAuthenticator) { user =>
+              post {
+                entity(as[RPCRequest]) { req =>
+                  onComplete(processRpcRequest(user, req, ip, euid)) { res =>
+                    completeOpRpc(res)
+                  }
+                } ~
+                entity(as[Seq[RPCRequest]]) { batch =>
+                  onComplete(processBatchRpcRequest(user, batch, ip, euid)) { res =>
+                    completeOpRpcBatch(res)
                   }
                 }
               }
-            //}
+            }
           }
         }
       }

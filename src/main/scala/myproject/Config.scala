@@ -11,6 +11,7 @@ object Config {
     private val srvConfig = config.getConfig("server")
     val interface = srvConfig.getString("interface")
     val port = srvConfig.getInt("port")
+    val sessionDuration = srvConfig.getDuration("session-duration")
   }
 
   //jwt
