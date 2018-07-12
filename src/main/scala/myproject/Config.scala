@@ -5,8 +5,7 @@ import com.typesafe.config.ConfigFactory
 object Config {
 
   private val config = ConfigFactory.load()
-
-  // server
+  
   object server {
     private val srvConfig = config.getConfig("server")
     val interface = srvConfig.getString("interface")
@@ -14,7 +13,9 @@ object Config {
     val sessionDuration = srvConfig.getDuration("session-duration")
   }
 
-  //jwt
-  val secret = config.getString("secret")
-
+  object security {
+    val secret = config.getString("secret")
+    val bcryptWork = config.getInt("bcrypt-work")
+    val jwtTimeToLive = config.getInt("jwt-ttl")
+  }
 }

@@ -1,4 +1,4 @@
-package myproject.web.api
+package myproject.api
 
 import myproject.audit.{AuditData, AuditUserInfo}
 import myproject.common.serialization.ReifiedDataWrapper

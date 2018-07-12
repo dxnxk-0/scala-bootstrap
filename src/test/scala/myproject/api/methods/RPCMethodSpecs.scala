@@ -1,7 +1,7 @@
-package myproject.web.api.methods
+package myproject.api.methods
 
 import akka.http.scaladsl.model.StatusCodes
-import myproject.web.api.RPCApiTestHelper
+import myproject.api.RPCApiTestHelper
 
 abstract class RPCMethodSpecs(val function: String, val needAuthentication: Boolean = true) extends RPCApiTestHelper {
 

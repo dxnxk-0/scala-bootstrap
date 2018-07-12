@@ -1,10 +1,10 @@
-package myproject.web.api.methods
+package myproject.api.methods
 
 import akka.http.scaladsl.model.StatusCodes
 import org.scalatest.DoNotDiscover
 
 @DoNotDiscover
-class ApiLoginSpecs extends RPCMethodSpecs("login", needAuthentication = false) {
+class LoginPasswordSpecs extends RPCMethodSpecs("login", needAuthentication = false) {
 
   it should "authenticate John Doe" in {
 

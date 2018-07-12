@@ -6,12 +6,13 @@ import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsReject
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, MissingCookieRejection, RejectionHandler}
 import myproject.common.serialization.AkkaHttpMarshalling
+import myproject.modules.iam.api.LoginPassword
 import myproject.web.server.WebAuth
 import myproject.web.views.AppView
 
 import scala.util.Success
 
-trait AppController extends HtmlController with AkkaHttpMarshalling with WebAuth with AppView {
+trait AppController extends HtmlController with AkkaHttpMarshalling with WebAuth with AppView with LoginPassword {
 
   private val authCookieName = "tapas-auth"
 
@@ -45,8 +46,8 @@ trait AppController extends HtmlController with AkkaHttpMarshalling with WebAuth
           } ~
           post {
             formFields(('login.as[String], 'password.as[String])) { (login, password) =>
-              onComplete(loginPasswordToJwt(login, password)) {
-                case Success(Some(token)) =>
+              onComplete(loginPassword(login, password)) {
+                case Success((user, token)) =>
                   setCookie(HttpCookie(authCookieName, token)) {
                     redirect(homeUrl, StatusCodes.SeeOther)
                   }

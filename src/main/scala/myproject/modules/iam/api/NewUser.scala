@@ -2,17 +2,17 @@ package myproject.modules.iam.api
 
 import java.util.UUID
 
+import myproject.api.ApiFunction
 import myproject.audit.AuditData
 import myproject.common.serialization.ReifiedDataWrapper
 import myproject.database.Database
 import myproject.modules.iam.UserGeneric
 import myproject.modules.iam.domain.UserFunctions
 import myproject.modules.iam.dto.UserDTO
-import myproject.web.api.ApiFunction
 
 import scala.concurrent.Future
 
-case object ApiNewUser extends ApiFunction with Database with UserDTO with UserFunctions {
+case object NewUser extends ApiFunction with Database with UserDTO with UserFunctions {
   override val name = "new_user"
   override val description = "Create a new user"
 

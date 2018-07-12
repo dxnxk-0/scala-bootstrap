@@ -3,9 +3,9 @@ package myproject.web.jsonrpc
 import java.util.UUID
 
 import com.typesafe.scalalogging.Logger
+import myproject.api.ApiMapper
 import myproject.common.serialization.ReifiedDataWrapper
 import myproject.modules.iam.{User, UserGeneric}
-import myproject.web.api.ApiMapper
 import myproject.web.jsonrpc.JsonRPCErrorCodes.RPCCodes
 
 import scala.concurrent.Future

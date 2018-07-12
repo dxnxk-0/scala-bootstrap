@@ -24,12 +24,4 @@ trait WebAuth extends DefaultExecutionContext with Database with JWT with Authen
     case Credentials.Missing => Future.successful(Some(Guest()))
     case Credentials.Provided(token) => jwtAuthenticate(token)
   }
-
-  def loginPasswordToJwt(login: String, password: String): Future[Option[String]] = {
-    getByLoginName(login) map { user =>
-      loginPassword(user, password) map { _ =>
-        createToken(user.login, user.id)
-      }
-    }
-  }
 }

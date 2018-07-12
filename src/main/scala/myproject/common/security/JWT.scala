@@ -35,7 +35,7 @@ trait JWT extends MessageAuthenticationCode {
 
     val claimSet = Base64.getUrlEncoder.withoutPadding.encodeToString(toJson(JwtPayload(sub = userLogin, uid = userId, iat = now, exp = expireAt)).getBytes)
 
-    val signature = Base64.getUrlEncoder.withoutPadding.encodeToString(sign((jwtHeader + "." + claimSet).getBytes, Config.secret.getBytes))
+    val signature = Base64.getUrlEncoder.withoutPadding.encodeToString(sign((jwtHeader + "." + claimSet).getBytes, Config.security.secret.getBytes))
 
     jwtHeader + "." + claimSet + "." + signature
   }
@@ -52,7 +52,7 @@ trait JWT extends MessageAuthenticationCode {
     val attempt = Try {
       val jwtClaimSet = new String(Base64.getUrlDecoder.decode(payload)).fromJson[JwtPayload]
 
-      if (!java.security.MessageDigest.isEqual(sign((header + "." + payload).getBytes, Config.secret.getBytes), Base64.getUrlDecoder.decode(signature)))
+      if (!java.security.MessageDigest.isEqual(sign((header + "." + payload).getBytes, Config.security.secret.getBytes), Base64.getUrlDecoder.decode(signature)))
         Left(JwtInvalidSignature())
       else if (jwtClaimSet.exp.isDefined && jwtClaimSet.exp.get < now)
         Left(JwtExpiredToken())

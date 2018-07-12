@@ -1,5 +1,6 @@
 package myproject.modules.iam.api
 
+import myproject.api.ApiFunction
 import myproject.audit.AuditData
 import myproject.common.serialization.ReifiedDataWrapper
 import myproject.common.serialization.ReifiedDataWrapper.asOpt
@@ -7,9 +8,8 @@ import myproject.database.Database
 import myproject.modules.iam.UserGeneric
 import myproject.modules.iam.domain.UserFunctions
 import myproject.modules.iam.dto.UserDTO
-import myproject.web.api.ApiFunction
 
-case object ApiUpdateUser extends ApiFunction with Database with UserDTO with UserFunctions {
+case object UpdateUser extends ApiFunction with Database with UserDTO with UserFunctions {
   override val name = "update_user"
   override val description = "Update an existing user"
 

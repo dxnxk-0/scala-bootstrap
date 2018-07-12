@@ -1,4 +1,4 @@
-package myproject.web.api
+package myproject.api
 
 import java.nio.charset.StandardCharsets
 import java.util.UUID

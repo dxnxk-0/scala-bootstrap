@@ -1,13 +1,17 @@
 package myproject.modules.iam.api
 
+import java.util.UUID
+
+import myproject.api.ApiFunction
 import myproject.audit.AuditData
 import myproject.common.serialization.ReifiedDataWrapper
 import myproject.database.Database
-import myproject.modules.iam.UserGeneric
 import myproject.modules.iam.dto.UserDTO
-import myproject.web.api.ApiFunction
+import myproject.modules.iam.{User, UserGeneric}
 
-object ApiGetUser extends ApiFunction with Database with UserDTO {
+import scala.concurrent.Future
+
+object GetUser extends ApiFunction with UserDTO with GetUser {
   override val name = "get_user"
   override val description = "Get an existing user"
 
@@ -15,7 +19,11 @@ object ApiGetUser extends ApiFunction with Database with UserDTO {
     val userId = p.uuid("id")
 
     for {
-      user <- getById(userId)
+      user <- getUser(userId)
     } yield user.serialize
   }
+}
+
+trait GetUser extends Database {
+  def getUser(userId: UUID): Future[User] = getById(userId)
 }

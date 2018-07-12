@@ -7,10 +7,10 @@ import akka.http.scaladsl.server.{RejectionHandler, Route}
 import com.typesafe.scalalogging.Logger
 import myproject.common.serialization.AkkaHttpMarshalling
 import myproject.web.jsonrpc.{JsonRPCRequestHandler, JsonRPCResponseHandler, RPCRequest}
-import myproject.web.server.{Rejections, WebAuth}
+import myproject.web.server.WebAuth
 import org.slf4j.LoggerFactory
 
-trait JsonRPCApiController extends JsonRPCRequestHandler with JsonRPCResponseHandler with AkkaHttpMarshalling with Rejections with WebAuth {
+trait JsonRPCApiController extends JsonRPCRequestHandler with JsonRPCResponseHandler with AkkaHttpMarshalling with WebAuth {
 
   private implicit val rpcSerializer = jsonUnmarshaller[RPCRequest]
   private implicit val rpcBatchSerializer = jsonUnmarshaller[Seq[RPCRequest]]
