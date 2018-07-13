@@ -5,14 +5,12 @@ import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
 import myproject.Config
-import myproject.common.DefaultExecutionContext
-import myproject.web.controllers.JsonRPCApiController
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-object WebServer extends App with Routes with JsonRPCApiController with DefaultExecutionContext with EnvInit {
+object WebServer extends App {
 
   private implicit val system = ActorSystem("actor-system")
   private implicit val materializer = ActorMaterializer()
@@ -22,9 +20,7 @@ object WebServer extends App with Routes with JsonRPCApiController with DefaultE
   val iface = Config.server.interface
   val port = Config.server.port
 
-  initEnv()
-
-  Http().bindAndHandle(httpRoutes, iface, port)
+  Http().bindAndHandle(Routes.httpRoutes, iface, port)
 
   logger.info(s"Started server on $iface:$port")
 

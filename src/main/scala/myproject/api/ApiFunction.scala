@@ -1,17 +1,19 @@
 package myproject.api
 
-import myproject.audit.AuditData
-import myproject.common.serialization.ReifiedDataWrapper
-import myproject.common.{DefaultExecutionContext, InvalidContextException, NotImplementedException}
-import myproject.modules.iam.UserGeneric
+import myproject.audit.Audit.AuditData
+import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
+import myproject.common.{InvalidContextException, NotImplementedException, Runtime}
+import myproject.iam.Users.UserGeneric
 
 import scala.concurrent.Future
 import scala.language.implicitConversions
 
-trait ApiFunction extends DefaultExecutionContext {
+trait ApiFunction {
   val name: String
   val description: String
   val secured: Boolean = true
+
+  protected implicit val ec = Runtime.ec
 
   def process(implicit p: ReifiedDataWrapper, effectiveUser: UserGeneric, auditData: AuditData): Future[Any] = {
     if(!secured)

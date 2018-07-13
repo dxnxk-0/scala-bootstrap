@@ -1,10 +1,11 @@
-package myproject.modules.iam.domain
+package myproject.iam
 
-import myproject.modules.iam.User
+import myproject.iam.Users.User
 
-trait AccessControl {
+object Authorization {
 
   def canImpersonate(requester: User, impersonate: User): Either[String, Unit] = ???
 
   def canLogin(user: User): Either[String, Unit] = Right(Unit)
 }
+

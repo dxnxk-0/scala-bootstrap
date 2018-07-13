@@ -1,6 +1,6 @@
 package test
 
-import myproject.api.methods.{WelcomeSpecs, LoginPasswordSpecs}
+import myproject.api.methods.{LoginPasswordSpecs, WelcomeSpecs}
 import org.scalatest.Suites
 
 class TestSuites extends Suites(

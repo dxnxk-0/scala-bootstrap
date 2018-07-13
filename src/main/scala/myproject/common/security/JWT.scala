@@ -11,21 +11,24 @@ import myproject.common.serialization.JSONSerializer._
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-case class JwtPayload(sub: String, uid: UUID, @JsonDeserialize(contentAs = classOf[java.lang.Long]) exp: Option[Long], iat: Long)
+object JWT {
 
-sealed case class JwtHeader(typ: String = "JWT", alg: String = "HS256")
+  import MessageAuthenticationCode.sign
 
-trait JwtValidationError {
-  val msg: String
-}
+  case class JwtPayload(sub: String, uid: UUID, @JsonDeserialize(contentAs = classOf[java.lang.Long]) exp: Option[Long], iat: Long)
 
-case class JwtInvalidSignature(msg: String = "The JWT signature is invalid") extends JwtValidationError
+  sealed case class JwtHeader(typ: String = "JWT", alg: String = "HS256")
 
-case class JwtExpiredToken(msg: String = "The authentication token has expired") extends JwtValidationError
+  protected trait JwtValidationError {
+    val msg: String
+  }
 
-case class JwtMalformedToken(msg: String = "The authentication token is malformed") extends JwtValidationError
+  case class JwtInvalidSignature(msg: String = "The JWT signature is invalid") extends JwtValidationError
 
-trait JWT extends MessageAuthenticationCode {
+  case class JwtExpiredToken(msg: String = "The authentication token has expired") extends JwtValidationError
+
+  case class JwtMalformedToken(msg: String = "The authentication token is malformed") extends JwtValidationError
+
 
   def createToken(userLogin: String, userId: UUID, validity: Option[Duration] = None): String = {
 
@@ -62,5 +65,4 @@ trait JWT extends MessageAuthenticationCode {
 
     attempt getOrElse Left(JwtMalformedToken())
   }
-
 }

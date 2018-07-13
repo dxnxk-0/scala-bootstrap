@@ -1,21 +1,46 @@
 package myproject.api
 
+import myproject.api.functions._
+import myproject.api.functions.iam.{GetUser, LoginPassword, NewUser, UpdateUser}
+import myproject.audit.Audit.AuditData
 import myproject.common.UnexpectedErrorException
-import myproject.modules.dummy.api.Welcome
-import myproject.modules.iam.api.{GetUser, LoginPassword, NewUser, UpdateUser}
+import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 
-trait ApiFunctionsRegistry {
-  val Functions = scala.collection.mutable.Set[ApiFunction]()
+import scala.concurrent.Future
 
-  def register(function: ApiFunction) = {
+object ApiFunctionsRegistry {
+
+  object ApiHelp extends ApiFunction {
+
+    override val name = "help"
+    override val secured = false
+    override val description = "An overview of the functions available in API"
+
+    override def process(implicit p: ReifiedDataWrapper, auditData: AuditData) = {
+
+      def buildDoc(fn: ApiFunction) = Map(
+        "name" -> fn.name,
+        "description" -> fn.description,
+        "secured" -> fn.secured)
+
+      Future.successful {
+        ApiFunctionsRegistry.Functions.map { fn =>
+          buildDoc(fn)
+        }
+      }
+    }
+  }
+
+  private val Functions = scala.collection.mutable.Set[ApiFunction]()
+
+  private def register(function: ApiFunction) = {
     if (Functions.exists(_.name == function.name))
       throw UnexpectedErrorException(s"Class ${function.getClass.getSimpleName} cannot be loaded. A function with name ${function.name} is already registered.")
     else
       Functions.add(function)
   }
-}
 
-object ApiFunctionsRegistry extends ApiFunctionsRegistry {
+  def find(functionName: String): Option[ApiFunction] = Functions.find(_.name.trim == functionName)
 
   ////////////// Register API functions below
   register(Welcome)
@@ -23,4 +48,5 @@ object ApiFunctionsRegistry extends ApiFunctionsRegistry {
   register(NewUser)
   register(UpdateUser)
   register(GetUser)
+  register(ApiHelp)
 }

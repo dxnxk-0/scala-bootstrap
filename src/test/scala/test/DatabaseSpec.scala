@@ -1,16 +1,16 @@
 package test
 
-import myproject.common.FutureImplicits
-import myproject.database.DBInit
+import myproject.common.FutureImplicits._
+import myproject.database.DB
 import org.scalatest.BeforeAndAfter
 
-trait DatabaseSpec extends UnitSpec with FutureImplicits with BeforeAndAfter {
+trait DatabaseSpec extends UnitSpec with BeforeAndAfter {
 
   before {
     InitTestData.init
   }
 }
 
-private object InitTestData extends DBInit with FutureImplicits {
-  lazy val init = db.run(setup).futureValue
+private object InitTestData {
+  lazy val init = DB.reset.futureValue
 }

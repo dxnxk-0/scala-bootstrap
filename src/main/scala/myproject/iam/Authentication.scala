@@ -1,9 +1,9 @@
-package myproject.modules.iam.domain
+package myproject.iam
 
-import myproject.modules.iam.User
+import myproject.iam.Users.User
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt
 
-trait Authentication {
+object Authentication {
 
   type AccessGranted = Unit
 

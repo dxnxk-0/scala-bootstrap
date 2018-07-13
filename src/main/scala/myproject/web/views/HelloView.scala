@@ -2,7 +2,7 @@ package myproject.web.views
 
 import scalatags.Text.all._
 
-trait HelloView {
+object HelloView {
 
   val view = html {
     body {

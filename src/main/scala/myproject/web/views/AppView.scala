@@ -2,7 +2,7 @@ package myproject.web.views
 
 import scalatags.Text.all._
 
-trait AppView {
+object AppView {
 
   def loginView(error: Option[String], loginUrl: String) =
     html(

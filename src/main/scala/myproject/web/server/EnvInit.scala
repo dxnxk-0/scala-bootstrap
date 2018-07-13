@@ -1,9 +1,9 @@
 package myproject.web.server
 
-import myproject.common.FutureImplicits
-import myproject.database.DBInit
+import myproject.common.FutureImplicits._
+import myproject.database.DB
 
-trait EnvInit extends DBInit with FutureImplicits {
+object EnvInit {
 
-  def initEnv(): Unit = db.run(setup).futureValue
+  def initEnv(): Unit = DB.reset.futureValue
 }

@@ -5,7 +5,7 @@ import java.security.SecureRandom
 import myproject.Config
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt
 
-trait BCrypt {
+object BCrypt {
 
   def hashPassword(pass: String): String = {
     val salt = new Array[Byte](16)

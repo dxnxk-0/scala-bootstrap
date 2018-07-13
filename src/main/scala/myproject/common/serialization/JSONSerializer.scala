@@ -8,16 +8,9 @@ import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
-/**
-  * Allow configuration of the json serialization/deserialization methods.
-  * @param prettyPrint enable pretty printing
-  */
-case class JSONConfig(prettyPrint: Boolean)
-
-/**
-  * The application JSON serializer, based on Jackson and its Scala module.
-  */
 object JSONSerializer {
+
+  case class JSONConfig(prettyPrint: Boolean)
 
   private val mapper = new ObjectMapper()
 
@@ -39,10 +32,6 @@ object JSONSerializer {
 
   mapper.registerModule(new JavaTimeModule())
 
-  /**
-    * The String class is automatically pimped with the fromJson method.
-    * @param doc the JSON document
-    */
   implicit class JsonString(doc: String) {
 
     /**
@@ -71,30 +60,17 @@ object JSONSerializer {
     }
   }
 
-  /**
-    * Serialize any object to Json.
-    * @param obj    the object to be serialized
-    * @param config json serializer configuration
-    * @tparam A the type of the object, usually automatically infered
-    * @return the json document
-    */
   def toJson[A: Manifest](obj: A)(implicit config: JSONConfig = JSONConfig(false)): String =
     if (config.prettyPrint)
       mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj)
     else
       mapper.writeValueAsString(obj)
 
-  /**
-    * Helper method which transform a json string in a prettified json string.
-    */
   def prettyPrintJsonString(json: String): String = {
     val obj = mapper.readValue(json, classOf[Object])
     mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj)
   }
 
-  /**
-    * Helper method which transform a json string in a non-prettified json string.
-    */
   def simplePrintJsonString(json: String): String = {
     val obj = mapper.readValue(json, classOf[Object])
     mapper.writeValueAsString(obj)

@@ -29,6 +29,7 @@ libraryDependencies ++= Seq(
 
   // Email
   "uk.gov.hmrc"                      %% "emailaddress"            % "2.2.0",
+  "org.apache.commons"               % "commons-email"            % "1.5",
 
   // Json
   "com.fasterxml.jackson.core"       %  "jackson-databind"        % "2.9.5",

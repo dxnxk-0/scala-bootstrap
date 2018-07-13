@@ -8,11 +8,11 @@ import akka.http.scaladsl.model.{HttpEntity, MediaTypes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import myproject.common.serialization.JSONSerializer._
-import myproject.web.controllers.JsonRPCApiController
-import myproject.web.jsonrpc.RPCRequest
+import myproject.web.controllers.JsonRPCApiController.JsonRPCRoute
+import myproject.web.jsonrpc.JsonRPC.RPCRequest
 import test.DatabaseSpec
 
-trait RPCApiTestHelper extends DatabaseSpec with ScalatestRouteTest with JsonRPCApiController {
+trait RPCApiTestHelper extends DatabaseSpec with ScalatestRouteTest {
 
   def postRpc(payload: String, token: Option[String] = None, euid: Option[UUID] = None): RouteTestResult = {
     val post = Post("/api/rpc" + euid.map(i => s"?euid=$i").getOrElse(""), HttpEntity(MediaTypes.`application/json`, payload.getBytes(StandardCharsets.UTF_8)))

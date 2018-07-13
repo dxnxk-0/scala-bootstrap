@@ -6,29 +6,31 @@ import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsReject
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, MissingCookieRejection, RejectionHandler}
 import myproject.common.serialization.AkkaHttpMarshalling
-import myproject.modules.iam.api.LoginPassword
-import myproject.web.server.WebAuth
-import myproject.web.views.AppView
+import myproject.iam.IAM._
+import myproject.web.server.WebAuth._
+import myproject.web.views.AppView._
 
 import scala.util.Success
 
-trait AppController extends HtmlController with AkkaHttpMarshalling with WebAuth with AppView with LoginPassword {
+object AppController extends HtmlController {
 
   private val authCookieName = "tapas-auth"
 
-  val appName = "app"
-  val loginRouteName = "login"
-  val homeRouteName = "home"
-  val logoutRouteName = "logout"
-  val rootRouteName = appName
-  val loginUrl = "/" + rootRouteName + "/" + loginRouteName
-  val homeUrl = "/" + rootRouteName + "/" + homeRouteName
-  val assetRoute = "public"
-  val cssFileName = "app.css"
-  val cssUrl = "/" + rootRouteName + "/" + s"$assetRoute/$cssFileName"
-  val cssPathMatcher = assetRoute / cssFileName
+  private implicit val htmlMarshaller = AkkaHttpMarshalling.getHtmlMarshaller
 
-  implicit val appRejectionHandler = RejectionHandler.newBuilder()
+  private val appName = "app"
+  private val loginRouteName = "login"
+  private val homeRouteName = "home"
+  private val logoutRouteName = "logout"
+  private val rootRouteName = appName
+  private val loginUrl = "/" + rootRouteName + "/" + loginRouteName
+  private val homeUrl = "/" + rootRouteName + "/" + homeRouteName
+  private val assetRoute = "public"
+  private val cssFileName = "app.css"
+  private val cssUrl = "/" + rootRouteName + "/" + s"$assetRoute/$cssFileName"
+  private val cssPathMatcher = assetRoute / cssFileName
+
+  private implicit val appRejectionHandler = RejectionHandler.newBuilder()
     .handle { case AuthenticationFailedRejection(AuthenticationFailedRejection.CredentialsRejected, _) =>
       complete(loginView(Some("Incorrect user or password"), loginUrl).render)
     }

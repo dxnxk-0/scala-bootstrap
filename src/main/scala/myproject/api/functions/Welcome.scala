@@ -1,9 +1,9 @@
-package myproject.modules.dummy.api
+package myproject.api.functions
 
 import myproject.api.ApiFunction
-import myproject.audit.AuditData
-import myproject.common.serialization.ReifiedDataWrapper
-import myproject.modules.iam.UserGeneric
+import myproject.audit.Audit.AuditData
+import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
+import myproject.iam.Users.UserGeneric
 
 import scala.concurrent.Future
 

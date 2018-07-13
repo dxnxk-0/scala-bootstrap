@@ -1,14 +1,13 @@
 package myproject.web.server
 
 import akka.http.scaladsl.server.Directives._
-import myproject.web.controllers.{AppController, HelloController, JsonRPCApiController}
+import myproject.web.controllers.AppController.AppRoute
+import myproject.web.controllers.HelloController.HelloRoute
+import myproject.web.controllers.JsonRPCApiController.JsonRPCRoute
 
-trait Routes extends WebAuth
-  with JsonRPCApiController
-  with HelloController
-  with AppController {
+object Routes {
 
-  val handleEncoding = decodeRequest | encodeResponse
+  private val handleEncoding = decodeRequest | encodeResponse
 
   val httpRoutes = handleEncoding {
     JsonRPCRoute ~ HelloRoute ~ AppRoute

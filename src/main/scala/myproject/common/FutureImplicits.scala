@@ -3,7 +3,7 @@ package myproject.common
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
-trait FutureImplicits {
+object FutureImplicits {
   val timeout: Duration = Duration.Inf
 
   implicit class BlockingFuture[A](f: Future[A]) {
