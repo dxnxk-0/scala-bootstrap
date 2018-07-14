@@ -2,6 +2,7 @@ package myproject.api.functions.iam
 
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
+import myproject.iam.Users
 import myproject.iam.Users.UserGeneric
 
 object GetUser extends IAMApiFunction {
@@ -14,6 +15,6 @@ object GetUser extends IAMApiFunction {
   override def process(implicit p: ReifiedDataWrapper, effectiveUser: UserGeneric, auditData: AuditData) = {
     val userId = p.uuid("id")
 
-    iam.getUser(userId) map (_.serialize)
+    Users.getUser(userId) map (_.serialize)
   }
 }

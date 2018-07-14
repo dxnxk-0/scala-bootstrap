@@ -3,6 +3,7 @@ package myproject.api.functions.iam
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.iam.Serializers.UserSerialization
+import myproject.iam.Users
 
 case object LoginPassword extends IAMApiFunction {
 
@@ -14,7 +15,7 @@ case object LoginPassword extends IAMApiFunction {
     val login = p.string("login")
     val candidate = p.string("password")
 
-    iam.loginPassword(login, candidate) map {
+    Users.loginPassword(login, candidate) map {
       case (user, token) => Map("whoami" -> user.serialize, "token" -> token)
     }
   }

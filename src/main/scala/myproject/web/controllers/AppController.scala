@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsReject
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, MissingCookieRejection, RejectionHandler}
 import myproject.common.serialization.AkkaHttpMarshalling
-import myproject.iam.IAM._
+import myproject.iam.Users.loginPassword
 import myproject.web.server.WebAuth._
 import myproject.web.views.AppView._
 

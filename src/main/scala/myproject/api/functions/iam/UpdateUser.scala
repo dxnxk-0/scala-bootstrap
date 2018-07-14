@@ -3,6 +3,7 @@ package myproject.api.functions.iam
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.iam.Serializers.UserSerialization
+import myproject.iam.Users
 import myproject.iam.Users.{User, UserGeneric}
 
 case object UpdateUser extends IAMApiFunction {
@@ -13,6 +14,6 @@ case object UpdateUser extends IAMApiFunction {
     val userId = p.uuid("id")
     val login  = p.string("login")
 
-    iam.updateUser(User(userId, login, "no-update")) map (_.serialize)
+    Users.updateUser(User(userId, login, "no-update")) map (_.serialize)
   }
 }
