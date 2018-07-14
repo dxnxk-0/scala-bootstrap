@@ -8,3 +8,4 @@ case class AuthenticationNeededException(msg: String) extends CustomException(ms
 case class AccessRefusedException(msg: String) extends CustomException(msg)
 case class InvalidContextException(msg: String) extends CustomException(msg)
 case class AuthenticationFailedException(msg: String) extends CustomException(msg)
+case class TokenExpiredException(msg: String) extends CustomException(msg)
