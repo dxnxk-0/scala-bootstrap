@@ -9,10 +9,6 @@ trait DatabaseSpec extends UnitSpec with BeforeAndAfter {
   before {
     InitTestData.init
   }
-
-  after {
-    //DB.db.close()
-  }
 }
 
 private object InitTestData {

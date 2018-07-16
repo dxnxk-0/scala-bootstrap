@@ -3,12 +3,10 @@ package myproject.iam
 import java.util.UUID
 
 import myproject.Config
-import myproject.common.Done
+import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.security.{BCrypt, JWT}
 import myproject.database.DB
-import Authorization._
-import myproject.common.FutureImplicits._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -54,26 +52,20 @@ object Users {
 
   object CRUD {
 
-    def createUser(login: String, password: String, companyId: UUID, role: UserRole): Future[User] =
+    def createUser(login: String, password: String, companyId: UUID, role: UserRole) =
       DB.insert(newUser(login, password, companyId, role))
-
-    def updateUser(userId: UUID, updates: List[UserUpdate]): Future[User] = for {
-      updated <- DB.getById(userId) map (Users.updateUser(_, updates))
-      saved <- DB.update(updated)
-    } yield saved
-
+    def updateUser(userId: UUID, updates: List[UserUpdate]) =
+      DB.getById(userId) map (Users.updateUser(_, updates)) flatMap DB.update
     def updateUser(userId: UUID, update: UserUpdate): Future[User] = updateUser(userId, List(update))
+    def getUser(userId: UUID) = DB.getById(userId)
+    def deleteUser(id: UUID) = DB.deleteUser(id)
 
-    def getUser(userId: UUID): Future[User] = DB.getById(userId)
-
-    def loginPassword(login: String, candidate: String): Future[(User, String)] = {
+    def loginPassword(login: String, candidate: String) = {
 
       for {
         user <- DB.getByLoginName(login)
         _    <- Authentication.loginPassword(user, candidate).toFuture
       } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive.seconds)))
     }
-
-    def deleteUser(id: UUID): Future[Done] = DB.deleteUser(id)
   }
 }

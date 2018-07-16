@@ -4,13 +4,15 @@ import myproject.common.Done
 import myproject.common.FutureImplicits._
 import myproject.iam.Companies.CRUD._
 import myproject.iam.Companies.UpdateName
+import myproject.iam.Domains.CRUD._
 import org.scalatest.DoNotDiscover
 import test.DatabaseSpec
 
 @DoNotDiscover
 class CompanySpecs extends DatabaseSpec {
 
-  lazy val acme = createCompany("Acme").futureValue
+  lazy val domain = createDomain("TESTS").futureValue
+  lazy val acme = createCompany(domain.id, "Acme").futureValue
 
   it should "create a company" in {
     acme.name shouldBe "Acme"

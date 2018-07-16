@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 object Companies {
 
-  case class Company(id: UUID, name: String)
+  case class Company(id: UUID, name: String, domainId: UUID)
 
   sealed trait CompanyUpdate
   case class UpdateName(name: String) extends CompanyUpdate
@@ -20,19 +20,14 @@ object Companies {
     }
   }
 
+  def newCompany(domainId: UUID, name: String) = Company(UUID.randomUUID(), name, domainId)
+
   object CRUD {
-
-    def createCompany(name: String) = DB.insert(Company(UUID.randomUUID(), name))
-
+    def createCompany(domainId:UUID, name: String) = DB.insert(newCompany(domainId, name))
     def getCompany(id: UUID) = DB.getCompany(id)
-
-    def updateCompany(companyId: UUID, updates: List[CompanyUpdate]): Future[Company] = for {
-      updated <- DB.getCompany(companyId) map (Companies.updateCompany(_, updates))
-      saved <- DB.update(updated)
-    } yield saved
-
+    def updateCompany(companyId: UUID, updates: List[CompanyUpdate]) =
+      DB.getCompany(companyId) map (Companies.updateCompany(_, updates)) flatMap DB.update
     def updateCompany(companyId: UUID, update: CompanyUpdate): Future[Company] = updateCompany(companyId, List(update))
-
     def deleteCompany(id: UUID) = DB.deleteCompany(id)
   }
 }

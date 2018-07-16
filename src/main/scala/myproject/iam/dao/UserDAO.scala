@@ -5,10 +5,8 @@ import java.util.UUID
 import myproject.common.Runtime.ec
 import myproject.common.{Done, ObjectNotFoundException}
 import myproject.database.DAO
-import myproject.iam.Users.{User, UserRole}
 import myproject.iam.Users.UserRole.UserRole
-
-import scala.concurrent.Future
+import myproject.iam.Users.{User, UserRole}
 
 trait UserDAO extends DAO { self: CompanyDAO =>
 
@@ -32,18 +30,18 @@ trait UserDAO extends DAO { self: CompanyDAO =>
 
   protected val users = TableQuery[UsersTable]
 
-  def getById(id: UUID): Future[User] = db.run(users.filter(_.id===id).result) map {
+  def getById(id: UUID) = db.run(users.filter(_.id===id).result) map {
     case Nil => throw ObjectNotFoundException(s"user with id $id was not found")
     case u +: _ => u
   }
 
-  def getByLoginName(login: String): Future[User] = db.run(users.filter(_.login===login).result) map {
+  def getByLoginName(login: String) = db.run(users.filter(_.login===login).result) map {
     case r if r.isEmpty => throw ObjectNotFoundException(s"user with login $login was not found")
     case u +: _ => u
   }
 
-  def update(user: User): Future[User] = db.run(users.filter(_.id===user.id).update(user)) map (_ => user)
-  def insert(user: User): Future[User] = db.run(users += user) map (_ => user)
-  def insert(batch: Seq[User]): Future[Unit] = db.run(users ++= batch) map (_ => Unit)
+  def update(user: User) = db.run(users.filter(_.id===user.id).update(user)) map (_ => user)
+  def insert(user: User) = db.run(users += user) map (_ => user)
+  def insert(batch: Seq[User]) = db.run(users ++= batch) map (_ => Done)
   def deleteUser(id: UUID) = db.run(users.filter(_.id===id).delete) map (_ => Done)
 }

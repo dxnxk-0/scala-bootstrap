@@ -3,6 +3,7 @@ package myproject.iam
 import myproject.common.FutureImplicits._
 import myproject.common.security.JWT
 import myproject.common.{AuthenticationFailedException, ObjectNotFoundException}
+import myproject.iam.Domains.CRUD.createDomain
 import myproject.iam.Users.CRUD._
 import myproject.iam.Users.{UpdateLogin, UserRole}
 import org.scalatest.DoNotDiscover
@@ -11,7 +12,8 @@ import test.DatabaseSpec
 @DoNotDiscover
 class UserSpecs extends DatabaseSpec {
 
-  lazy val company = Companies.CRUD.createCompany("ACME").futureValue
+  lazy val domain = createDomain("TESTS").futureValue
+  lazy val company = Companies.CRUD.createCompany(domain.id, "ACME").futureValue
   lazy val jdoe = createUser("jdoe", "Kondor_123", company.id, UserRole.User).futureValue
 
   it should "create a user" in {

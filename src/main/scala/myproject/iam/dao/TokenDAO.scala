@@ -6,10 +6,8 @@ import java.util.UUID
 import myproject.common.Runtime.ec
 import myproject.common.{Done, ObjectNotFoundException}
 import myproject.database.DAO
-import myproject.iam.Tokens.{Token, TokenRole}
 import myproject.iam.Tokens.TokenRole.TokenRole
-
-import scala.concurrent.Future
+import myproject.iam.Tokens.{Token, TokenRole}
 
 trait TokenDAO extends DAO { self: UserDAO =>
 
@@ -30,7 +28,7 @@ trait TokenDAO extends DAO { self: UserDAO =>
 
   protected val tokens = TableQuery[TokensTable]
 
-  def getToken(id: UUID): Future[Token] = db.run(tokens.filter(_.id===id).result) map {
+  def getToken(id: UUID) = db.run(tokens.filter(_.id===id).result) map {
     case Nil => throw ObjectNotFoundException(s"token with id $id was not found")
     case t +: _ => t
   }
