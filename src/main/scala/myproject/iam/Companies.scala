@@ -25,7 +25,7 @@ object Companies {
   def newCompany(domainId: UUID, name: String) = Company(UUID.randomUUID(), name, domainId)
 
   object CRUD {
-    private def getCompanyFromDb(id: UUID): Future[Company] = DB.getCompany(id).flattenOpt(ObjectNotFoundException(s"company with id $id was not found"))
+    private def getCompanyFromDb(id: UUID): Future[Company] = DB.getCompany(id).getOrFail(ObjectNotFoundException(s"company with id $id was not found"))
     def createCompany(domainId:UUID, name: String) = DB.insert(newCompany(domainId, name))
     def getCompany(id: UUID) = getCompanyFromDb(id)
     def updateCompany(id: UUID, updates: List[CompanyUpdate]) = getCompanyFromDb(id) map (Companies.updateCompany(_, updates)) flatMap DB.update

@@ -21,7 +21,7 @@ object FutureImplicits {
   }
 
   implicit class FutureOptionToFuture[A](future: Future[Option[A]]) {
-    def flattenOpt(exception: Throwable): Future[A] = future flatMap {
+    def getOrFail(exception: Throwable): Future[A] = future flatMap {
       case Some(v) => Future.successful(v)
       case None => Future.failed(exception)
     }

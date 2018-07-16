@@ -24,7 +24,7 @@ object Domains {
   def newDomain(name: String) = Domain(UUID.randomUUID(), name)
 
   object CRUD {
-    private def getDomainFromDb(id: UUID) = DB.getDomain(id).flattenOpt(ObjectNotFoundException(s"domain with id $id was not found"))
+    private def getDomainFromDb(id: UUID) = DB.getDomain(id).getOrFail(ObjectNotFoundException(s"domain with id $id was not found"))
     def createDomain(name: String) = DB.insert(newDomain(name))
     def getDomain(id: UUID) = getDomainFromDb(id)
     def updateDomain(id: UUID, updates: List[DomainUpdate]) =

@@ -52,17 +52,20 @@ object Users {
 
   object CRUD {
 
-    private def getUserFromDb(id: UUID): Future[User] = DB.getUserById(id).flattenOpt(ObjectNotFoundException(s"user with id $id was not found"))
+    private def getUserFromDb(id: UUID): Future[User] = DB.getUserById(id).getOrFail(ObjectNotFoundException(s"user with id $id was not found"))
 
-    def createUser(login: String, password: String, companyId: UUID, role: UserRole, email: EmailAddress) =
-      DB.insert(newUser(login, password, companyId, role, email))
+    def createUser(login: String, password: String, companyId: UUID, role: UserRole, email: EmailAddress) = for {
+      byEmail <- DB.getUserByLoginName(login)
+      byLogin <- DB.getUserByEmail(email)
+      _ <- if(byEmail.isDefined or byLogin.isDefined) ...
+    }
     def updateUser(id: UUID, updates: List[UserUpdate]) = getUserFromDb(id) map (Users.updateUser(_, updates)) flatMap DB.update
     def updateUser(id: UUID, update: UserUpdate): Future[User] = updateUser(id, List(update))
     def getUser(id: UUID) = getUserFromDb(id)
     def deleteUser(id: UUID) = DB.deleteUser(id)
 
     def loginPassword(login: String, candidate: String) = for {
-      user <- DB.getUserByLoginName(login).flattenOpt(ObjectNotFoundException(s"user with login $login was not found"))
+      user <- DB.getUserByLoginName(login).getOrFail(ObjectNotFoundException(s"user with login $login was not found"))
       _    <- Authentication.loginPassword(user, candidate).toFuture
     } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive.seconds)))
   }

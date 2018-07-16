@@ -28,7 +28,7 @@ object Tokens {
       DB.insert(Token(UUID.randomUUID(), userId, role, ttl.map(d => getCurrentDateTime.plusMinutes(d.toMinutes))))
     }
 
-    def getToken(id: UUID) = DB.getToken(id).flattenOpt(ObjectNotFoundException(s"token with id $id was not found")) map {
+    def getToken(id: UUID) = DB.getToken(id).getOrFail(ObjectNotFoundException(s"token with id $id was not found")) map {
       case Token(_, _, _, Some(dt)) if getCurrentDateTime.isAfter(dt) => throw TokenExpiredException(s"token with id $id has expired")
       case t => t
     }
