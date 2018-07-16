@@ -4,8 +4,10 @@ import myproject.common.Done
 import myproject.common.FutureImplicits._
 import myproject.iam.Companies.CRUD._
 import myproject.iam.Companies.UpdateName
+import org.scalatest.DoNotDiscover
 import test.DatabaseSpec
 
+@DoNotDiscover
 class CompanySpecs extends DatabaseSpec {
 
   lazy val acme = createCompany("Acme").futureValue

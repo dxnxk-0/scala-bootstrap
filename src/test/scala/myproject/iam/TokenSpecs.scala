@@ -4,10 +4,13 @@ import myproject.common.FutureImplicits._
 import myproject.common.{ObjectNotFoundException, TokenExpiredException}
 import myproject.iam.Tokens.CRUD._
 import myproject.iam.Tokens.TokenRole
+import myproject.iam.Users.UserRole
+import org.scalatest.DoNotDiscover
 import test.DatabaseSpec
 
 import scala.concurrent.duration._
 
+@DoNotDiscover
 class TokenSpecs extends DatabaseSpec {
 
   lazy val company = Companies.CRUD.createCompany("ACME").futureValue

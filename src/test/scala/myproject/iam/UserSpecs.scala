@@ -4,9 +4,11 @@ import myproject.common.FutureImplicits._
 import myproject.common.security.JWT
 import myproject.common.{AuthenticationFailedException, ObjectNotFoundException}
 import myproject.iam.Users.CRUD._
-import myproject.iam.Users.UpdateLogin
+import myproject.iam.Users.{UpdateLogin, UserRole}
+import org.scalatest.DoNotDiscover
 import test.DatabaseSpec
 
+@DoNotDiscover
 class UserSpecs extends DatabaseSpec {
 
   lazy val company = Companies.CRUD.createCompany("ACME").futureValue
