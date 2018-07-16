@@ -12,15 +12,18 @@ import scala.concurrent.duration.Duration
 
 object Tokens {
 
+  import TokenRole.TokenRole
+
   object TokenRole extends Enumeration {
+    type TokenRole = Value
     val Authentication, Signup = Value
   }
 
-  case class Token(id: UUID, userId: UUID, role: TokenRole.Value, expires: Option[LocalDateTime])
+  case class Token(id: UUID, userId: UUID, role: TokenRole, expires: Option[LocalDateTime])
 
   object CRUD {
 
-    def createToken(userId: UUID, role: TokenRole.Value, ttl: Option[Duration]) = {
+    def createToken(userId: UUID, role: TokenRole, ttl: Option[Duration]) = {
       DB.insert(Token(UUID.randomUUID(), userId, role, ttl.map(d => getCurrentDateTime.plusMinutes(d.toMinutes))))
     }
 

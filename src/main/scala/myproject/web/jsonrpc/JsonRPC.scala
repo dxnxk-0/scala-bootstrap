@@ -36,7 +36,8 @@ object JsonRPC {
 
   case class RPCErrorInfo(code: Int, message: String)
 
-  object RPCCodes extends Enumeration {
+  object RPCCode extends Enumeration {
+    type RPCCode                = Value
     val parseError              = Value(-32700, "parse_error")
     val invalidRequest          = Value(-32600, "invalid_request")
     val methodNotFound          = Value(-32601, "method_not_found")
@@ -64,12 +65,12 @@ object JsonRPC {
       /* No request method */
       case _ if Option(req.method).isEmpty /* null */ || req.method.isEmpty =>
         logger.info(s"[${execTime}ms] invalid RPC call with an undefined method")
-        Future.successful(RPCResponseError(id = None, error = RPCErrorInfo(RPCCodes.invalidRequest.id, s"null or empty request method")))
+        Future.successful(RPCResponseError(id = None, error = RPCErrorInfo(RPCCode.invalidRequest.id, s"null or empty request method")))
 
       /* Parameters undefined or invalid */
       case _ if Option(req.params).isEmpty /* null */ || !(Try(req.params.asInstanceOf[List[Any]]).isSuccess || Try(req.params.asInstanceOf[Map[String, Any]]).isSuccess) =>
         logger.info(s"[${execTime}ms] invalid RPC call with malformed parameters (method:${Option(req.method).getOrElse("undefined")})")
-        Future.successful(RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.invalidRequest.id, s"parameters missing or malformed")))
+        Future.successful(RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidRequest.id, s"parameters missing or malformed")))
 
       /* Calling method */
       case method => callRpcMethod(req, method, user, clientIp).recover(throwableToRPCResponse(req)).andThen { //TODO: Implement effective user
@@ -98,44 +99,44 @@ object JsonRPC {
     }
   }
 
-  def rpcErrorCodeToHttpStatus(code: RPCCodes.Value) = code match {
-    case RPCCodes.forbidden               => StatusCodes.Forbidden
-    case RPCCodes.needAuthentication      => StatusCodes.Unauthorized
-    case RPCCodes.internalError           => StatusCodes.InternalServerError
-    case RPCCodes.invalidParams           => StatusCodes.BadRequest
-    case RPCCodes.invalidRequest          => StatusCodes.BadRequest
-    case RPCCodes.parseError              => StatusCodes.BadRequest
-    case RPCCodes.serverError             => StatusCodes.InternalServerError
-    case RPCCodes.methodNotFound          => StatusCodes.NotFound
-    case RPCCodes.objectNotFound          => StatusCodes.NotFound
-    case RPCCodes.locked                  => StatusCodes.Locked
-    case RPCCodes.passwordPolicyViolation => StatusCodes.BadRequest
-    case RPCCodes.importError             => StatusCodes.BadRequest
-    case RPCCodes.tooManyLoginAttempts    => StatusCodes.TooManyRequests
+  def rpcErrorCodeToHttpStatus(code: RPCCode.Value) = code match {
+    case RPCCode.forbidden               => StatusCodes.Forbidden
+    case RPCCode.needAuthentication      => StatusCodes.Unauthorized
+    case RPCCode.internalError           => StatusCodes.InternalServerError
+    case RPCCode.invalidParams           => StatusCodes.BadRequest
+    case RPCCode.invalidRequest          => StatusCodes.BadRequest
+    case RPCCode.parseError              => StatusCodes.BadRequest
+    case RPCCode.serverError             => StatusCodes.InternalServerError
+    case RPCCode.methodNotFound          => StatusCodes.NotFound
+    case RPCCode.objectNotFound          => StatusCodes.NotFound
+    case RPCCode.locked                  => StatusCodes.Locked
+    case RPCCode.passwordPolicyViolation => StatusCodes.BadRequest
+    case RPCCode.importError             => StatusCodes.BadRequest
+    case RPCCode.tooManyLoginAttempts    => StatusCodes.TooManyRequests
   }
 
   private def throwableToRPCResponse(req: RPCRequest): PartialFunction[Throwable, RPCResponse] = {
     case _ if req.id.isEmpty => RPCNotificationResponse() // The client does not care the error
     case InvalidTypeException(msg) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.invalidParams.id, msg))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidParams.id, msg))
     case MissingKeyException(msg) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.invalidParams.id, msg))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidParams.id, msg))
     case NullValueException(msg) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.invalidParams.id, msg))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidParams.id, msg))
     case ObjectNotFoundException(msg) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.objectNotFound.id, msg))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.objectNotFound.id, msg))
     case UnexpectedErrorException(msg) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.internalError.id, msg))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.internalError.id, msg))
     case AuthenticationFailedException(msg) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.needAuthentication.id, msg))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.needAuthentication.id, msg))
     case AuthenticationNeededException(msg) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.needAuthentication.id, msg))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.needAuthentication.id, msg))
     case AccessRefusedException(msg) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.forbidden.id, msg))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.forbidden.id, msg))
     case e: Exception =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.serverError.id, e.getMessage))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.serverError.id, e.getMessage))
     case unknown =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCodes.internalError.id, s"Cannot map RPC response from an unknown type ($unknown)"))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.internalError.id, s"Cannot map RPC response from an unknown type ($unknown)"))
   }
 
   implicit val respondJsonSingle = getJsonMarshaller[RPCResponse]
@@ -146,7 +147,7 @@ object JsonRPC {
       case Success(_: RPCNotificationResponse) => ctx.complete(StatusCodes.NoContent)
       case Success(obj: RPCResponseSuccess) => ctx.complete(obj)
       case Success(response: RPCResponseError) =>
-        ctx.complete((rpcErrorCodeToHttpStatus(RPCCodes(response.error.code)), response))
+        ctx.complete((rpcErrorCodeToHttpStatus(RPCCode(response.error.code)), response))
       case e =>
         logger.error(s"Does not know how to handle $e (${e.getClass}}) in RPC response handler")
         ctx.complete((
