@@ -8,13 +8,14 @@ import myproject.iam.Users.CRUD._
 import myproject.iam.Users.{UpdateLogin, UserRole}
 import org.scalatest.DoNotDiscover
 import test.DatabaseSpec
+import uk.gov.hmrc.emailaddress.EmailAddress
 
 @DoNotDiscover
 class UserSpecs extends DatabaseSpec {
 
   lazy val domain = createDomain("TESTS").futureValue
   lazy val company = Companies.CRUD.createCompany(domain.id, "ACME").futureValue
-  lazy val jdoe = createUser("jdoe", "Kondor_123", company.id, UserRole.User).futureValue
+  lazy val jdoe = createUser("jdoe", "Kondor_123", company.id, UserRole.User, EmailAddress("no-reply@tests.com")).futureValue
 
   it should "create a user" in {
     jdoe.login shouldBe "jdoe"

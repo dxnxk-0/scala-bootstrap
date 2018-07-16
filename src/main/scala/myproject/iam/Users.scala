@@ -4,9 +4,11 @@ import java.util.UUID
 
 import myproject.Config
 import myproject.common.FutureImplicits._
+import myproject.common.ObjectNotFoundException
 import myproject.common.Runtime.ec
 import myproject.common.security.{BCrypt, JWT}
 import myproject.database.DB
+import uk.gov.hmrc.emailaddress.EmailAddress
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -25,7 +27,7 @@ object Users {
     val User = Value("user")
   }
 
-  case class User(id: UUID, login: String, hashedPassword: String, companyId: UUID, role: UserRole)
+  case class User(id: UUID, login: String, hashedPassword: String, companyId: UUID, role: UserRole, email: EmailAddress)
     extends UserGeneric
 
   case class Guest() extends UserGeneric {
@@ -37,8 +39,8 @@ object Users {
   case class UpdatePassword(password: String) extends UserUpdate
   case class UpdateRole(role: UserRole) extends UserUpdate
 
-  def newUser(login: String, password: String, companyId: UUID, role: UserRole) =
-    User(UUID.randomUUID(), login, BCrypt.hashPassword(password), companyId, role)
+  def newUser(login: String, password: String, companyId: UUID, role: UserRole, email: EmailAddress) =
+    User(UUID.randomUUID(), login, BCrypt.hashPassword(password), companyId, role, email.copy(value = email.toLowerCase()))
 
   def updateUser(user: User, updates: List[UserUpdate]) = updates.foldLeft(user) { case (updated, upd) =>
     upd match {
@@ -50,20 +52,18 @@ object Users {
 
   object CRUD {
 
-    def createUser(login: String, password: String, companyId: UUID, role: UserRole) =
-      DB.insert(newUser(login, password, companyId, role))
-    def updateUser(userId: UUID, updates: List[UserUpdate]) =
-      DB.getById(userId) map (Users.updateUser(_, updates)) flatMap DB.update
-    def updateUser(userId: UUID, update: UserUpdate): Future[User] = updateUser(userId, List(update))
-    def getUser(userId: UUID) = DB.getById(userId)
+    private def getUserById(id: UUID): Future[User] = DB.getById(id).flattenOpt(ObjectNotFoundException(s"user with id $id was not found"))
+
+    def createUser(login: String, password: String, companyId: UUID, role: UserRole, email: EmailAddress) =
+      DB.insert(newUser(login, password, companyId, role, email))
+    def updateUser(id: UUID, updates: List[UserUpdate]) = getUserById(id) map (Users.updateUser(_, updates)) flatMap DB.update
+    def updateUser(id: UUID, update: UserUpdate): Future[User] = updateUser(id, List(update))
+    def getUser(id: UUID) = getUserById(id)
     def deleteUser(id: UUID) = DB.deleteUser(id)
 
-    def loginPassword(login: String, candidate: String) = {
-
-      for {
-        user <- DB.getByLoginName(login)
-        _    <- Authentication.loginPassword(user, candidate).toFuture
-      } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive.seconds)))
-    }
+    def loginPassword(login: String, candidate: String) = for {
+      user <- DB.getByLoginName(login).flattenOpt(ObjectNotFoundException(s"user with login $login was not found"))
+      _    <- Authentication.loginPassword(user, candidate).toFuture
+    } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive.seconds)))
   }
 }

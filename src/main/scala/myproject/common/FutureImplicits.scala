@@ -1,9 +1,12 @@
 package myproject.common
 
+import myproject.common.Runtime.ec
+
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
 object FutureImplicits {
+
   val timeout: Duration = Duration.Inf
 
   implicit class BlockingFuture[A](f: Future[A]) {
@@ -14,6 +17,13 @@ object FutureImplicits {
     def toFuture: Future[A] = either match {
       case Left(e) => Future.failed(e)
       case Right(res) => Future.successful(res)
+    }
+  }
+
+  implicit class FutureOptionToFuture[A](future: Future[Option[A]]) {
+    def flattenOpt(exception: Throwable): Future[A] = future flatMap {
+      case Some(v) => Future.successful(v)
+      case None => Future.failed(exception)
     }
   }
 }

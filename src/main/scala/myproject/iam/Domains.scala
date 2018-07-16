@@ -2,6 +2,8 @@ package myproject.iam
 
 import java.util.UUID
 
+import myproject.common.FutureImplicits._
+import myproject.common.ObjectNotFoundException
 import myproject.common.Runtime.ec
 import myproject.database.DB
 
@@ -22,10 +24,11 @@ object Domains {
   def newDomain(name: String) = Domain(UUID.randomUUID(), name)
 
   object CRUD {
+    private def getDomainFromDb(id: UUID) = DB.getDomain(id).flattenOpt(ObjectNotFoundException(s"domain with id $id was not found"))
     def createDomain(name: String) = DB.insert(newDomain(name))
-    def getDomain(id: UUID) = DB.getDomain(id)
+    def getDomain(id: UUID) = getDomainFromDb(id)
     def updateDomain(id: UUID, updates: List[DomainUpdate]) =
-      DB.getDomain(id) map (Domains.updateDomain(_, updates)) flatMap DB.update
+      getDomainFromDb(id) map (Domains.updateDomain(_, updates)) flatMap DB.update
     def updateDomain(id: UUID, update: DomainUpdate): Future[Domain] = updateDomain(id, List(update))
     def deleteDomain(id: UUID) = DB.deleteDomain(id)
   }

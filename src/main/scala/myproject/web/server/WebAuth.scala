@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.directives.Credentials
 import myproject.common.ObjectNotFoundException
 import myproject.common.Runtime.ec
 import myproject.common.security.JWT
-import myproject.database.DB
+import myproject.iam.Users
 import myproject.iam.Users.{Guest, User, UserGeneric}
 
 import scala.concurrent.Future
@@ -16,7 +16,7 @@ object WebAuth {
     Future(JWT.extractToken(token)) flatMap {
       case Left(_) => Future.successful(None)
       case Right(payload) =>
-        DB.getById(payload.uid) map (Some(_)) recover { case ObjectNotFoundException(_) => None }
+        Users.CRUD.getUser(payload.uid) map (Some(_)) recover { case ObjectNotFoundException(_) => None }
     }
   }
 

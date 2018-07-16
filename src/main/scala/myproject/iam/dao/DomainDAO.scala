@@ -2,8 +2,8 @@ package myproject.iam.dao
 
 import java.util.UUID
 
+import myproject.common.Done
 import myproject.common.Runtime.ec
-import myproject.common.{Done, ObjectNotFoundException}
 import myproject.database.DAO
 import myproject.iam.Domains.Domain
 
@@ -19,11 +19,7 @@ trait DomainDAO extends DAO {
 
   protected val domains = TableQuery[DomainsTable]
 
-  def getDomain(id: UUID) = db.run(domains.filter(_.id===id).result) map {
-    case Nil => throw ObjectNotFoundException(s"domain with id $id was not found")
-    case c +: _ => c
-  }
-
+  def getDomain(id: UUID) = db.run(domains.filter(_.id===id).result) map (_.headOption)
   def insert(domain: Domain) = db.run(domains += domain) map (_ => domain)
   def update(domain: Domain) = db.run(domains.filter(_.id===domain.id).update(domain)) map (_ => domain)
   def deleteDomain(id: UUID) = db.run(domains.filter(_.id===id).delete) map (_ => Done)

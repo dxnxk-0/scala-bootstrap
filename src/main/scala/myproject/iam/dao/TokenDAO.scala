@@ -3,8 +3,8 @@ package myproject.iam.dao
 import java.time.LocalDateTime
 import java.util.UUID
 
+import myproject.common.Done
 import myproject.common.Runtime.ec
-import myproject.common.{Done, ObjectNotFoundException}
 import myproject.database.DAO
 import myproject.iam.Tokens.TokenRole.TokenRole
 import myproject.iam.Tokens.{Token, TokenRole}
@@ -28,11 +28,7 @@ trait TokenDAO extends DAO { self: UserDAO =>
 
   protected val tokens = TableQuery[TokensTable]
 
-  def getToken(id: UUID) = db.run(tokens.filter(_.id===id).result) map {
-    case Nil => throw ObjectNotFoundException(s"token with id $id was not found")
-    case t +: _ => t
-  }
-
+  def getToken(id: UUID) = db.run(tokens.filter(_.id===id).result) map (_.headOption)
   def insert(token: Token) = db.run(tokens += token) map (_ => token)
   def deleteToken(id: UUID) = db.run(tokens.filter(_.id===id).delete) map (_ => Done)
 }
