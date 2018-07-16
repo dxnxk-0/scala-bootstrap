@@ -12,7 +12,7 @@ import test.DatabaseSpec
 class UserSpecs extends DatabaseSpec {
 
   lazy val company = Companies.CRUD.createCompany("ACME").futureValue
-  lazy val jdoe = createUser("jdoe", "Kondor_123", company.id).futureValue
+  lazy val jdoe = createUser("jdoe", "Kondor_123", company.id, UserRole.User).futureValue
 
   it should "create a user" in {
     jdoe.login shouldBe "jdoe"

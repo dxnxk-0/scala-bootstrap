@@ -5,7 +5,8 @@ import java.util.UUID
 import myproject.common.Runtime.ec
 import myproject.common.{Done, ObjectNotFoundException}
 import myproject.database.DAO
-import myproject.iam.Users.User
+import myproject.iam.Users.{User, UserRole}
+import myproject.iam.Users.UserRole.UserRole
 
 import scala.concurrent.Future
 
@@ -13,13 +14,18 @@ trait UserDAO extends DAO { self: CompanyDAO =>
 
   import api._
 
+  implicit def userRoleMapper = MappedColumnType.base[UserRole, Int](
+    e => e.id,
+    i => UserRole(i))
+
   protected class UsersTable(tag: Tag) extends Table[User](tag, "USERS") {
     def id = column[UUID]("USER_ID", O.PrimaryKey, O.SqlType("UUID"))
     def login = column[String]("LOGIN")
     def password = column[String]("PASSWORD")
+    def role = column[UserRole]("ROLE")
     def companyId = column[UUID]("COMPANY_ID", O.SqlType("UUID"))
     def company = foreignKey("COMPANY_FK", companyId, companies)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
-    def * = (id, login, password, companyId) <> (User.tupled, User.unapply)
+    def * = (id, login, password, companyId, role) <> (User.tupled, User.unapply)
     def idxLogin = index("idx_login", login)
     def idxCompanyId = index("idx_company", companyId)
   }

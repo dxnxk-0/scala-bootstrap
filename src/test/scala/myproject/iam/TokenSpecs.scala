@@ -14,7 +14,7 @@ import scala.concurrent.duration._
 class TokenSpecs extends DatabaseSpec {
 
   lazy val company = Companies.CRUD.createCompany("ACME").futureValue
-  lazy val user = Users.CRUD.createUser("tokens-specs", "secret", company.id).futureValue
+  lazy val user = Users.CRUD.createUser("tokens-specs", "secret", company.id, UserRole.User).futureValue
   lazy val expiredToken = createToken(user.id, TokenRole.Authentication, Some(0.second)).futureValue
   lazy val validToken = createToken(user.id, TokenRole.Signup, Some(10.minutes)).futureValue
 
