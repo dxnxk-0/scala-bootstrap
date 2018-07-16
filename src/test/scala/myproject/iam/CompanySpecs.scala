@@ -3,6 +3,7 @@ package myproject.iam
 import myproject.common.Done
 import myproject.common.FutureImplicits._
 import myproject.iam.Companies.CRUD._
+import myproject.iam.Companies.UpdateName
 import test.DatabaseSpec
 
 class CompanySpecs extends DatabaseSpec {
@@ -18,7 +19,7 @@ class CompanySpecs extends DatabaseSpec {
   }
 
   it should "update a company" in {
-    updateCompany(acme.copy(name = "Death Star")).futureValue
+    updateCompany(acme.id, UpdateName("Death Star")).futureValue
     getCompany(acme.id).futureValue.name shouldBe "Death Star"
   }
 
