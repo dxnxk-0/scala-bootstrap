@@ -22,17 +22,19 @@ object Tokens {
 
   case class Token(id: UUID, userId: UUID, role: TokenRole, expires: Option[LocalDateTime])
 
+  def validateToken(token: Token) = token match {
+    case Token(_, _, _, Some(dt)) if getCurrentDateTime.isAfter(dt) =>
+      Left(TokenExpiredException(s"token with id ${token.id} has expired"))
+    case t =>
+      Right(t)
+  }
+
+  def newToken(userId: UUID, role: TokenRole, ttl: Option[Duration]) =
+    Token(UUID.randomUUID(), userId, role, ttl.map(d => getCurrentDateTime.plusMinutes(d.toMinutes)))
+
   object CRUD {
-
-    def createToken(userId: UUID, role: TokenRole, ttl: Option[Duration]) = {
-      DB.insert(Token(UUID.randomUUID(), userId, role, ttl.map(d => getCurrentDateTime.plusMinutes(d.toMinutes))))
-    }
-
-    def getToken(id: UUID) = DB.getToken(id).getOrFail(ObjectNotFoundException(s"token with id $id was not found")) map {
-      case Token(_, _, _, Some(dt)) if getCurrentDateTime.isAfter(dt) => throw TokenExpiredException(s"token with id $id has expired")
-      case t => t
-    }
-
+    def createToken(userId: UUID, role: TokenRole, ttl: Option[Duration]) = DB.insert(newToken(userId, role, ttl))
+    def getToken(id: UUID) = DB.getToken(id).getOrFail(ObjectNotFoundException(s"token with id $id was not found")) flatMap (validateToken(_).toFuture)
     def deleteToken(id: UUID) = DB.deleteToken(id)
   }
 }
