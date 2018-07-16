@@ -7,6 +7,7 @@ import myproject.common.Runtime.ec
 import myproject.common.{Done, ObjectNotFoundException}
 import myproject.database.DAO
 import myproject.iam.Tokens.{Token, TokenRole}
+import myproject.iam.Tokens.TokenRole.TokenRole
 
 import scala.concurrent.Future
 
@@ -14,7 +15,7 @@ trait TokenDAO extends DAO { self: UserDAO =>
 
   import api._
 
-  implicit def tokenRoleMapper = MappedColumnType.base[TokenRole.Value, Int](
+  implicit def tokenRoleMapper = MappedColumnType.base[TokenRole, Int](
     e => e.id,
     i => TokenRole(i))
 
@@ -22,7 +23,7 @@ trait TokenDAO extends DAO { self: UserDAO =>
     def id = column[UUID]("TOKEN_ID", O.PrimaryKey, O.SqlType("UUID"))
     def userId = column[UUID]("USER_ID", O.SqlType("UUID"))
     def user = foreignKey("USER_FK", userId, users)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
-    def role = column[TokenRole.Value]("ROLE")
+    def role = column[TokenRole]("ROLE")
     def expires = column[Option[LocalDateTime]]("EXPIRES")
     def * = (id, userId, role, expires) <> (Token.tupled, Token.unapply)
   }
