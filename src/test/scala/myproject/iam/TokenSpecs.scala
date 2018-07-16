@@ -2,15 +2,16 @@ package myproject.iam
 
 import myproject.common.FutureImplicits._
 import myproject.common.{ObjectNotFoundException, TokenExpiredException}
-import myproject.iam.Tokens.{TokenRole, _}
+import myproject.iam.Tokens.CRUD._
+import myproject.iam.Tokens.TokenRole
 import test.DatabaseSpec
 
 import scala.concurrent.duration._
 
 class TokenSpecs extends DatabaseSpec {
 
-  lazy val company = Companies.createCompany("ACME").futureValue
-  lazy val user = Users.createUser("tokens-specs", "secret", company.id).futureValue
+  lazy val company = Companies.CRUD.createCompany("ACME").futureValue
+  lazy val user = Users.CRUD.createUser("tokens-specs", "secret", company.id).futureValue
   lazy val expiredToken = createToken(user.id, TokenRole.Authentication, Some(0.second)).futureValue
   lazy val validToken = createToken(user.id, TokenRole.Signup, Some(10.minutes)).futureValue
 

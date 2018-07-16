@@ -3,12 +3,12 @@ package myproject.iam
 import myproject.common.FutureImplicits._
 import myproject.common.security.JWT
 import myproject.common.{AuthenticationFailedException, ObjectNotFoundException}
-import myproject.iam.Users._
+import myproject.iam.Users.CRUD._
 import test.DatabaseSpec
 
 class UserSpecs extends DatabaseSpec {
 
-  lazy val company = Companies.createCompany("ACME").futureValue
+  lazy val company = Companies.CRUD.createCompany("ACME").futureValue
   lazy val jdoe = createUser("jdoe", "Kondor_123", company.id).futureValue
 
   it should "create a user" in {

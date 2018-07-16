@@ -9,14 +9,17 @@ object Companies {
 
   case class Company(id: UUID, name: String)
 
-  def createCompany(name: String) = DB.insert(Company(UUID.randomUUID(), name))
+  object CRUD {
 
-  def getCompany(id: UUID) = DB.getCompany(id)
+    def createCompany(name: String) = DB.insert(Company(UUID.randomUUID(), name))
 
-  def updateCompany(company: Company) = for {
-    _ <- DB.getCompany(company.id)
-    saved <- DB.update(company)
-  } yield saved
+    def getCompany(id: UUID) = DB.getCompany(id)
 
-  def deleteCompany(id: UUID) = DB.deleteCompany(id)
+    def updateCompany(company: Company) = for {
+      _ <- DB.getCompany(company.id)
+      saved <- DB.update(company)
+    } yield saved
+
+    def deleteCompany(id: UUID) = DB.deleteCompany(id)
+  }
 }

@@ -2,7 +2,7 @@ package myproject.iam
 
 import myproject.common.Done
 import myproject.common.FutureImplicits._
-import myproject.iam.Companies._
+import myproject.iam.Companies.CRUD._
 import test.DatabaseSpec
 
 class CompanySpecs extends DatabaseSpec {
