@@ -4,6 +4,7 @@ import myproject.common.FutureImplicits._
 import myproject.common.security.JWT
 import myproject.common.{AuthenticationFailedException, ObjectNotFoundException}
 import myproject.iam.Users.CRUD._
+import myproject.iam.Users.UpdateLogin
 import test.DatabaseSpec
 
 class UserSpecs extends DatabaseSpec {
@@ -38,7 +39,7 @@ class UserSpecs extends DatabaseSpec {
   }
 
   it should "update the user" in {
-    updateUser(jdoe.copy(login = "smith")).futureValue
+    updateUser(jdoe.id, UpdateLogin("smith")).futureValue
     getUser(jdoe.id).futureValue.login shouldBe "smith"
   }
 
