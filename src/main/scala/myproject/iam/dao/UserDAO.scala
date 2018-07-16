@@ -37,8 +37,8 @@ trait UserDAO extends DAO { self: CompanyDAO =>
 
   protected val users = TableQuery[UsersTable]
 
-  def getById(id: UUID) = db.run(users.filter(_.id===id).result) map (_.headOption)
-  def getByLoginName(login: String) = db.run(users.filter(_.login===login).result) map (_.headOption)
+  def getUserById(id: UUID) = db.run(users.filter(_.id===id).result) map (_.headOption)
+  def getUserByLoginName(login: String) = db.run(users.filter(_.login===login).result) map (_.headOption)
   def update(user: User) = db.run(users.filter(_.id===user.id).update(user)) map (_ => user)
   def insert(user: User) = db.run(users += user) map (_ => user)
   def insert(batch: Seq[User]) = db.run(users ++= batch) map (_ => Done)
