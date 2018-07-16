@@ -19,11 +19,13 @@ object Tokens {
   case class Token(id: UUID, userId: UUID, role: TokenRole.Value, expires: Option[LocalDateTime])
 
   def createToken(userId: UUID, role: TokenRole.Value, ttl: Option[Duration]) = {
-    DB.createToken(Token(UUID.randomUUID(), userId, role, ttl.map(d => getCurrentDateTime.plusMinutes(d.toMinutes))))
+    DB.insert(Token(UUID.randomUUID(), userId, role, ttl.map(d => getCurrentDateTime.plusMinutes(d.toMinutes))))
   }
 
   def getToken(id: UUID) = DB.getToken(id) map {
     case Token(_, _, _, Some(dt)) if getCurrentDateTime.isAfter(dt) => throw TokenExpiredException(s"token with id $id has expired")
     case t => t
   }
+
+  def deleteToken(id: UUID) = DB.deleteToken(id)
 }

@@ -3,9 +3,9 @@ package myproject.iam
 import java.util.UUID
 
 import myproject.Config
-import myproject.common.AuthenticationFailedException
 import myproject.common.Runtime.ec
 import myproject.common.security.{BCrypt, JWT}
+import myproject.common.{AuthenticationFailedException, Done, IllegalOperationException}
 import myproject.database.DB
 
 import scala.concurrent.Future
@@ -18,7 +18,7 @@ object Users {
     val login: String
   }
 
-  case class User(id: UUID, login: String, hashedPassword: String)
+  case class User(id: UUID, login: String, hashedPassword: String, companyId: UUID)
     extends UserGeneric
 
   case class Guest() extends UserGeneric {
@@ -26,22 +26,31 @@ object Users {
     val login = "guest"
   }
 
-  def createUser(login: String, password: String): Future[User] = {
-    val user = User(UUID.randomUUID(), login, BCrypt.hashPassword(password))
+  def createUser(login: String, password: String, companyId: UUID): Future[User] = {
+    val user = User(UUID.randomUUID(), login, BCrypt.hashPassword(password), companyId)
     DB.insert(user)
   }
 
-  def updateUser(user: User): Future[User] = for {
-    _      <- DB.getById(user.id)
-    saved  <- DB.update(user)
-  } yield saved
+  def updateUser(user: User): Future[User] = {
+    def checkUpdate: PartialFunction[User, Future[Done]] = {
+      case u if u.companyId != user.companyId =>
+        Future.failed(IllegalOperationException(s"a user's company id cannot be changed"))
+      case _ =>
+        Future.successful(Done)
+    }
+
+    for {
+      _      <- DB.getById(user.id) map checkUpdate
+      saved  <- DB.update(user)
+    } yield saved
+  }
 
   def getUser(userId: UUID): Future[User] = DB.getById(userId)
 
   def loginPassword(login: String, candidate: String): Future[(User, String)] = {
 
-    def checkLogin: PartialFunction[Either[String, Unit], Future[Unit]] = {
-      case Right(_) => Future.successful(Unit)
+    def checkLogin: PartialFunction[Either[String, Done], Future[Done]] = {
+      case Right(_) => Future.successful(Done)
       case Left(error: String) => Future.failed(AuthenticationFailedException(error))
     }
 
@@ -50,4 +59,6 @@ object Users {
       _    <- checkLogin(Authentication.loginPassword(user, candidate))
     } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive.seconds)))
   }
+
+  def deleteUser(id: UUID): Future[Done] = DB.deleteUser(id)
 }

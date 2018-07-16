@@ -1,7 +1,6 @@
 package myproject.api
 
 import myproject.api.functions._
-import myproject.api.functions.iam.{GetUser, LoginPassword, NewUser, UpdateUser}
 import myproject.audit.Audit.AuditData
 import myproject.common.UnexpectedErrorException
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
@@ -44,9 +43,5 @@ object ApiFunctionsRegistry {
 
   ////////////// Register API functions below
   register(Welcome)
-  register(LoginPassword)
-  register(NewUser)
-  register(UpdateUser)
-  register(GetUser)
   register(ApiHelp)
 }

@@ -8,7 +8,8 @@ import test.DatabaseSpec
 
 class UserSpecs extends DatabaseSpec {
 
-  lazy val jdoe = createUser("jdoe", "Kondor_123").futureValue
+  lazy val company = Companies.createCompany("ACME").futureValue
+  lazy val jdoe = createUser("jdoe", "Kondor_123", company.id).futureValue
 
   it should "create a user" in {
     jdoe.login shouldBe "jdoe"
@@ -42,6 +43,7 @@ class UserSpecs extends DatabaseSpec {
   }
 
   it should "delete the user" in {
-    pending
+    deleteUser(jdoe.id).futureValue
+    a [ObjectNotFoundException] shouldBe thrownBy(getUser(jdoe.id).futureValue)
   }
 }

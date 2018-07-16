@@ -1,18 +1,18 @@
 package myproject.iam
 
-import java.util.UUID
-
 import myproject.common.FutureImplicits._
-import myproject.common.TokenExpiredException
-import myproject.iam.Tokens.TokenRole
+import myproject.common.{ObjectNotFoundException, TokenExpiredException}
+import myproject.iam.Tokens.{TokenRole, _}
 import test.DatabaseSpec
 
 import scala.concurrent.duration._
 
 class TokenSpecs extends DatabaseSpec {
 
-  lazy val expiredToken = Tokens.createToken(UUID.randomUUID(), TokenRole.Authentication, Some(0.second)).futureValue
-  lazy val validToken = Tokens.createToken(UUID.randomUUID(), TokenRole.Signup, Some(10.minutes)).futureValue
+  lazy val company = Companies.createCompany("ACME").futureValue
+  lazy val user = Users.createUser("tokens-specs", "secret", company.id).futureValue
+  lazy val expiredToken = createToken(user.id, TokenRole.Authentication, Some(0.second)).futureValue
+  lazy val validToken = createToken(user.id, TokenRole.Signup, Some(10.minutes)).futureValue
 
   it should "create a token" in {
     expiredToken.role shouldBe TokenRole.Authentication
@@ -20,10 +20,15 @@ class TokenSpecs extends DatabaseSpec {
   }
 
   it should "not retrieve the expired token" in {
-    a [TokenExpiredException] should be thrownBy Tokens.getToken(expiredToken.id).futureValue
+    a [TokenExpiredException] should be thrownBy getToken(expiredToken.id).futureValue
   }
 
   it should "retrieve the valid token" in {
-    Tokens.getToken(validToken.id).futureValue.role shouldBe TokenRole.Signup
+    getToken(validToken.id).futureValue.role shouldBe TokenRole.Signup
+  }
+
+  it should "delete the token" in {
+    deleteToken(validToken.id).futureValue
+    a [ObjectNotFoundException] shouldBe thrownBy(getToken(validToken.id).futureValue)
   }
 }

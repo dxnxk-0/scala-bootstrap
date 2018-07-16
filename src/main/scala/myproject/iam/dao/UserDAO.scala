@@ -2,25 +2,29 @@ package myproject.iam.dao
 
 import java.util.UUID
 
-import myproject.common.ObjectNotFoundException
 import myproject.common.Runtime.ec
+import myproject.common.{Done, ObjectNotFoundException}
 import myproject.database.DAO
 import myproject.iam.Users.User
 
 import scala.concurrent.Future
 
-trait UserDAO extends DAO {
+trait UserDAO extends DAO { self: CompanyDAO =>
 
   import api._
 
-  protected class Users(tag: Tag) extends Table[User](tag, "USERS") {
+  protected class UsersTable(tag: Tag) extends Table[User](tag, "USERS") {
     def id = column[UUID]("USER_ID", O.PrimaryKey, O.SqlType("UUID"))
     def login = column[String]("LOGIN")
     def password = column[String]("PASSWORD")
-    def * = (id, login, password) <> (User.tupled, User.unapply)
+    def companyId = column[UUID]("COMPANY_ID", O.SqlType("UUID"))
+    def company = foreignKey("COMPANY_FK", companyId, companies)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+    def * = (id, login, password, companyId) <> (User.tupled, User.unapply)
+    def idxLogin = index("idx_login", login)
+    def idxCompanyId = index("idx_company", companyId)
   }
 
-  protected val users = TableQuery[Users]
+  protected val users = TableQuery[UsersTable]
 
   def getById(id: UUID): Future[User] = db.run(users.filter(_.id===id).result) map {
     case Nil => throw ObjectNotFoundException(s"user with id $id was not found")
@@ -33,8 +37,7 @@ trait UserDAO extends DAO {
   }
 
   def update(user: User): Future[User] = db.run(users.filter(_.id===user.id).update(user)) map (_ => user)
-
   def insert(user: User): Future[User] = db.run(users += user) map (_ => user)
-
   def insert(batch: Seq[User]): Future[Unit] = db.run(users ++= batch) map (_ => Unit)
+  def deleteUser(id: UUID) = db.run(users.filter(_.id===id).delete) map (_ => Done)
 }
