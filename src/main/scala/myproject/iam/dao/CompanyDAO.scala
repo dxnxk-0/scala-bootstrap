@@ -7,16 +7,16 @@ import myproject.common.Runtime.ec
 import myproject.database.DAO
 import myproject.iam.Companies.Company
 
-trait CompanyDAO extends DAO { self: DomainDAO =>
+trait CompanyDAO extends DAO { self: ChannelDAO =>
 
   import api._
 
   protected class CompaniesTable(tag: Tag) extends Table[Company](tag, "COMPANIES") {
     def id = column[UUID]("COMPANY_ID", O.PrimaryKey, O.SqlType("UUID"))
     def name = column[String]("NAME")
-    def domainId = column[UUID]("DOMAIN_ID", O.SqlType("UUID"))
-    def domain = foreignKey("DOMAIN_FK", domainId, domains)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
-    def * = (id, name, domainId) <> (Company.tupled, Company.unapply)
+    def channelId = column[UUID]("DOMAIN_ID", O.SqlType("UUID"))
+    def channel = foreignKey("DOMAIN_FK", channelId, channels)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+    def * = (id, name, channelId) <> (Company.tupled, Company.unapply)
   }
 
   protected val companies = TableQuery[CompaniesTable]

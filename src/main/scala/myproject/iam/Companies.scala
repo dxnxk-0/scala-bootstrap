@@ -11,7 +11,7 @@ import scala.concurrent.Future
 
 object Companies {
 
-  case class Company(id: UUID, name: String, domainId: UUID)
+  case class Company(id: UUID, name: String, channelId: UUID)
 
   sealed trait CompanyUpdate
   case class UpdateName(name: String) extends CompanyUpdate
@@ -22,11 +22,11 @@ object Companies {
     }
   }
 
-  def newCompany(domainId: UUID, name: String) = Company(UUID.randomUUID(), name, domainId)
+  def newCompany(channelId: UUID, name: String) = Company(UUID.randomUUID(), name, channelId)
 
   object CRUD {
     private def getCompanyFromDb(id: UUID): Future[Company] = DB.getCompany(id).getOrFail(ObjectNotFoundException(s"company with id $id was not found"))
-    def createCompany(domainId:UUID, name: String) = DB.insert(newCompany(domainId, name))
+    def createCompany(channelId:UUID, name: String) = DB.insert(newCompany(channelId, name))
     def getCompany(id: UUID) = getCompanyFromDb(id)
     def updateCompany(id: UUID, updates: List[CompanyUpdate]) = getCompanyFromDb(id) map (Companies.updateCompany(_, updates)) flatMap DB.update
     def updateCompany(id: UUID, update: CompanyUpdate): Future[Company] = updateCompany(id, List(update))

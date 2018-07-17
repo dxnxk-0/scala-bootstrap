@@ -2,7 +2,7 @@ package myproject.iam
 
 import myproject.common.FutureImplicits._
 import myproject.common.{ObjectNotFoundException, TokenExpiredException}
-import myproject.iam.Domains.CRUD.createDomain
+import myproject.iam.Channels.CRUD.createChannel
 import myproject.iam.Tokens.CRUD._
 import myproject.iam.Tokens.TokenRole
 import myproject.iam.Users.UserRole
@@ -15,8 +15,8 @@ import scala.concurrent.duration._
 @DoNotDiscover
 class TokenSpecs extends DatabaseSpec {
 
-  lazy val domain = createDomain("TESTS").futureValue
-  lazy val company = Companies.CRUD.createCompany(domain.id, "ACME").futureValue
+  lazy val channel = createChannel("TESTS").futureValue
+  lazy val company = Companies.CRUD.createCompany(channel.id, "ACME").futureValue
   lazy val user = Users.CRUD.createUser("tokens-specs", "secret", company.id, UserRole.User, EmailAddress("no-reply@tests.com")).futureValue
   lazy val expiredToken = createToken(user.id, TokenRole.Authentication, Some(0.second)).futureValue
   lazy val validToken = createToken(user.id, TokenRole.Signup, Some(10.minutes)).futureValue
