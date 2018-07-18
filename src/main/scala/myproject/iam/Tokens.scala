@@ -9,7 +9,7 @@ import myproject.common.TimeManagement._
 import myproject.common.{ObjectNotFoundException, TokenExpiredException}
 import myproject.database.DB
 
-import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success}
 
 object Tokens {
 
@@ -24,16 +24,13 @@ object Tokens {
 
   def validateToken(token: Token) = token match {
     case Token(_, _, _, Some(dt)) if getCurrentDateTime.isAfter(dt) =>
-      Left(TokenExpiredException(s"token with id ${token.id} has expired"))
+      Failure(TokenExpiredException(s"token with id ${token.id} has expired"))
     case t =>
-      Right(t)
+      Success(t)
   }
 
-  def newToken(userId: UUID, role: TokenRole, ttl: Option[Duration]) =
-    Token(UUID.randomUUID(), userId, role, ttl.map(d => getCurrentDateTime.plusMinutes(d.toMinutes)))
-
   object CRUD {
-    def createToken(userId: UUID, role: TokenRole, ttl: Option[Duration]) = DB.insert(newToken(userId, role, ttl))
+    def createToken(token: Token) = DB.insert(token)
     def getToken(id: UUID) = DB.getToken(id).getOrFail(ObjectNotFoundException(s"token with id $id was not found")) flatMap (validateToken(_).toFuture)
     def deleteToken(id: UUID) = DB.deleteToken(id)
   }

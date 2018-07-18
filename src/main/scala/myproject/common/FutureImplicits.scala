@@ -4,6 +4,7 @@ import myproject.common.Runtime.ec
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
+import scala.util.{Failure, Success, Try}
 
 object FutureImplicits {
 
@@ -11,6 +12,13 @@ object FutureImplicits {
 
   implicit class BlockingFuture[A](f: Future[A]) {
     def futureValue: A = Await.result(f, timeout)
+  }
+
+  implicit class TryToFuture[A](monad: Try[A]) {
+    def toFuture: Future[A] = monad match {
+      case Failure(e) => Future.failed(e)
+      case Success(res) => Future.successful(res)
+    }
   }
 
   implicit class EitherToFuture[A](either: Either[CustomException, A]) {

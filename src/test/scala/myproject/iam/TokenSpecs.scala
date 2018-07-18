@@ -1,29 +1,31 @@
 package myproject.iam
 
+import java.util.UUID
+
 import myproject.common.FutureImplicits._
-import myproject.common.{ObjectNotFoundException, TokenExpiredException}
-import myproject.iam.Channels.CRUD.createChannel
+import myproject.common.{ObjectNotFoundException, TimeManagement, TokenExpiredException}
+import myproject.iam.Channels.Channel
+import myproject.iam.Groups.Group
 import myproject.iam.Tokens.CRUD._
-import myproject.iam.Tokens.TokenRole
-import myproject.iam.Users.UserRole
+import myproject.iam.Tokens.{Token, TokenRole}
+import myproject.iam.Users.{User, UserRole}
 import org.scalatest.DoNotDiscover
 import test.DatabaseSpec
 import uk.gov.hmrc.emailaddress.EmailAddress
 
-import scala.concurrent.duration._
-
 @DoNotDiscover
 class TokenSpecs extends DatabaseSpec {
 
-  lazy val channel = createChannel("TESTS").futureValue
-  lazy val company = Companies.CRUD.createCompany(channel.id, "ACME").futureValue
-  lazy val user = Users.CRUD.createUser("tokens-specs", "secret", company.id, UserRole.User, EmailAddress("no-reply@tests.com")).futureValue
-  lazy val expiredToken = createToken(user.id, TokenRole.Authentication, Some(0.second)).futureValue
-  lazy val validToken = createToken(user.id, TokenRole.Signup, Some(10.minutes)).futureValue
+  val channel = Channel(UUID.randomUUID, "TESTS")
+  val group = Group(UUID.randomUUID, "ACME", channel.id)
+  val user = User(UUID.randomUUID, "tokens-specs", "secret", None, Some(group.id), UserRole.GroupUser, EmailAddress("token-specs@tests.com"))
+  val expiredToken = Token(UUID.randomUUID, user.id, TokenRole.Authentication, Some(TimeManagement.getCurrentDateTime.plusSeconds(0)))
+  val validToken = Token(UUID.randomUUID, user.id, TokenRole.Signup, Some(TimeManagement.getCurrentDateTime.plusMinutes(10)))
 
   it should "create a token" in {
-    expiredToken.role shouldBe TokenRole.Authentication
-    validToken.role shouldBe TokenRole.Signup
+    Users.CRUD.createUser(user).futureValue
+    createToken(expiredToken).futureValue.role shouldBe TokenRole.Authentication
+    createToken(validToken).futureValue.role shouldBe TokenRole.Signup
   }
 
   it should "not retrieve the expired token" in {

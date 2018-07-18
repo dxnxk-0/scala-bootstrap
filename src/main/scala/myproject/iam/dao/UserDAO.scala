@@ -9,7 +9,7 @@ import myproject.iam.Users.UserRole.UserRole
 import myproject.iam.Users.{User, UserRole}
 import uk.gov.hmrc.emailaddress.EmailAddress
 
-trait UserDAO extends DAO { self: CompanyDAO =>
+trait UserDAO extends DAO { self: GroupDAO =>
 
   import api._
 
@@ -27,12 +27,12 @@ trait UserDAO extends DAO { self: CompanyDAO =>
     def password = column[String]("PASSWORD")
     def role = column[UserRole]("ROLE")
     def email = column[EmailAddress]("EMAIL", O.Unique)
-    def companyId = column[UUID]("COMPANY_ID", O.SqlType("UUID"))
-    def company = foreignKey("COMPANY_FK", companyId, companies)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
-    def * = (id, login, password, companyId, role, email) <> (User.tupled, User.unapply)
+    def groupId = column[Option[UUID]]("GROUP_ID", O.SqlType("UUID"))
+    def channelId = column[Option[UUID]]("CHANNEL_ID", O.SqlType("UUID"))
+    def * = (id, login, password, channelId, groupId, role, email) <> (User.tupled, User.unapply)
     def idxLogin = index("idx_login", login)
     def idxEmail = index("idx_email", email)
-    def idxCompanyId = index("idx_company", companyId)
+    def idxGroupId = index("idx_group", groupId)
   }
 
   protected val users = TableQuery[UsersTable]
