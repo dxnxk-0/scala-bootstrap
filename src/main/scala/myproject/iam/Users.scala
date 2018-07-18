@@ -60,7 +60,6 @@ object Users {
   case object LevelEntityIdConflict extends ValidationError
 
   object UserValidator extends Validator[User] {
-
     override val validators = List(
       (u: User) => if(Option(u.login).isEmpty || u.login=="" || u.login!=u.login.trim || u.login!=u.login.toLowerCase) NOK(InvalidLogin) else OK,
       (u: User) => if(u.channelId.isDefined && u.level!=RoleLevel.Channel) NOK(LevelEntityIdConflict) else OK,
@@ -80,9 +79,7 @@ object Users {
   }
 
   object CRUD {
-
     private def readUserOrFail(id: UUID): Future[User] = DB.getUserById(id).getOrFail(ObjectNotFoundException(s"user with id $id was not found"))
-
     def createUser(user: User) = UserValidator.validate(user).toFuture flatMap (u => DB.insert(u.copy(password = BCrypt.hashPassword(u.password))))
     def updateUser(user: User) = readUserOrFail(user.id) flatMap (new UserUpdater(_, user).update.toFuture) flatMap DB.update
     def getUser(id: UUID) = readUserOrFail(id)
