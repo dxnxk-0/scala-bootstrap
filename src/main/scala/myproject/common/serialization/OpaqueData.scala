@@ -144,7 +144,7 @@ object OpaqueData {
     def email(key: String, value: Option[String] = None): EmailAddress = {
 
       value.getOrElse(nonEmptyString(key)) match {
-        case e if Try(EmailAddress(e)).isSuccess => EmailAddress(e)
+        case e if Try(EmailAddress(e)).isSuccess => EmailAddress(e.toLowerCase)
         case _ =>
           throw InvalidTypeException(s"key `$key` is not a valid email")
       }
