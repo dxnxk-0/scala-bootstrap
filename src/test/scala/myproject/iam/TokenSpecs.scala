@@ -4,11 +4,14 @@ import java.util.UUID
 
 import myproject.common.FutureImplicits._
 import myproject.common.{ObjectNotFoundException, TimeManagement, TokenExpiredException}
+import myproject.iam.Channels.CRUD.createChannel
 import myproject.iam.Channels.Channel
+import myproject.iam.Groups.CRUD.createGroup
 import myproject.iam.Groups.Group
 import myproject.iam.Tokens.CRUD._
 import myproject.iam.Tokens.{Token, TokenRole}
-import myproject.iam.Users.{User, UserRole}
+import myproject.iam.Users.{User, UserLevel}
+import myproject.iam.Users.CRUD._
 import org.scalatest.DoNotDiscover
 import test.DatabaseSpec
 import uk.gov.hmrc.emailaddress.EmailAddress
@@ -18,12 +21,14 @@ class TokenSpecs extends DatabaseSpec {
 
   val channel = Channel(UUID.randomUUID, "TESTS")
   val group = Group(UUID.randomUUID, "ACME", channel.id)
-  val user = User(UUID.randomUUID, "tokens-specs", "secret", None, Some(group.id), UserRole.GroupUser, EmailAddress("token-specs@tests.com"))
+  val user = User(UUID.randomUUID, UserLevel.Group, "tokens-specs", EmailAddress("token-specs@tests.com"), "secret", None, Some(group.id), None)
   val expiredToken = Token(UUID.randomUUID, user.id, TokenRole.Authentication, Some(TimeManagement.getCurrentDateTime.plusSeconds(0)))
   val validToken = Token(UUID.randomUUID, user.id, TokenRole.Signup, Some(TimeManagement.getCurrentDateTime.plusMinutes(10)))
 
   it should "create a token" in {
-    Users.CRUD.createUser(user).futureValue
+    createChannel(channel)
+    createGroup(group)
+    createUser(user).futureValue
     createToken(expiredToken).futureValue.role shouldBe TokenRole.Authentication
     createToken(validToken).futureValue.role shouldBe TokenRole.Signup
   }

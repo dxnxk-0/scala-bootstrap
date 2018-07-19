@@ -44,4 +44,11 @@ object ApiFunctionsRegistry {
   ////////////// Register API functions below
   register(Welcome)
   register(ApiHelp)
+  register(NewPlatformUser)
+  register(NewChannelUser)
+  register(NewGroupUser)
+  register(NewSimpleUser)
+  register(UpdateUser)
+  register(LoginPassword)
+  register(GetUser)
 }

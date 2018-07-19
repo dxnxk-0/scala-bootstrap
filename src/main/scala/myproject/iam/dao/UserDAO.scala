@@ -5,17 +5,22 @@ import java.util.UUID
 import myproject.common.Done
 import myproject.common.Runtime.ec
 import myproject.database.DAO
-import myproject.iam.Users.UserRole.UserRole
-import myproject.iam.Users.{User, UserRole}
+import myproject.iam.Users.GroupRole.GroupRole
+import myproject.iam.Users.UserLevel.UserLevel
+import myproject.iam.Users.{GroupRole, User, UserLevel}
 import uk.gov.hmrc.emailaddress.EmailAddress
 
-trait UserDAO extends DAO { self: GroupDAO =>
+trait UserDAO extends DAO { self: GroupDAO with ChannelDAO =>
 
   import api._
 
-  implicit def userRoleMapper = MappedColumnType.base[UserRole, Int](
+  implicit def groupRoleMapper = MappedColumnType.base[GroupRole, Int](
     e => e.id,
-    i => UserRole(i))
+    i => GroupRole(i))
+
+  implicit def userLevelMapper = MappedColumnType.base[UserLevel, Int](
+    e => e.id,
+    i => UserLevel(i))
 
   implicit def emailAddressMapper = MappedColumnType.base[EmailAddress, String](
     address => address.toString,
@@ -25,14 +30,17 @@ trait UserDAO extends DAO { self: GroupDAO =>
     def id = column[UUID]("USER_ID", O.PrimaryKey, O.SqlType("UUID"))
     def login = column[String]("LOGIN", O.Unique)
     def password = column[String]("PASSWORD")
-    def role = column[UserRole]("ROLE")
+    def groupRole = column[Option[GroupRole]]("GROUP_ROLE")
+    def level = column[UserLevel]("LEVEL")
     def email = column[EmailAddress]("EMAIL", O.Unique)
     def groupId = column[Option[UUID]]("GROUP_ID", O.SqlType("UUID"))
     def channelId = column[Option[UUID]]("CHANNEL_ID", O.SqlType("UUID"))
-    def * = (id, login, password, channelId, groupId, role, email) <> (User.tupled, User.unapply)
+    def channel = foreignKey("USER_CHANNEL_FK", channelId, channels)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+    def group = foreignKey("USER_GROUP_FK", groupId, groups)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
     def idxLogin = index("idx_login", login)
     def idxEmail = index("idx_email", email)
     def idxGroupId = index("idx_group", groupId)
+    def * = (id, level, login, email, password, channelId, groupId, groupRole) <> (User.tupled, User.unapply)
   }
 
   protected val users = TableQuery[UsersTable]

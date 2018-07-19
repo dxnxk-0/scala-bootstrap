@@ -15,7 +15,7 @@ trait GroupDAO extends DAO { self: ChannelDAO =>
     def id = column[UUID]("GROUP_ID", O.PrimaryKey, O.SqlType("UUID"))
     def name = column[String]("NAME")
     def channelId = column[UUID]("CHANNEL_ID", O.SqlType("UUID"))
-    def channel = foreignKey("CHANNEL_FK", channelId, channels)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
+    def channel = foreignKey("GROUP_CHANNEL_FK", channelId, channels)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
     def * = (id, name, channelId) <> (Group.tupled, Group.unapply)
   }
 

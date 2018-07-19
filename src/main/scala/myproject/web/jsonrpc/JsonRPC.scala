@@ -11,11 +11,14 @@ import myproject.common.serialization.AkkaHttpMarshalling._
 import myproject.common.serialization.JSONSerializer._
 import myproject.common.serialization.OpaqueData.{InvalidTypeException, MissingKeyException, NullValueException, ReifiedDataWrapper}
 import myproject.iam.Users.UserGeneric
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
 import scala.util.{Success, Try}
 
 object JsonRPC {
+
+  private val logger = Logger(LoggerFactory.getLogger("jsonrpc-module"))
 
   case class RPCRequest(method: String, params: AnyRef, id: Option[Int], jsonrpc: String = "2.0")
 
@@ -134,9 +137,11 @@ object JsonRPC {
     case AccessRefusedException(msg) =>
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.forbidden.id, msg))
     case e: Exception =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.serverError.id, e.getMessage))
+      logger.error(s"Cannot map RPC response from an unknown type $e: " + e.getClass + ": " + e.getMessage)
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.serverError.id, "An error as occurred"))
     case unknown =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.internalError.id, s"Cannot map RPC response from an unknown type ($unknown)"))
+      logger.error(s"Cannot map RPC response from an unknown type ($unknown)")
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.internalError.id, "An error as occured"))
   }
 
   implicit val respondJsonSingle = getJsonMarshaller[RPCResponse]

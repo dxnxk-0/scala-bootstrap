@@ -11,5 +11,7 @@ object DB extends JdbcProfile with UserDAO with TokenDAO with GroupDAO with Chan
 
   val schema = channels.schema ++ groups.schema ++ users.schema ++ tokens.schema
 
-  def reset = db.run(DBIO.seq(schema.drop.asTry, schema.create))
+  def reset = {
+    db.run(DBIO.seq(schema.drop.asTry, schema.create))
+  }
 }

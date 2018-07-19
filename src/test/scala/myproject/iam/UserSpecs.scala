@@ -6,9 +6,11 @@ import myproject.common.FutureImplicits._
 import myproject.common.security.JWT
 import myproject.common.{AuthenticationFailedException, ObjectNotFoundException}
 import myproject.iam.Channels.Channel
+import myproject.iam.Channels.CRUD._
+import myproject.iam.Groups.CRUD.createGroup
 import myproject.iam.Groups.Group
 import myproject.iam.Users.CRUD._
-import myproject.iam.Users.{User, UserRole}
+import myproject.iam.Users.{User, UserLevel}
 import org.scalatest.DoNotDiscover
 import test.DatabaseSpec
 import uk.gov.hmrc.emailaddress.EmailAddress
@@ -18,9 +20,11 @@ class UserSpecs extends DatabaseSpec {
 
   val channel = Channel(UUID.randomUUID, "TEST")
   val group = Group(UUID.randomUUID, "ACME", channel.id)
-  val jdoe = User(UUID.randomUUID, "user-specs", "Kondor_123", None, Some(group.id), UserRole.GroupUser, EmailAddress("user-specs@tests.com"))
+  val jdoe = User(UUID.randomUUID, UserLevel.Group, "user-specs", EmailAddress("user-specs@tests.com"), "Kondor_123", None, Some(group.id), None)
 
   it should "create a user" in {
+    createChannel(channel)
+    createGroup(group)
     createUser(jdoe).futureValue.login shouldBe jdoe.login
   }
 
@@ -49,6 +53,11 @@ class UserSpecs extends DatabaseSpec {
   it should "update the user" in {
     updateUser(jdoe.copy(login = "smith")).futureValue
     getUser(jdoe.id).futureValue.login shouldBe "smith"
+  }
+
+  it should "update the password" in {
+    updateUser(jdoe.copy(password = "new password"))
+    loginPassword(jdoe.login, "new password")
   }
 
   it should "delete the user" in {

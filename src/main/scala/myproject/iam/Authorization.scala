@@ -14,5 +14,6 @@ object Authorization {
   private def success = Success(AccessGranted)
 
   def authzLoginAccess(user: User) = success
+
 }
 

@@ -20,6 +20,8 @@ object WebServer extends App {
   val iface = Config.server.interface
   val port = Config.server.port
 
+  EnvInit.initEnv()
+
   Http().bindAndHandle(Routes.httpRoutes, iface, port)
 
   logger.info(s"Started server on $iface:$port")

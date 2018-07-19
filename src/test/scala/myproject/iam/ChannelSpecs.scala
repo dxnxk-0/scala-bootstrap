@@ -7,8 +7,9 @@ import myproject.common.FutureImplicits._
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.Group
+import myproject.iam.Groups.CRUD._
 import myproject.iam.Users.CRUD._
-import myproject.iam.Users.{User, UserRole}
+import myproject.iam.Users.{User, UserLevel}
 import org.scalatest.DoNotDiscover
 import test.DatabaseSpec
 import uk.gov.hmrc.emailaddress.EmailAddress
@@ -18,10 +19,11 @@ class ChannelSpecs extends DatabaseSpec {
 
   val channel = Channel(UUID.randomUUID, "TEST")
   val group = Group(UUID.randomUUID, "ACME", channel.id)
-  val smith = User(UUID.randomUUID, "channel-specs", "whatever", None, Some(group.id), UserRole.GroupUser, EmailAddress("channel-specs@tests.com"))
+  val smith = User(UUID.randomUUID, UserLevel.Group, "channel-specs", EmailAddress("channel-specs@tests.com"), "whatever", None, Some(group.id), None)
 
   it should "create a channel" in {
     createChannel(channel).futureValue.name shouldBe "TEST"
+    createGroup(group)
     createUser(smith).futureValue
   }
 
