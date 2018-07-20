@@ -106,9 +106,40 @@ object Users {
 
   object CRUD {
     private def readUserOrFail(id: UUID): Future[User] = DB.getUserById(id).getOrFail(ObjectNotFoundException(s"user with id $id was not found"))
-    def createUser(user: User) = UserValidator.validate(user).toFuture flatMap (u => DB.insert(u.copy(password = BCrypt.hashPassword(u.password))))
-    def updateUser(user: User) = readUserOrFail(user.id) flatMap (new UserUpdater(_, user).update.toFuture) flatMap DB.update
+    private def checkUniqueUserProperty(user: User, get: => Future[Option[User]], msg: String) = get map {
+      case None => user
+      case Some(u) if u.id == user.id => user
+      case _ => throw UniquenessCheckException(msg)
+    }
+    private def checkEmailOwnership(u: User) =
+      checkUniqueUserProperty(u, DB.getUserByEmail(u.email), s"email `${u.email}` does already exist")
+    private def checkLoginOwnership(u: User) =
+      checkUniqueUserProperty(u, DB.getUserByLoginName(u.login), s"login name `${u.login}` does already exist")
+    private def checkChannel(u: User) = u.channelId map Channels.CRUD.getChannel getOrElse Future.unit
+    private def checkGroup(u: User) = u.groupId map Groups.CRUD.getGroup getOrElse Future.unit
+
+    private def dbCheckUser(u: User) = for {
+      _ <- checkEmailOwnership(u)
+      _ <- checkLoginOwnership(u)
+      _ <- checkGroup(u)
+      _ <- checkChannel(u)
+    } yield Done
+
+    def createUser(user: User) = for {
+      _ <- UserValidator.validate(user).toFuture
+      _ <- dbCheckUser(user)
+      saved <- DB.insert(user.copy(password = BCrypt.hashPassword(user.password)))
+    } yield saved
+
+    def updateUser(user: User) = for {
+      existing <- readUserOrFail(user.id)
+      updated <- new UserUpdater(existing, user).update.toFuture
+      _ <- dbCheckUser(user)
+      saved <- DB.update(updated)
+    } yield saved
+
     def getUser(id: UUID) = readUserOrFail(id)
+
     def deleteUser(id: UUID) = DB.deleteUser(id)
 
     def loginPassword(login: String, candidate: String) = for {

@@ -9,7 +9,7 @@ import myproject.common.Runtime.ec
 import myproject.common._
 import myproject.common.serialization.AkkaHttpMarshalling._
 import myproject.common.serialization.JSONSerializer._
-import myproject.common.serialization.OpaqueData.{InvalidTypeException, MissingKeyException, NullValueException, ReifiedDataWrapper}
+import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.iam.Users.UserGeneric
 import org.slf4j.LoggerFactory
 
@@ -136,6 +136,18 @@ object JsonRPC {
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.needAuthentication.id, msg))
     case AccessRefusedException(msg) =>
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.forbidden.id, msg))
+    case NotImplementedException(msg) =>
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.internalError.id, msg))
+    case InvalidContextException(msg) =>
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidRequest.id, msg))
+    case TokenExpiredException(msg) =>
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidRequest.id, msg))
+    case IllegalOperationException(msg) =>
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidRequest.id, msg))
+    case UniquenessCheckException(msg) =>
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidRequest.id, msg))
+    case ValidationErrorException(msg, errors) =>
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidRequest.id, msg + ": " + errors.map(_.toString).mkString(",")))
     case e: Exception =>
       logger.error(s"Cannot map RPC response from an unknown type $e: " + e.getClass + ": " + e.getMessage)
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.serverError.id, "An error as occurred"))

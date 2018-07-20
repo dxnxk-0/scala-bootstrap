@@ -4,18 +4,12 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, YearMonth}
 import java.util.{Currency, Locale, UUID}
 
-import myproject.common.CustomException
+import myproject.common.{InvalidTypeException, MissingKeyException, NullValueException}
 import uk.gov.hmrc.emailaddress.EmailAddress
 
 import scala.util.Try
 
 object OpaqueData {
-
-  case class NullValueException(msg: String) extends CustomException(msg)
-
-  case class MissingKeyException(msg: String) extends CustomException(msg)
-
-  case class InvalidTypeException(msg: String) extends CustomException(msg)
 
   class ReifiedDataWrapper(private val underlying: Any) {
 
