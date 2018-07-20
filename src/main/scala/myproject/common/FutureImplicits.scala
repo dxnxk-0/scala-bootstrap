@@ -4,7 +4,7 @@ import myproject.common.Runtime.ec
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 object FutureImplicits {
 
@@ -15,10 +15,7 @@ object FutureImplicits {
   }
 
   implicit class TryToFuture[A](monad: Try[A]) {
-    def toFuture: Future[A] = monad match {
-      case Failure(e) => Future.failed(e)
-      case Success(res) => Future.successful(res)
-    }
+    def toFuture: Future[A] = Future.fromTry(monad)
   }
 
   implicit class EitherToFuture[A](either: Either[CustomException, A]) {
