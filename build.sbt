@@ -37,7 +37,6 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.datatype"   %  "jackson-datatype-jsr310" % "2.9.5",
 
   // Encryption
-  "org.bouncycastle"                 % "bcprov-ext-jdk15on"       % "1.59",
   "org.bouncycastle"                 % "bcpg-jdk15on"             % "1.59",
 
   // Tests
