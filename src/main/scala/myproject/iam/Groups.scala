@@ -1,10 +1,12 @@
 package myproject.iam
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import myproject.common.FutureImplicits._
 import myproject.common.ObjectNotFoundException
 import myproject.common.Runtime.ec
+import myproject.common.TimeManagement.getCurrentDateTime
 import myproject.common.Updater.Updater
 import myproject.common.Validation.Validator
 import myproject.database.DB
@@ -13,14 +15,17 @@ import scala.concurrent.Future
 
 object Groups {
 
-  case class Group(id: UUID, name: String, channelId: UUID)
+  case class Group(id: UUID, name: String, channelId: UUID, created: LocalDateTime, lastUpdate: LocalDateTime)
 
   object GroupValidator extends Validator[Group] {
     override val validators = Nil
   }
 
   class GroupUpdater(source: Group, target: Group) extends Updater(source, target) {
-    override val updaters = List((g: Group) => OK(g.copy(name = target.name)))
+    override val updaters = List(
+      (g: Group) => OK(g.copy(name = target.name)),
+      (c: Group) => OK(c.copy(lastUpdate = getCurrentDateTime))
+    )
     override val validator = GroupValidator
   }
 

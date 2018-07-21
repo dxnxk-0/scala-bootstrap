@@ -22,8 +22,9 @@ trait TokenDAO extends DAO { self: UserDAO =>
     def userId = column[UUID]("USER_ID", O.SqlType("UUID"))
     def user = foreignKey("USER_FK", userId, users)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
     def role = column[TokenRole]("ROLE")
+    def created = column[LocalDateTime]("CREATED")
     def expires = column[Option[LocalDateTime]]("EXPIRES")
-    def * = (id, userId, role, expires) <> (Token.tupled, Token.unapply)
+    def * = (id, userId, role, created, expires) <> (Token.tupled, Token.unapply)
   }
 
   protected val tokens = TableQuery[TokensTable]

@@ -3,10 +3,11 @@ package myproject.iam
 import java.util.UUID
 
 import myproject.common.FutureImplicits._
+import myproject.common.TimeManagement.getCurrentDateTime
 import myproject.common.security.JWT
 import myproject.common.{AuthenticationFailedException, ObjectNotFoundException}
-import myproject.iam.Channels.Channel
 import myproject.iam.Channels.CRUD._
+import myproject.iam.Channels.Channel
 import myproject.iam.Groups.CRUD.createGroup
 import myproject.iam.Groups.Group
 import myproject.iam.Users.CRUD._
@@ -17,10 +18,10 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 
 @DoNotDiscover
 class UserSpecs extends DatabaseSpec {
-
-  val channel = Channel(UUID.randomUUID, "TEST")
-  val group = Group(UUID.randomUUID, "ACME", channel.id)
-  val jdoe = User(UUID.randomUUID, UserLevel.Group, "user-specs", EmailAddress("user-specs@tests.com"), "Kondor_123", None, Some(group.id), None)
+  val now = getCurrentDateTime
+  val channel = Channel(UUID.randomUUID, "TEST", now, now)
+  val group = Group(UUID.randomUUID, "ACME", channel.id, now, now)
+  val jdoe = User(UUID.randomUUID, UserLevel.Group, "user-specs", EmailAddress("user-specs@tests.com"), "Kondor_123", None, Some(group.id), None, now, now)
 
   it should "create a user" in {
     createChannel(channel)

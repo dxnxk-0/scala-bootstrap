@@ -6,6 +6,7 @@ import myproject.api.ApiParameters.{ApiParameter, ApiParameterType}
 import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiParameters}
 import myproject.audit.Audit.AuditData
+import myproject.common.TimeManagement._
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.iam.Users
 import myproject.iam.Users.{GroupRole, User, UserLevel}
@@ -21,8 +22,8 @@ class NewPlatformUser extends ApiFunction with NewUserParameters {
   override val description = "Create a new platform user"
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    val user = User(UUID.randomUUID, UserLevel.Platform, login, email, password, None, None, None)
-
+    val now = getCurrentDateTime
+    val user = User(UUID.randomUUID, UserLevel.Platform, login, email, password, None, None, None, now, now)
     Users.CRUD.createUser(user) map (_.serialize)
   }
 }
@@ -32,10 +33,9 @@ class NewChannelUser extends ApiFunction with NewUserParameters {
   override val description = "Create a new channel user"
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
+    val now = getCurrentDateTime
     val channelId = p.uuid("channel_id")
-
-    val user = User(UUID.randomUUID, UserLevel.Channel, login, email, password, Some(channelId), None, None)
-
+    val user = User(UUID.randomUUID, UserLevel.Channel, login, email, password, Some(channelId), None, None, now, now)
     Users.CRUD.createUser(user) map (_.serialize)
   }
 }
@@ -48,9 +48,8 @@ class NewGroupUser extends ApiFunction with NewUserParameters {
   val groupRole = ApiParameter("group_role", ApiParameterType.EnumString, "the group role", optional = true, withEnum = Some(GroupRole))
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-
-    val user = User(UUID.randomUUID, UserLevel.Group, login, email, password, None, Some(groupId), ApiParameters.Enumerations.toEnumOpt(groupRole, GroupRole))
-
+    val now = getCurrentDateTime
+    val user = User(UUID.randomUUID, UserLevel.Group, login, email, password, None, Some(groupId), ApiParameters.Enumerations.toEnumOpt(groupRole, GroupRole), now, now)
     Users.CRUD.createUser(user) map (_.serialize)
   }
 }
@@ -60,9 +59,8 @@ class NewSimpleUser extends ApiFunction with NewUserParameters {
   override val description = "Create a new simple user"
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-
-    val user = User(UUID.randomUUID, UserLevel.NoLevel, login, email, password, None, None, None)
-
+    val now = getCurrentDateTime
+    val user = User(UUID.randomUUID, UserLevel.NoLevel, login, email, password, None, None, None, now, now)
     Users.CRUD.createUser(user) map (_.serialize)
   }
 }

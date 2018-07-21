@@ -4,6 +4,7 @@ import java.util.UUID
 
 import myproject.common.Done
 import myproject.common.FutureImplicits._
+import myproject.common.TimeManagement.getCurrentDateTime
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.CRUD._
@@ -13,9 +14,9 @@ import test.DatabaseSpec
 
 @DoNotDiscover
 class GroupSpecs extends DatabaseSpec {
-
-  val channel = Channel(UUID.randomUUID, "TEST")
-  val group = Group(UUID.randomUUID, "ACME", channel.id)
+  val now = getCurrentDateTime
+  val channel = Channel(UUID.randomUUID, "TEST", now, now)
+  val group = Group(UUID.randomUUID, "ACME", channel.id, now, now)
 
   it should "create a group" in {
     createChannel(channel).futureValue

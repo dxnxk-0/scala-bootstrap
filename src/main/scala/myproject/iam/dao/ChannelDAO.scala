@@ -1,5 +1,6 @@
 package myproject.iam.dao
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import myproject.common.Done
@@ -14,7 +15,9 @@ trait ChannelDAO extends DAO {
   protected class ChannelsTable(tag: Tag) extends Table[Channel](tag, "CHANNELS") {
     def id = column[UUID]("CHANNEL_ID", O.PrimaryKey, O.SqlType("UUID"))
     def name = column[String]("NAME")
-    def * = (id, name) <> (Channel.tupled, Channel.unapply)
+    def created = column[LocalDateTime]("CREATED")
+    def lastUpdate = column[LocalDateTime]("LAST_UPDATE")
+    def * = (id, name, created, lastUpdate) <> (Channel.tupled, Channel.unapply)
   }
 
   protected val channels = TableQuery[ChannelsTable]

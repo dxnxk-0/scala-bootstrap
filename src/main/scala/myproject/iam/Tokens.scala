@@ -20,10 +20,10 @@ object Tokens {
     val Authentication, Signup = Value
   }
 
-  case class Token(id: UUID, userId: UUID, role: TokenRole, expires: Option[LocalDateTime])
+  case class Token(id: UUID, userId: UUID, role: TokenRole, created: LocalDateTime, expires: Option[LocalDateTime])
 
   def validateToken(token: Token) = token match {
-    case Token(_, _, _, Some(dt)) if getCurrentDateTime.isAfter(dt) =>
+    case Token(_, _, _, _, Some(dt)) if getCurrentDateTime.isAfter(dt) =>
       Failure(TokenExpiredException(s"token with id ${token.id} has expired"))
     case t =>
       Success(t)

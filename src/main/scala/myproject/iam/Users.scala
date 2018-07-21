@@ -1,10 +1,12 @@
 package myproject.iam
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import myproject.Config
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
+import myproject.common.TimeManagement._
 import myproject.common.Updater.{FieldUpdater, Updater}
 import myproject.common.Validation._
 import myproject.common._
@@ -44,7 +46,9 @@ object Users {
       password: String,
       channelId: Option[UUID],
       groupId: Option[UUID],
-      groupRole: Option[GroupRole])
+      groupRole: Option[GroupRole],
+      created: LocalDateTime,
+      lastUpdate: LocalDateTime)
     extends UserGeneric
 
   case class Guest() extends UserGeneric {
@@ -62,25 +66,25 @@ object Users {
 
     val platformUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.Platform => OK
-      case User(_, UserLevel.Platform, _, _ , _, None, None, None) => OK
+      case User(_, UserLevel.Platform, _, _ , _, None, None, None, _, _) => OK
       case _ => NOK(InvalidPlatformUser)
     }
 
     val channelUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.Channel => OK
-      case User(_, UserLevel.Channel, _, _ , _, Some(_), None, None) => OK
+      case User(_, UserLevel.Channel, _, _ , _, Some(_), None, None, _, _) => OK
       case _ => NOK(InvalidChannelUser)
     }
 
     val groupUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.Group=> OK
-      case User(_, UserLevel.Group, _, _ , _, None, Some(_), _) => OK
+      case User(_, UserLevel.Group, _, _ , _, None, Some(_), _, _, _) => OK
       case _ => NOK(InvalidGroupUser)
     }
 
     val simpleUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.NoLevel => OK
-      case User(_, UserLevel.NoLevel, _, _ , _, None, None, None) => OK
+      case User(_, UserLevel.NoLevel, _, _ , _, None, None, None, _, _) => OK
       case _ => NOK(InvalidSimpleUser)
     }
 
@@ -96,7 +100,8 @@ object Users {
       (u: User) => OK(u.copy(login = target.login)),
       (u: User) => if(source.password!=u.password) OK(u.copy(password = BCrypt.hashPassword(target.password))) else OK(u),
       (u: User) => OK(u.copy(email = target.email)),
-      (u: User) => OK(u.copy(groupRole = target.groupRole))
+      (u: User) => OK(u.copy(groupRole = target.groupRole)),
+      (u: User) => OK(u.copy(lastUpdate = getCurrentDateTime))
     )
     override val validator = UserValidator
   }

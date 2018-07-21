@@ -1,5 +1,6 @@
 package myproject.iam.dao
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import myproject.common.Done
@@ -15,8 +16,10 @@ trait GroupDAO extends DAO { self: ChannelDAO =>
     def id = column[UUID]("GROUP_ID", O.PrimaryKey, O.SqlType("UUID"))
     def name = column[String]("NAME")
     def channelId = column[UUID]("CHANNEL_ID", O.SqlType("UUID"))
+    def created = column[LocalDateTime]("CREATED")
+    def lastUpdate = column[LocalDateTime]("LAST_UPDATE")
     def channel = foreignKey("GROUP_CHANNEL_FK", channelId, channels)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
-    def * = (id, name, channelId) <> (Group.tupled, Group.unapply)
+    def * = (id, name, channelId, created, lastUpdate) <> (Group.tupled, Group.unapply)
   }
 
   protected val groups = TableQuery[GroupsTable]
