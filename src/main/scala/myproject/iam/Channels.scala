@@ -26,6 +26,7 @@ object Channels {
     private def readChannelOrFail(id: UUID) = DB.getChannel(id).getOrFail(ObjectNotFoundException(s"channel with id $id was not found"))
     def createChannel(channel: Channel) = DB.insert(channel)
     def getChannel(id: UUID) = readChannelOrFail(id)
+    def getAllChannels = DB.getAllChannels
     def updateChannel(channel: Channel) = readChannelOrFail(channel.id) flatMap (new ChannelUpdater(_, channel).update.toFuture) flatMap DB.update
     def deleteChannel(id: UUID) = DB.deleteChannel(id)
   }

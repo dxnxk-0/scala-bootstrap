@@ -2,11 +2,11 @@ package myproject.api.functions
 
 import myproject.api.ApiFunction
 import myproject.api.ApiParameters.{ApiParameter, ApiParameterType}
+import myproject.api.Serializers._
 import myproject.audit.Audit.AuditData
 import myproject.common.FutureImplicits._
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.iam.Authorization._
-import myproject.iam.Serializers._
 import myproject.iam.Users
 
 class LoginPassword extends ApiFunction {

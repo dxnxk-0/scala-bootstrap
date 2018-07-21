@@ -47,9 +47,6 @@ object Users {
       groupRole: Option[GroupRole])
     extends UserGeneric
 
-  private val rootUUID = UUID.fromString("00000000-0000-0000-0000-000000000000")
-  val Root = User(rootUUID, UserLevel.Platform, "root", EmailAddress("root@nowhere"), "Kondor_123", None, None, None)
-
   case class Guest() extends UserGeneric {
     val login = "guest"
   }
@@ -139,6 +136,7 @@ object Users {
     } yield saved
 
     def getUser(id: UUID) = readUserOrFail(id)
+    def getGroupUsers(groupId: UUID) = DB.getGroupUsers(groupId)
 
     def deleteUser(id: UUID) = DB.deleteUser(id)
 

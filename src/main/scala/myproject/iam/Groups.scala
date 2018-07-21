@@ -28,6 +28,7 @@ object Groups {
     private def retrieveGroupOrFail(id: UUID): Future[Group] = DB.getGroup(id).getOrFail(ObjectNotFoundException(s"group with id $id was not found"))
     def createGroup(group: Group) = Channels.CRUD.getChannel(group.channelId) flatMap (_ => DB.insert(group))
     def getGroup(id: UUID) = retrieveGroupOrFail(id)
+    def getChannelGroups(channelId: UUID) = DB.getChannelGroups(channelId)
     def updateGroup(group: Group) = retrieveGroupOrFail(group.id) flatMap (new GroupUpdater(_, group).update.toFuture) flatMap DB.update
     def deleteGroup(id: UUID) = DB.deleteGroup(id)
   }

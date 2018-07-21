@@ -2,9 +2,9 @@ package myproject.api.functions
 
 import myproject.api.ApiFunction
 import myproject.api.ApiParameters.{ApiParameter, ApiParameterType}
+import myproject.api.Serializers._
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
-import myproject.iam.Serializers._
 import myproject.iam.Users
 import myproject.iam.Users.User
 

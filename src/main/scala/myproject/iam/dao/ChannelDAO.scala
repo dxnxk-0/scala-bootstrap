@@ -21,7 +21,7 @@ trait ChannelDAO extends DAO {
 
   def getChannel(id: UUID) = db.run(channels.filter(_.id===id).result) map (_.headOption)
   def insert(channel: Channel) = db.run(channels += channel) map (_ => channel)
+  def getAllChannels = db.run(channels.result)
   def update(channel: Channel) = db.run(channels.filter(_.id===channel.id).update(channel)) map (_ => channel)
   def deleteChannel(id: UUID) = db.run(channels.filter(_.id===id).delete) map (_ => Done)
-
 }
