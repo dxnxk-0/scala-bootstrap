@@ -7,7 +7,7 @@ import myproject.iam.Users.User
 
 import scala.concurrent.Future
 
-case object Welcome extends ApiFunction {
+class Welcome extends ApiFunction {
   override val name = "welcome"
   override val description = "A bit of kindness in this cold world"
 

@@ -2,74 +2,66 @@ package myproject.api.functions
 
 import java.util.UUID
 
-import myproject.api.ApiFunction
+import myproject.api.ApiParameters.{ApiParameter, ApiParameterType}
+import myproject.api.{ApiFunction, ApiParameters}
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
-import myproject.common.serialization.OpaqueData.ReifiedDataWrapper.asOpt
 import myproject.iam.Serializers._
 import myproject.iam.Users
 import myproject.iam.Users.{GroupRole, User, UserLevel}
-import uk.gov.hmrc.emailaddress.EmailAddress
 
-protected trait NewUserFunction extends ApiFunction {
-  case class CommonParams(login: String, password: String, email: EmailAddress)
-  def getCommonParams(p: ReifiedDataWrapper): CommonParams = {
-    CommonParams(
-      p.string("login"),
-      p.string("password"),
-      p.email("email"))
-  }
+trait NewUserParameters {
+  def login = ApiParameter("login", ApiParameterType.String, "the user's login")
+  def password = ApiParameter("password", ApiParameterType.String, "the user's password")
+  def email = ApiParameter("email", ApiParameterType.Email, "the user's email")
 }
 
-object NewPlatformUser extends NewUserFunction {
+class NewPlatformUser extends ApiFunction with NewUserParameters {
   override val name = "new_platform_user"
   override val description = "Create a new platform user"
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    val cp = getCommonParams(p)
-    val user = User(UUID.randomUUID, UserLevel.Platform, cp.login, cp.email, cp.password, None, None, None)
+    val user = User(UUID.randomUUID, UserLevel.Platform, login, email, password, None, None, None)
 
     Users.CRUD.createUser(user) map (_.serialize)
   }
 }
 
-object NewChannelUser extends NewUserFunction {
+class NewChannelUser extends ApiFunction with NewUserParameters {
   override val name = "new_channel_user"
   override val description = "Create a new channel user"
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    val cp = getCommonParams(p)
     val channelId = p.uuid("channel_id")
 
-    val user = User(UUID.randomUUID, UserLevel.Channel, cp.login, cp.email, cp.password, Some(channelId), None, None)
+    val user = User(UUID.randomUUID, UserLevel.Channel, login, email, password, Some(channelId), None, None)
 
     Users.CRUD.createUser(user) map (_.serialize)
   }
 }
 
-object NewGroupUser extends NewUserFunction {
+class NewGroupUser extends ApiFunction with NewUserParameters {
   override val name = "new_group_user"
   override val description = "Create a new group user"
 
-  override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    val cp = getCommonParams(p)
-    val groupId = p.uuid("group_id")
-    val groupRole = asOpt(p.enumString("group_role", GroupRole))
+  val groupId = ApiParameter("group_id", ApiParameterType.UUID, "the group id")
+  val groupRole = ApiParameter("group_role", ApiParameterType.EnumString, "the group role", optional = true, withEnum = Some(GroupRole))
 
-    val user = User(UUID.randomUUID, UserLevel.Group, cp.login, cp.email, cp.password, None, Some(groupId), groupRole)
+  override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
+
+    val user = User(UUID.randomUUID, UserLevel.Group, login, email, password, None, Some(groupId), ApiParameters.Enumerations.toEnumOpt(groupRole, GroupRole))
 
     Users.CRUD.createUser(user) map (_.serialize)
   }
 }
 
-object NewSimpleUser extends NewUserFunction {
+class NewSimpleUser extends ApiFunction with NewUserParameters {
   override val name = "new_simple_user"
   override val description = "Create a new simple user"
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    val cp = getCommonParams(p)
 
-    val user = User(UUID.randomUUID, UserLevel.NoLevel, cp.login, cp.email, cp.password, None, None, None)
+    val user = User(UUID.randomUUID, UserLevel.NoLevel, login, email, password, None, None, None)
 
     Users.CRUD.createUser(user) map (_.serialize)
   }

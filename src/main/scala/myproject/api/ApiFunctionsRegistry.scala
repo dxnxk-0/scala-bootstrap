@@ -9,18 +9,56 @@ import scala.concurrent.Future
 
 object ApiFunctionsRegistry {
 
-  object ApiHelp extends ApiFunction {
+  class ApiHelp extends ApiFunction {
 
     override val name = "help"
     override val secured = false
     override val description = "An overview of the functions available in API"
 
+    import ApiParameters._
+
+    import scala.reflect.runtime.universe._
+
+    def getApiFunctionParameters(function: ApiFunction) = {
+      val typeMirror = runtimeMirror(function.getClass.getClassLoader)
+      val instanceMirror = typeMirror.reflect(function)
+      val members = instanceMirror.symbol.typeSignature.members
+
+      val parameters = members.filter(_.typeSignature <:< typeOf[ApiParameter])
+
+      parameters.map { symbol ⇒
+        val paramMirror = instanceMirror.reflectField(symbol.asTerm)
+
+        paramMirror.get match {
+          case param: ApiParameter ⇒ param
+        }
+      }.toList
+    }
+
     override def process(implicit p: ReifiedDataWrapper, auditData: AuditData) = {
 
-      def buildDoc(fn: ApiFunction) = Map(
-        "name" -> fn.name,
-        "description" -> fn.description,
-        "secured" -> fn.secured)
+      def buildDoc(fn: ApiFunction) = {
+        val params = getApiFunctionParameters(fn).map { param =>
+          Map(
+            "name" -> param.name,
+            "type" -> param.`type`.toString,
+            "description" -> param.description,
+            "nullable" -> param.nullable,
+            "optional" -> param.optional,
+            "path" -> param.path.map(_.mkString("/")).getOrElse(None),
+            "values" -> param.withEnum.map{
+              case e if param.`type`==ApiParameterType.EnumString => e.values.mkString(",")
+              case e if param.`type`==ApiParameterType.EnumId => e.values.map(_.id).mkString(",")
+              case _ => None
+            })
+        }
+
+        Map(
+          "name" -> fn.name,
+          "description" -> fn.description,
+          "secured" -> fn.secured,
+          "parameters" -> params)
+      }
 
       Future.successful {
         ApiFunctionsRegistry.Functions.map { fn =>
@@ -42,13 +80,17 @@ object ApiFunctionsRegistry {
   def find(functionName: String): Option[ApiFunction] = Functions.find(_.name.trim == functionName)
 
   ////////////// Register API functions below
-  register(Welcome)
-  register(ApiHelp)
-  register(NewPlatformUser)
-  register(NewChannelUser)
-  register(NewGroupUser)
-  register(NewSimpleUser)
-  register(UpdateUser)
-  register(LoginPassword)
-  register(GetUser)
+  register(new Welcome)
+  register(new ApiHelp)
+  register(new NewPlatformUser)
+  register(new NewChannelUser)
+  register(new NewGroupUser)
+  register(new NewSimpleUser)
+  register(new UpdatePlatformUser)
+  register(new UpdateChannelUser)
+  register(new UpdateGroupUser)
+  register(new UpdateSimpleUser)
+  register(new LoginPassword)
+  register(new GetUser)
+  register(new ApiPlayGround)
 }

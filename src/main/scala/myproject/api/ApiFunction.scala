@@ -6,7 +6,6 @@ import myproject.common.{InvalidContextException, NotImplementedException, Runti
 import myproject.iam.Users.User
 
 import scala.concurrent.Future
-import scala.language.implicitConversions
 
 trait ApiFunction {
   val name: String
