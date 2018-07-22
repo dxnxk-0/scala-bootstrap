@@ -7,7 +7,7 @@ import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Channels.Channel
-import myproject.iam.Users
+import myproject.iam.{Authorization, Users}
 
 class UpdateChannel extends ApiFunction {
   override val name = "update_channel"
@@ -17,5 +17,6 @@ class UpdateChannel extends ApiFunction {
   val channelName = ApiParameter("name", ApiParameterType.String, "the new channel name", optional = true)
 
   override def process(implicit p: OpaqueData.ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) =
-    updateChannel(channelId, (c: Channel) => c.copy(name = (channelName: Option[String]).getOrElse(c.name))) map (_.serialize)
+    updateChannel(channelId, (c: Channel) => c.copy(name = (channelName: Option[String]).getOrElse(c.name)), Authorization.canUpdateChannel(user, _))
+    .map(_.serialize)
 }

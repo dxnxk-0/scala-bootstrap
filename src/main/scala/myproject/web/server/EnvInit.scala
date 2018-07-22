@@ -6,6 +6,7 @@ import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.TimeManagement.getCurrentDateTime
 import myproject.database.DB
+import myproject.iam.Authorization.voidIAMAuthzChecker
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.CRUD._
@@ -28,13 +29,13 @@ object EnvInit {
 
     val initFuture = for {
       _ <- DB.reset
-      _ <- createUser(root)
-      _ <- createChannel(channel)
-      _ <- createUser(channelAdmin)
-      _ <- createGroup(group)
-      _ <- createUser(groupAdmin)
-      _ <- createUser(groupUser1)
-      _ <- createUser(groupUser2)
+      _ <- createUser(root, voidIAMAuthzChecker)
+      _ <- createChannel(channel, voidIAMAuthzChecker)
+      _ <- createUser(channelAdmin, voidIAMAuthzChecker)
+      _ <- createGroup(group, voidIAMAuthzChecker)
+      _ <- createUser(groupAdmin, voidIAMAuthzChecker)
+      _ <- createUser(groupUser1, voidIAMAuthzChecker)
+      _ <- createUser(groupUser2, voidIAMAuthzChecker)
     } yield Unit
 
     initFuture.futureValue

@@ -12,6 +12,9 @@ import myproject.common.Validation._
 import myproject.common._
 import myproject.common.security.{BCrypt, JWT}
 import myproject.database.DB
+import myproject.iam.Authorization.{IAMAuthzChecker, IAMAuthzData, voidIAMAuthzChecker}
+import myproject.iam.Channels.CRUD.getChannel
+import myproject.iam.Groups.CRUD.getGroup
 import myproject.iam.Users.GroupRole.GroupRole
 import myproject.iam.Users.UserLevel.UserLevel
 import uk.gov.hmrc.emailaddress.EmailAddress
@@ -117,37 +120,45 @@ object Users {
       checkUniqueUserProperty(u, DB.getUserByEmail(u.email), s"email `${u.email}` does already exist")
     private def checkLoginOwnership(u: User) =
       checkUniqueUserProperty(u, DB.getUserByLoginName(u.login), s"login name `${u.login}` does already exist")
-    private def checkChannel(u: User) = u.channelId map Channels.CRUD.getChannel getOrElse Future.unit
-    private def checkGroup(u: User) = u.groupId map Groups.CRUD.getGroup getOrElse Future.unit
+    private def checkChannel(u: User) = u.channelId map (id => Channels.CRUD.getChannel(id, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+    private def checkGroup(u: User) = u.groupId map (id => Groups.CRUD.getGroup(id, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
 
-    private def dbCheckUser(u: User) = for {
-      _ <- checkEmailOwnership(u)
-      _ <- checkLoginOwnership(u)
-      _ <- checkGroup(u)
-      _ <- checkChannel(u)
+    private def dbCheckUserAndAuthz(u: User, authz: IAMAuthzChecker) = for {
+      _          <- checkEmailOwnership(u)
+      _          <- checkLoginOwnership(u)
+      groupOpt   <- checkGroup(u)
+      channelOpt <- checkChannel(u)
+      _          <- authz(IAMAuthzData(user = Some(u), group = groupOpt, channel = channelOpt)).toFuture
     } yield Done
 
-    def createUser(user: User) = for {
-      _ <- UserValidator.validate(user).toFuture
-      _ <- dbCheckUser(user)
+    def createUser(user: User, authz: IAMAuthzChecker) = for {
+      _     <- UserValidator.validate(user).toFuture
+      _     <- dbCheckUserAndAuthz(user, authz)
       saved <- DB.insert(user.copy(password = BCrypt.hashPassword(user.password)))
     } yield saved
 
-    def updateUser(user: User) = for {
-      existing <- readUserOrFail(user.id)
-      updated <- new UserUpdater(existing, user).update.toFuture
-      _ <- dbCheckUser(user)
-      saved <- DB.update(updated)
+    def updateUser(userId: UUID, upd: User => User, authz: IAMAuthzChecker) = for {
+      existing <- readUserOrFail(userId)
+      updated  <- new UserUpdater(existing, upd(existing)).update.toFuture
+      _        <- dbCheckUserAndAuthz(updated, authz)
+      saved    <- DB.update(updated)
     } yield saved
 
-    def getUser(id: UUID) = readUserOrFail(id)
-    def getGroupUsers(groupId: UUID) = DB.getGroupUsers(groupId)
+    def getUser(id: UUID, authz: IAMAuthzChecker) = for {
+      user       <- readUserOrFail(id)
+      groupOpt   <- user.groupId map (gid => getGroup(gid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+      channelOpt <- user.channelId map (cid => getChannel(cid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+      _          <- authz(IAMAuthzData(group = groupOpt, channel = channelOpt)).toFuture
+    } yield user
 
-    def deleteUser(id: UUID) = DB.deleteUser(id)
+    def deleteUser(id: UUID, authz: IAMAuthzChecker) = DB.deleteUser(id)
 
-    def loginPassword(login: String, candidate: String) = for {
-      user <- DB.getUserByLoginName(login).getOrFail(ObjectNotFoundException(s"user with login $login was not found"))
-      _    <- Authentication.loginPassword(user, candidate).toFuture
+    def loginPassword(login: String, candidate: String, authz: User => IAMAuthzChecker) = for {
+      user       <- DB.getUserByLoginName(login).getOrFail(ObjectNotFoundException(s"user with login $login was not found"))
+      groupOpt   <- checkGroup(user)
+      channelOpt <- checkChannel(user)
+      _          <- authz(user)(IAMAuthzData(Some(user), groupOpt, channelOpt)).toFuture
+      _          <- Authentication.loginPassword(user, candidate).toFuture
     } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive.seconds)))
   }
 }

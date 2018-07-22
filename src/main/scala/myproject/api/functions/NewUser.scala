@@ -8,8 +8,8 @@ import myproject.api.{ApiFunction, ApiParameters}
 import myproject.audit.Audit.AuditData
 import myproject.common.TimeManagement._
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
-import myproject.iam.Users
 import myproject.iam.Users.{GroupRole, User, UserLevel}
+import myproject.iam.{Authorization, Users}
 
 trait NewUserParameters {
   def login = ApiParameter("login", ApiParameterType.String, "the user's login")
@@ -24,7 +24,7 @@ class NewPlatformUser extends ApiFunction with NewUserParameters {
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val now = getCurrentDateTime
     val user = User(UUID.randomUUID, UserLevel.Platform, login, email, password, None, None, None, now, now)
-    Users.CRUD.createUser(user) map (_.serialize)
+    Users.CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.serialize)
   }
 }
 
@@ -36,7 +36,7 @@ class NewChannelUser extends ApiFunction with NewUserParameters {
     val now = getCurrentDateTime
     val channelId = p.uuid("channel_id")
     val user = User(UUID.randomUUID, UserLevel.Channel, login, email, password, Some(channelId), None, None, now, now)
-    Users.CRUD.createUser(user) map (_.serialize)
+    Users.CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.serialize)
   }
 }
 
@@ -50,7 +50,7 @@ class NewGroupUser extends ApiFunction with NewUserParameters {
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val now = getCurrentDateTime
     val user = User(UUID.randomUUID, UserLevel.Group, login, email, password, None, Some(groupId), ApiParameters.Enumerations.toEnumOpt(groupRole, GroupRole), now, now)
-    Users.CRUD.createUser(user) map (_.serialize)
+    Users.CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.serialize)
   }
 }
 
@@ -61,6 +61,6 @@ class NewSimpleUser extends ApiFunction with NewUserParameters {
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val now = getCurrentDateTime
     val user = User(UUID.randomUUID, UserLevel.NoLevel, login, email, password, None, None, None, now, now)
-    Users.CRUD.createUser(user) map (_.serialize)
+    Users.CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.serialize)
   }
 }

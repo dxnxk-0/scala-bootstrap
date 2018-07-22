@@ -5,6 +5,7 @@ import java.util.UUID
 import myproject.common.Done
 import myproject.common.FutureImplicits._
 import myproject.common.TimeManagement._
+import myproject.iam.Authorization.voidIAMAuthzChecker
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.CRUD._
@@ -23,21 +24,21 @@ class ChannelSpecs extends DatabaseSpec {
   val smith = User(UUID.randomUUID, UserLevel.Group, "channel-specs", EmailAddress("channel-specs@tests.com"), "whatever", None, Some(group.id), None, now, now)
 
   it should "create a channel" in {
-    createChannel(channel).futureValue.name shouldBe "TEST"
-    createGroup(group)
-    createUser(smith).futureValue
+    createChannel(channel, voidIAMAuthzChecker).futureValue.name shouldBe "TEST"
+    createGroup(group, voidIAMAuthzChecker).futureValue
+    createUser(smith, voidIAMAuthzChecker).futureValue
   }
 
   it should "get a channel" in {
-    getChannel(channel.id).futureValue.name shouldBe "TEST"
+    getChannel(channel.id, voidIAMAuthzChecker).futureValue.name shouldBe "TEST"
   }
 
   it should "update a channel" in {
-    updateChannel(channel.id, (c: Channel) => c.copy(name = "SPECS")).futureValue
-    getChannel(channel.id).futureValue.name shouldBe "SPECS"
+    updateChannel(channel.id, c => c.copy(name = "SPECS"), voidIAMAuthzChecker).futureValue
+    getChannel(channel.id, voidIAMAuthzChecker).futureValue.name shouldBe "SPECS"
   }
 
   it should "delete a channel" in {
-    deleteChannel(channel.id).futureValue shouldBe Done
+    deleteChannel(channel.id, voidIAMAuthzChecker).futureValue shouldBe Done
   }
 }

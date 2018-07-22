@@ -5,7 +5,7 @@ import myproject.api.ApiParameters.{ApiParameter, ApiParameterType}
 import myproject.api.Serializers._
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
-import myproject.iam.Users
+import myproject.iam.{Authorization, Users}
 
 class LoginPassword extends ApiFunction {
   override val name = "login"
@@ -17,7 +17,7 @@ class LoginPassword extends ApiFunction {
 
   override def process(implicit p: ReifiedDataWrapper, auditData: AuditData) = {
     for {
-      authData <- Users.CRUD.loginPassword(login, password)
+      authData <- Users.CRUD.loginPassword(login, password, u => Authorization.canLogin(u, _))
     } yield Map("whoami" -> authData._1.serialize, "token" -> authData._2)
   }
 }

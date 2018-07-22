@@ -6,6 +6,7 @@ import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsReject
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, MissingCookieRejection, RejectionHandler}
 import myproject.common.serialization.AkkaHttpMarshalling
+import myproject.iam.Authorization
 import myproject.iam.Users.CRUD.loginPassword
 import myproject.web.server.WebAuth._
 import myproject.web.views.AppView._
@@ -48,7 +49,7 @@ object AppController extends HtmlController {
           } ~
           post {
             formFields(('login.as[String], 'password.as[String])) { (login, password) =>
-              onComplete(loginPassword(login, password)) {
+              onComplete(loginPassword(login, password, u => Authorization.canLogin(u, _))) {
                 case Success((user, token)) =>
                   setCookie(HttpCookie(authCookieName, token)) {
                     redirect(homeUrl, StatusCodes.SeeOther)

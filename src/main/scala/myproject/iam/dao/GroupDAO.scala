@@ -8,7 +8,7 @@ import myproject.common.Runtime.ec
 import myproject.database.DAO
 import myproject.iam.Groups.Group
 
-trait GroupDAO extends DAO { self: ChannelDAO =>
+trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
 
   import api._
 
@@ -27,6 +27,6 @@ trait GroupDAO extends DAO { self: ChannelDAO =>
   def getGroup(id: UUID) = db.run(groups.filter(_.id===id).result) map (_.headOption)
   def insert(group: Group) = db.run(groups += group) map (_ => group)
   def update(group: Group) = db.run(groups.filter(_.id===group.id).update(group)) map (_ => group)
-  def getChannelGroups(channelId: UUID) = db.run(groups.filter(_.channelId===channelId).result)
   def deleteGroup(id: UUID) = db.run(groups.filter(_.id===id).delete) map (_ => Done)
+  def getGroupUsers(groupId: UUID) = db.run(users.filter(_.groupId===groupId).result)
 }

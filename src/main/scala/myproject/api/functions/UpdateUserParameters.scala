@@ -5,6 +5,7 @@ import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiParameters}
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
+import myproject.iam.Authorization
 import myproject.iam.Users.CRUD._
 import myproject.iam.Users.{GroupRole, User}
 import uk.gov.hmrc.emailaddress.EmailAddress
@@ -21,12 +22,11 @@ class UpdatePlatformUser extends ApiFunction with UpdateUserParameters {
   override val description = "Update an existing platform user"
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    getUser(userId) flatMap updateUser map { user =>
-      user.copy(
-        login = (login: Option[String]).getOrElse(user.login),
-        email = (email: Option[EmailAddress]).getOrElse(user.email),
-        password = (password: Option[String]).getOrElse(user.password))
-    } map (_.serialize)
+    updateUser(userId, u =>
+      u.copy(
+        login = (login: Option[String]).getOrElse(u.login),
+        email = (email: Option[EmailAddress]).getOrElse(u.email),
+        password = (password: Option[String]).getOrElse(u.password)), Authorization.canUpdateUser(user, _)) map (_.serialize)
   }
 }
 
@@ -35,12 +35,11 @@ class UpdateChannelUser extends ApiFunction with UpdateUserParameters {
   override val description = "Update an existing channel user"
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    getUser(userId) flatMap updateUser map { user =>
-      user.copy(
-        login = (login: Option[String]).getOrElse(user.login),
-        email = (email: Option[EmailAddress]).getOrElse(user.email),
-        password = (password: Option[String]).getOrElse(user.password))
-    } map (_.serialize)
+    updateUser(userId, u =>
+      u.copy(
+        login = (login: Option[String]).getOrElse(u.login),
+        email = (email: Option[EmailAddress]).getOrElse(u.email),
+        password = (password: Option[String]).getOrElse(u.password)), Authorization.canUpdateUser(user, _)) map (_.serialize)
   }
 }
 
@@ -51,13 +50,12 @@ class UpdateGroupUser extends ApiFunction with UpdateUserParameters {
   val role = ApiParameter("role", ApiParameterType.EnumId, "the user's role", optional = true, nullable = true, withEnum = Some(GroupRole))
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    getUser(userId) flatMap updateUser map { user =>
-      user.copy(
-        login = (login: Option[String]).getOrElse(user.login),
-        email = (email: Option[EmailAddress]).getOrElse(user.email),
-        password = (password: Option[String]).getOrElse(user.password),
-        groupRole = ApiParameters.Enumerations.toEnumOptOpt(role, GroupRole).getOrElse(user.groupRole))
-    } map (_.serialize)
+    updateUser(userId, u =>
+      u.copy(
+        login = (login: Option[String]).getOrElse(u.login),
+        email = (email: Option[EmailAddress]).getOrElse(u.email),
+        password = (password: Option[String]).getOrElse(u.password),
+        groupRole = ApiParameters.Enumerations.toEnumOptOpt(role, GroupRole).getOrElse(u.groupRole)), Authorization.canUpdateUser(user, _)) map (_.serialize)
   }
 }
 
@@ -66,11 +64,10 @@ class UpdateSimpleUser extends ApiFunction with UpdateUserParameters {
   override val description = "Update an existing simple user"
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    getUser(userId) flatMap updateUser map { user =>
-      user.copy(
-        login = (login: Option[String]).getOrElse(user.login),
-        email = (email: Option[EmailAddress]).getOrElse(user.email),
-        password = (password: Option[String]).getOrElse(user.password))
-    } map (_.serialize)
+    updateUser(userId, u =>
+      u.copy(
+        login = (login: Option[String]).getOrElse(u.login),
+        email = (email: Option[EmailAddress]).getOrElse(u.email),
+        password = (password: Option[String]).getOrElse(u.password)), Authorization.canUpdateUser(user, _)) map (_.serialize)
   }
 }

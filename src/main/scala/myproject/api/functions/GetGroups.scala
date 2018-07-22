@@ -5,8 +5,8 @@ import myproject.api.ApiParameters.{ApiParameter, ApiParameterType}
 import myproject.api.Serializers._
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData
-import myproject.iam.Groups.CRUD
-import myproject.iam.Users
+import myproject.iam.Channels.CRUD
+import myproject.iam.{Authorization, Users}
 
 class GetGroups extends ApiFunction{
   override val name = "get_groups"
@@ -15,7 +15,7 @@ class GetGroups extends ApiFunction{
   val channelId = ApiParameter("channel_id", ApiParameterType.UUID, "the target channel id")
 
   override def process(implicit p: OpaqueData.ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
-    CRUD.getChannelGroups(channelId) map { groups =>
+    CRUD.getChannelGroups(channelId, Authorization.canListChannelGroups(user, _)) map { groups =>
       groups.map(_.serialize)
     }
   }

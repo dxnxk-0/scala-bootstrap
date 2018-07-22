@@ -51,7 +51,6 @@ trait UserDAO extends DAO { self: GroupDAO with ChannelDAO =>
   def getUserById(id: UUID) = db.run(users.filter(_.id===id).result) map (_.headOption)
   def getUserByLoginName(login: String) = db.run(users.filter(_.login===login).result) map (_.headOption)
   def getUserByEmail(email: EmailAddress) = db.run(users.filter(_.email===email).result) map (_.headOption)
-  def getGroupUsers(groupId: UUID) = db.run(users.filter(_.groupId===groupId).result)
   def update(user: User) = db.run(users.filter(_.id===user.id).update(user)) map (_ => user)
   def insert(user: User) = db.run(users += user) map (_ => user)
   def insert(batch: Seq[User]) = db.run(users ++= batch) map (_ => Done)
