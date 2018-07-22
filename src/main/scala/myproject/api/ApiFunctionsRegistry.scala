@@ -18,20 +18,22 @@ object ApiFunctionsRegistry {
     import ApiParameters._
 
     import scala.reflect.runtime.universe._
+    import scala.reflect.runtime.{universe => ru}
+
 
     def getApiFunctionParameters(function: ApiFunction) = {
-      val typeMirror = runtimeMirror(function.getClass.getClassLoader)
-      val instanceMirror = typeMirror.reflect(function)
-      val members = instanceMirror.symbol.typeSignature.members
+      val m = ru.runtimeMirror(function.getClass.getClassLoader)
+      val i = m.reflect(function)
+      val members = i.symbol.typeSignature.members
 
-      val parameters = members.filter(_.typeSignature <:< typeOf[ApiParameter])
-
-      parameters.map { symbol ⇒
-        val paramMirror = instanceMirror.reflectField(symbol.asTerm)
-
-        paramMirror.get match {
-          case param: ApiParameter ⇒ param
+      members.flatMap {
+        case f: TermSymbol if f.isAccessor => {
+          i.reflectMethod(f.asMethod).apply() match {
+            case d: ApiParameter => Some(d)
+            case _ => None
+          }
         }
+        case _ => None
       }.toList
     }
 

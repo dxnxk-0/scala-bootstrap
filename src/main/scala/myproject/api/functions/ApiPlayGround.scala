@@ -11,13 +11,9 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 
 import scala.concurrent.Future
 
-class ApiPlayGround extends ApiFunction {
+object ApiPlayGround {
 
   import MyEnum.MyEnum
-
-  override val name = "play"
-  override val description = "test the API parameters handling"
-  override val secured = false
 
   object MyEnum extends Enumeration {
     type MyEnum = Value
@@ -25,8 +21,6 @@ class ApiPlayGround extends ApiFunction {
     val Two = Value("two")
     val Three = Value("three")
   }
-
-
   case class NestedMore(value: MyEnum)
   case class Nested(value: List[Int], nestedMore: NestedMore)
   case class Values(
@@ -79,6 +73,15 @@ class ApiPlayGround extends ApiFunction {
       )
     )
   }
+}
+
+class ApiPlayGround extends ApiFunction {
+
+  import ApiPlayGround._
+
+  override val name = "play"
+  override val description = "test the API parameters handling"
+  override val secured = false
 
   val string = ApiParameter("a_string", ApiParameterType.String, "a string")
   val optString = ApiParameter("a_string_opt", ApiParameterType.String, "an optional string", optional = true)
