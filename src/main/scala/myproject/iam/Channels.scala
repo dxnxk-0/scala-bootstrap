@@ -11,6 +11,8 @@ import myproject.common.Updater.Updater
 import myproject.common.Validation.Validator
 import myproject.database.DB
 
+import scala.util.Try
+
 object Channels {
 
   case class Channel(id: UUID, name: String, created: LocalDateTime, lastUpdate: LocalDateTime)
@@ -32,7 +34,12 @@ object Channels {
     def createChannel(channel: Channel) = DB.insert(channel)
     def getChannel(id: UUID) = readChannelOrFail(id)
     def getAllChannels = DB.getAllChannels
-    def updateChannel(channel: Channel) = readChannelOrFail(channel.id) flatMap (new ChannelUpdater(_, channel).update.toFuture) flatMap DB.update
+    def updateChannel(id: UUID, upd: Channel => Channel) = for {
+      existing <- readChannelOrFail(id)
+      candidate <- Try(upd(existing)).toFuture
+      updated <- new ChannelUpdater(existing, candidate).update.toFuture
+      saved <- DB.update(updated)
+    } yield saved
     def deleteChannel(id: UUID) = DB.deleteChannel(id)
   }
 }

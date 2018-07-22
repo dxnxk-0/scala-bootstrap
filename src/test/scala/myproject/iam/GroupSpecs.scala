@@ -28,7 +28,7 @@ class GroupSpecs extends DatabaseSpec {
   }
 
   it should "update a group" in {
-    updateGroup(group.copy(name = "Death Star")).futureValue
+    updateGroup(group.id, (g: Group) => g.copy(name = "Death Star")).futureValue
     getGroup(group.id).futureValue.name shouldBe "Death Star"
   }
 

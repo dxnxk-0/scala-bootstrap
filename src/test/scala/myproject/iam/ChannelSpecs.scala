@@ -33,7 +33,7 @@ class ChannelSpecs extends DatabaseSpec {
   }
 
   it should "update a channel" in {
-    updateChannel(channel.copy(name = "SPECS")).futureValue
+    updateChannel(channel.id, (c: Channel) => c.copy(name = "SPECS")).futureValue
     getChannel(channel.id).futureValue.name shouldBe "SPECS"
   }
 

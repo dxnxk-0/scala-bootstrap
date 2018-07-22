@@ -4,9 +4,7 @@ import myproject.api.ApiFunction
 import myproject.api.ApiParameters.{ApiParameter, ApiParameterType}
 import myproject.api.Serializers._
 import myproject.audit.Audit.AuditData
-import myproject.common.FutureImplicits._
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
-import myproject.iam.Authorization._
 import myproject.iam.Users
 
 class LoginPassword extends ApiFunction {
@@ -20,7 +18,6 @@ class LoginPassword extends ApiFunction {
   override def process(implicit p: ReifiedDataWrapper, auditData: AuditData) = {
     for {
       authData <- Users.CRUD.loginPassword(login, password)
-      _ <- authzLoginAccess(authData._1).toFuture
     } yield Map("whoami" -> authData._1.serialize, "token" -> authData._2)
   }
 }
