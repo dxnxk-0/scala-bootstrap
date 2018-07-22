@@ -84,9 +84,11 @@ object ApiFunctionsRegistry {
   ////////////// Register API functions below
   register(new Welcome)
   register(new ApiHelp)
+  register(new CreateChannel)
   register(new GetChannels)
   register(new GetChannel)
   register(new UpdateChannel)
+  register(new CreateGroup)
   register(new GetGroups)
   register(new GetGroup)
   register(new UpdateGroup)
