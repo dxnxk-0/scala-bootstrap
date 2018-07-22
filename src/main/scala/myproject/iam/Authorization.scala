@@ -3,7 +3,7 @@ package myproject.iam
 import myproject.common.Authorization.{AuthorizationCheck, AuthzData, _}
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.Group
-import myproject.iam.Users.{User, UserLevel}
+import myproject.iam.Users.{GroupRole, User, UserLevel}
 
 object Authorization {
 
@@ -12,7 +12,7 @@ object Authorization {
 
   private def isPlatformAdmin(implicit requester: User, data: IAMAuthzData) = if(requester.level==UserLevel.Platform) grant else refuse
   private def isChannelAdmin(implicit requester: User, data: IAMAuthzData) = if(requester.level==UserLevel.Channel && (requester.channelId==data.channel.map(_.id) || requester.channelId==data.group.map(_.channelId))) grant else refuse
-  private def isGroupAdmin(implicit requester: User, data: IAMAuthzData) = if(requester.level==UserLevel.Group && (requester.groupId==data.group.map(_.id)) || requester.groupId==data.user.flatMap(_.groupId)) grant else refuse
+  private def isGroupAdmin(implicit requester: User, data: IAMAuthzData) = if(requester.level==UserLevel.Group && requester.groupRole.contains(GroupRole.Admin) && (requester.groupId==data.group.map(_.id)) || requester.groupId==data.user.flatMap(_.groupId)) grant else refuse
   private def isUserHimself(implicit requester: User, data: IAMAuthzData) = if(data.user.exists(_.id==requester.id)) grant else refuse
   private def isInTheSameGroup(implicit requester: User, data: IAMAuthzData) = if(requester.groupId==requester.groupId) grant else refuse
   private def belongToTheGroup(implicit requester: User, data: IAMAuthzData) = if(requester.groupId==data.group.map(_.id)) grant else refuse
