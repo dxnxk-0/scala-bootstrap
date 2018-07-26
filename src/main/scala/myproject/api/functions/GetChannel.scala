@@ -1,7 +1,6 @@
 package myproject.api.functions
 
 import myproject.api.ApiFunction
-import myproject.api.ApiParameters.{ApiParameter, ApiParameterType}
 import myproject.api.Serializers._
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData
@@ -13,9 +12,8 @@ class GetChannel extends ApiFunction {
   override val name = "get_channel"
   override val description = "get an existing channel"
 
-  val channelId = ApiParameter("channel_id", ApiParameterType.UUID, "the target channel id")
-
   override def process(implicit p: OpaqueData.ReifiedDataWrapper, user: User, auditData: Audit.AuditData) = {
-    CRUD.getChannel(channelId, Authorization.canReadChannel(user, _)) map (_.serialize)
+    val channelId = p.uuid("channel_id")
+    CRUD.getChannel(channelId, Authorization.canReadChannel(user, _)) map (_.toMap)
   }
 }

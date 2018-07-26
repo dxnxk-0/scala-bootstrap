@@ -7,7 +7,7 @@ import myproject.iam.Users.{User, UserLevel}
 object Serializers {
 
   implicit class UserSerialization(user: User) {
-    def serialize = {
+    def toMap = {
       val common = Map(
         "user_id" -> user.id,
         "login" -> user.login,
@@ -27,7 +27,7 @@ object Serializers {
   }
 
   implicit class ChannelSerialization(channel: Channel) {
-    def serialize = Map(
+    def toMap = Map(
       "channel_id" -> channel.id,
       "name" -> channel.name,
       "created" -> channel.created.toString,
@@ -35,7 +35,7 @@ object Serializers {
   }
 
   implicit class GroupSerialization(group: Group) {
-    def serialize = Map(
+    def toMap = Map(
       "group_id" -> group.id,
       "name" -> group.name,
       "channel_id" -> group.channelId,

@@ -16,7 +16,7 @@ object OpaqueData {
     private val underlyingMap = Try(underlying.asInstanceOf[Map[String, Any]])
     private val underlyingArray = Try(underlying.asInstanceOf[Seq[Any]])
 
-    private def get(key: String): Any = {
+    private def get(key: String) = {
       val value = if (key == ".")
         Some(underlying)
       else if (underlyingMap.isSuccess) {
@@ -157,8 +157,9 @@ object OpaqueData {
             .getOrElse(throw InvalidTypeException(s"Date (without time) `$date` for key `$key` is invalid")))
     }
 
-    def uuid(key: String, value: Option[Any] = None): UUID = value.getOrElse(get(key)) match {
-      case uuid: String => Try(UUID.fromString(uuid.trim)).getOrElse(throw InvalidTypeException(s"key $key is not a valid UUID"))
+    def uuid(key: String, value: Option[Any] = None, extraMsg: Option[String] = None): UUID = value.getOrElse(get(key)) match {
+      case uuid: String => Try(UUID.fromString(uuid.trim)).getOrElse(throw InvalidTypeException(s"key $key is not a valid UUID" + extraMsg.map(". " + _).getOrElse("")))
+      case uuid: UUID => uuid
       case _ => throw InvalidTypeException(s"key $key is not a valid UUID")
     }
 

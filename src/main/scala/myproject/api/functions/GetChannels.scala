@@ -13,7 +13,7 @@ class GetChannels extends ApiFunction {
 
   override def process(implicit p: OpaqueData.ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     CRUD.getAllChannels(Authorization.canListChannels(user, _)) map { channels =>
-      channels.map(_.serialize)
+      channels.map(_.toMap)
     }
   }
 }

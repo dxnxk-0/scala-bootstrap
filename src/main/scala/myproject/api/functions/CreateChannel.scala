@@ -3,7 +3,7 @@ package myproject.api.functions
 import java.util.UUID
 
 import myproject.api.ApiFunction
-import myproject.api.ApiParameters.{ApiParameter, ApiParameterType}
+import myproject.api.Serializers._
 import myproject.audit.Audit
 import myproject.common.TimeManagement
 import myproject.common.serialization.OpaqueData
@@ -14,12 +14,11 @@ class CreateChannel extends ApiFunction {
   override val name = "create_channel"
   override val description = "create a new channel"
 
-  val channelName = ApiParameter("channel_name", ApiParameterType.NonEmptyString, "the channel name")
-
   override def process(implicit p: OpaqueData.ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     val now = TimeManagement.getCurrentDateTime
+    val channelName = p.nonEmptyString("name")
     val channel = Channel(UUID.randomUUID, channelName, now, now)
 
-    CRUD.createChannel(channel, Authorization.canCreateChannel(user, _))
+    CRUD.createChannel(channel, Authorization.canCreateChannel(user, _)) map (_.toMap)
   }
 }
