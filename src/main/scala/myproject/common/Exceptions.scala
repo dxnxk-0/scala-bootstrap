@@ -3,9 +3,9 @@ package myproject.common
 import myproject.common.Validation.ValidationError
 
 sealed abstract class CustomException(msg: String) extends Exception(msg)
-case class NullValueException(msg: String) extends CustomException(msg)
-case class MissingKeyException(msg: String) extends CustomException(msg)
-case class InvalidTypeException(msg: String) extends CustomException(msg)
+case class NullValueException(msg: String, extra: List[String] = Nil) extends CustomException(msg)
+case class MissingKeyException(msg: String, extra: List[String] = Nil) extends CustomException(msg)
+case class InvalidTypeException(msg: String, extra: List[String] = Nil) extends CustomException(msg)
 case class ObjectNotFoundException(msg: String) extends CustomException(msg)
 case class UnexpectedErrorException(msg: String) extends CustomException(msg)
 case class NotImplementedException(msg: String) extends CustomException(msg)

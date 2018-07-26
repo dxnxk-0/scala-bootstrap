@@ -13,8 +13,8 @@ class UpdateChannel extends ApiFunction {
   override val description = "update a channel"
 
   override def process(implicit p: OpaqueData.ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) ={
-    val channelId = p.uuid("channel_id")
-    val name = missingKeyAsOption(p.nonEmptyString("name"))
+    val channelId = required(p.uuid("channel_id"))
+    val name = optional(p.nonEmptyString("name"))
     CRUD.updateChannel(channelId, c => c.copy(name = name.getOrElse(c.name)), Authorization.canUpdateChannel(user, _))
       .map(_.toMap)
   }

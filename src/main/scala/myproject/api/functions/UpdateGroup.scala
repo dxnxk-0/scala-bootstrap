@@ -13,8 +13,8 @@ class UpdateGroup extends ApiFunction {
   override val description = "update an existing group"
 
   override def process(implicit p: OpaqueData.ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
-    val groupId = p.uuid("group_id")
-    val name = missingKeyAsOption(p.nonEmptyString("name"))
+    val groupId = required(p.uuid("group_id"))
+    val name = optional(p.nonEmptyString("name"))
     CRUD.updateGroup(groupId, g => g.copy(name = name.getOrElse(g.name)), Authorization.canUpdateGroup(user, _))
       .map(_.toMap)
   }
