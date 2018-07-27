@@ -121,11 +121,11 @@ object JsonRPC {
   private def throwableToRPCResponse(req: RPCRequest): PartialFunction[Throwable, RPCResponse] = {
     case _ if req.id.isEmpty => RPCNotificationResponse() // The client does not care the error
     case InvalidTypeException(msg, extra) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidParams.id, msg), data = Some(Map("extra" -> extra)))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidParams.id, msg), data = Some(Map("extra-msg" -> extra)))
     case MissingKeyException(msg, extra) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidParams.id, msg), data = Some(Map("extra" -> extra)))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidParams.id, msg), data = Some(Map("extra-msg" -> extra)))
     case NullValueException(msg, extra) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidParams.id, msg), data = Some(Map("extra" -> extra)))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.invalidParams.id, msg), data = Some(Map("extra-msg" -> extra)))
     case ObjectNotFoundException(msg) =>
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.objectNotFound.id, msg))
     case UnexpectedErrorException(msg) =>

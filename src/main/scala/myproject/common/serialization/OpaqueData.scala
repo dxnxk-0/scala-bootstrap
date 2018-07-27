@@ -188,28 +188,40 @@ object OpaqueData {
 
   object ReifiedDataWrapper {
 
-    def optional[A](v: => A, help: String = ""): Option[A] = try {
-      Some(v)
-    } catch {
-      case e: MissingKeyException => None
-      case e: NullValueException => throw e.copy(extra = "this key is OPTIONAL" :: e.extra)
-      case e: InvalidTypeException => throw e.copy(extra = "this key is OPTIONAL" :: e.extra)
+    def optional[A](v: => A, help: String = ""): Option[A] = {
+      val msg = "this key is OPTIONAL"
+
+      try {
+        Some(v)
+      } catch {
+        case _: MissingKeyException => None
+        case e: NullValueException => throw e.copy(extra = msg :: help :: e.extra)
+        case e: InvalidTypeException => throw e.copy(extra = msg :: help :: e.extra)
+      }
     }
 
-    def nullable[A](v: => A, help: String = ""): Option[A] = try {
-      Some(v)
-    } catch {
-      case e: NullValueException => None
-      case e: MissingKeyException => throw e.copy(msg = e.msg + " (As an option, null means none)", extra = "this key is MANDATORY AND NULLABLE" :: e.extra)
-      case e: InvalidTypeException => throw e.copy(msg = e.msg + " (As an option, null means none)", extra = "this key is MANDATORY AND NULLABLE" :: e.extra)
+    def nullable[A](v: => A, help: String = ""): Option[A] = {
+      val msg = "this key is MANDATORY and NULLABLE"
+
+      try {
+        Some(v)
+      } catch {
+        case _: NullValueException => None
+        case e: MissingKeyException => throw e.copy(msg = e.msg + " (As an option, null means none)", extra = msg :: help :: e.extra)
+        case e: InvalidTypeException => throw e.copy(msg = e.msg + " (As an option, null means none)", extra = msg :: help :: e.extra)
+      }
     }
 
-    def required[A](v: => A, help: String = ""): A = try {
-      v
-    } catch {
-      case e: MissingKeyException => throw e.copy(extra = "this key is MANDATORY" :: e.extra)
-      case e: NullValueException => throw e.copy(extra = "this key is MANDATORY AND NON NULLABLE" :: e.extra)
-      case e: InvalidTypeException => throw e.copy(extra = "this key is MANDATORY AND NON NULLABLE" :: e.extra)
+    def required[A](v: => A, help: String = ""): A = {
+      val msg = "this key is MANDATORY AND NON NULLABLE"
+
+      try {
+        v
+      } catch {
+        case e: MissingKeyException => throw e.copy(extra = msg :: help :: e.extra)
+        case e: NullValueException => throw e.copy(extra = msg :: help :: e.extra)
+        case e: InvalidTypeException => throw e.copy(extra = msg :: help :: e.extra)
+      }
     }
   }
 }
