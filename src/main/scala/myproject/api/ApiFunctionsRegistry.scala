@@ -20,19 +20,19 @@ object ApiFunctionsRegistry {
     override def process(implicit p: ReifiedDataWrapper, auditData: AuditData) = {
 
       def buildDoc(fn: ApiFunction) = {
-
         Map(
           "name" -> fn.name,
-          "doc" -> Map(
-            "description" -> fn.doc.description,
-            "return" -> fn.doc.`return`),
+          "description" -> fn.doc.description,
+          "return" -> fn.doc.`return`,
           "secured" -> fn.secured)
       }
 
       Future.successful {
-        ApiFunctionsRegistry.Functions.map { fn =>
-          buildDoc(fn)
-        }
+        Map("jsonrpc" -> "see: https://www.jsonrpc.org/specification") ++ Map(
+          "functions" -> ApiFunctionsRegistry.Functions.map { fn =>
+            buildDoc(fn)
+          }
+        )
       }
     }
   }
