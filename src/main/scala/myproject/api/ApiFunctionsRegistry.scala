@@ -13,7 +13,9 @@ object ApiFunctionsRegistry {
 
     override val name = "help"
     override val secured = false
-    override val description = "An overview of the functions available in API"
+    override val doc = ApiSummaryDoc(
+      description = "An overview of the functions available in API",
+      `return` = "a list of objects containing function description data")
 
     override def process(implicit p: ReifiedDataWrapper, auditData: AuditData) = {
 
@@ -21,7 +23,9 @@ object ApiFunctionsRegistry {
 
         Map(
           "name" -> fn.name,
-          "description" -> fn.description,
+          "doc" -> Map(
+            "description" -> fn.doc.description,
+            "return" -> fn.doc.`return`),
           "secured" -> fn.secured)
       }
 

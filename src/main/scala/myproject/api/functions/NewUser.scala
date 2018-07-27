@@ -2,8 +2,8 @@ package myproject.api.functions
 
 import java.util.UUID
 
-import myproject.api.ApiFunction
 import myproject.api.Serializers._
+import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit.AuditData
 import myproject.common.TimeManagement._
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
@@ -12,7 +12,6 @@ import myproject.iam.Authorization
 import myproject.iam.Users.{CRUD, GroupRole, User, UserLevel}
 
 trait NewUserParameters {
-
   def getCommonParameters(implicit p: ReifiedDataWrapper) = (
     required(p.nonEmptyString("login")),
     required(p.nonEmptyString("password")),
@@ -22,7 +21,10 @@ trait NewUserParameters {
 
 class NewPlatformUser extends ApiFunction with NewUserParameters {
   override val name = "new_platform_user"
-  override val description = "Create a new platform user"
+  override val doc = ApiSummaryDoc(
+    description = "create a new platform user (platform users are defined at the highest possible level which is the platform) - "
+      + "a platform represents the whole application instance - it contains channels, which in turn contain groups",
+    `return` = "an object containing the newly created user's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val now = getCurrentDateTime
@@ -34,7 +36,10 @@ class NewPlatformUser extends ApiFunction with NewUserParameters {
 
 class NewChannelUser extends ApiFunction with NewUserParameters {
   override val name = "new_channel_user"
-  override val description = "Create a new channel user"
+  override val doc = ApiSummaryDoc(
+    description = "create a new channel user (channel users are users defined at the channel level (platform>channels>groups>users)) ; "
+                + "they generally represents administrators of groups of users, as a channel contains groups",
+    `return` = "an object containing the newly created user's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val now = getCurrentDateTime
@@ -47,7 +52,10 @@ class NewChannelUser extends ApiFunction with NewUserParameters {
 
 class NewGroupUser extends ApiFunction with NewUserParameters {
   override val name = "new_group_user"
-  override val description = "Create a new group user"
+  override val doc = ApiSummaryDoc(
+    description = "create a new group user (group users are users defined at the group level (platform>channels>groups>users)) ; "
+      + "they generally represents end users of the application",
+    `return` = "an object containing the newly created user's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val now = getCurrentDateTime
@@ -60,7 +68,9 @@ class NewGroupUser extends ApiFunction with NewUserParameters {
 
 class NewSimpleUser extends ApiFunction with NewUserParameters {
   override val name = "new_simple_user"
-  override val description = "Create a new simple user"
+  override val doc = ApiSummaryDoc(
+    description = "create a new simple user (TBD)",
+    `return` = "an object containing the newly created user's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val now = getCurrentDateTime

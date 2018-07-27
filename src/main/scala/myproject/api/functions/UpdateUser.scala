@@ -1,7 +1,7 @@
 package myproject.api.functions
 
-import myproject.api.ApiFunction
 import myproject.api.Serializers._
+import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
@@ -11,10 +11,12 @@ import myproject.iam.Users.{CRUD, GroupRole, User}
 
 class UpdateUser extends ApiFunction {
   override val name = "update_user"
-  override val description = "Update user details for all kind of users"
+  override val doc = ApiSummaryDoc(
+    description = "fully update or patch a user regardless of his type",
+    `return` = "an object containing the resulting user's data ")
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    val userId = required(p.uuid("user_id"))
+    val userId = required(p.uuid("user_id"), "the user id is bla bla")
     val email = optional(p.email("email"))
     val password = optional(p.nonEmptyString("password"))
     val login = optional(p.nonEmptyString("login"))

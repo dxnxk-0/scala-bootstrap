@@ -2,8 +2,8 @@ package myproject.api.functions
 
 import java.util.UUID
 
-import myproject.api.ApiFunction
 import myproject.api.Serializers._
+import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.TimeManagement
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
@@ -13,7 +13,9 @@ import myproject.iam.{Authorization, Users}
 
 class CreateGroup extends ApiFunction {
   override val name = "create_group"
-  override val description = "create a new group"
+  override val doc = ApiSummaryDoc(
+    description = "create a new users group (requires admin privileges on the target channel)",
+    `return` = "an object containing the newly created group data")
 
   override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     val now = TimeManagement.getCurrentDateTime

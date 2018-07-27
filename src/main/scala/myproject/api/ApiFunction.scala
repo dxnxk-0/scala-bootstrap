@@ -7,9 +7,11 @@ import myproject.iam.Users.User
 
 import scala.concurrent.Future
 
+case class ApiSummaryDoc(description: String, `return`: String)
+
 trait ApiFunction {
   val name: String
-  val description: String
+  val doc: ApiSummaryDoc
   val secured: Boolean = true
 
   protected implicit val ec = Runtime.ec

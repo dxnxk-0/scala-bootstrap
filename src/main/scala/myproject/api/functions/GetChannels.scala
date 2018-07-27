@@ -1,7 +1,7 @@
 package myproject.api.functions
 
-import myproject.api.ApiFunction
 import myproject.api.Serializers._
+import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.iam.Channels.CRUD
@@ -9,7 +9,9 @@ import myproject.iam.{Authorization, Users}
 
 class GetChannels extends ApiFunction {
   override val name = "get_channels"
-  override val description = "get all channels in the platform"
+  override val doc = ApiSummaryDoc(
+    description = "get all the existing channels on the platform (requires high privileges such as platform administrator's",
+    `return` = "a list of objects containing the requested channel's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     CRUD.getAllChannels(Authorization.canListChannels(user, _)) map { channels =>
