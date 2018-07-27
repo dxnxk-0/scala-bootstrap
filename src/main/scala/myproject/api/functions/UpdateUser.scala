@@ -20,15 +20,18 @@ class UpdateUser extends ApiFunction {
     val email = optional(p.email("email"))
     val password = optional(p.nonEmptyString("password"))
     val login = optional(p.nonEmptyString("login"))
-    val groupRole = optional(nullable(p.enumString("group_role", GroupRole)))
+    val groupRole = optionalAndNullable(p.enumString("group_role", GroupRole))
 
-    val authzHandler: IAMAuthzChecker = if(groupRole.isDefined) Authorization.canAdminUser(user, _) else Authorization.canUpdateUser(user, _)
+    checkParamAndProcess(userId, email, password, login, groupRole) flatMap { _ =>
+      val authzHandler: IAMAuthzChecker =
+        if(groupRole.get.isDefined) Authorization.canAdminUser(user, _) else Authorization.canUpdateUser(user, _)
 
-    CRUD.updateUser(userId, u =>
-      u.copy(
-        login = login.getOrElse(u.login),
-        email = email.getOrElse(u.email),
-        password = password.getOrElse(u.password),
-        groupRole = groupRole.getOrElse(u.groupRole)), authzHandler) map(_.toMap)
+      CRUD.updateUser(userId.get, u =>
+        u.copy(
+          login = login.get.getOrElse(u.login),
+          email = email.get.getOrElse(u.email),
+          password = password.get.getOrElse(u.password),
+          groupRole = groupRole.get.getOrElse(u.groupRole)), authzHandler) map(_.toMap)
+    }
   }
 }

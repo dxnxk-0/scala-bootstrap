@@ -20,8 +20,10 @@ class CreateChannel extends ApiFunction {
   override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     val now = TimeManagement.getCurrentDateTime
     val channelName = required(p.nonEmptyString("name"))
-    val channel = Channel(UUID.randomUUID, channelName, now, now)
 
-    CRUD.createChannel(channel, Authorization.canCreateChannel(user, _)) map (_.toMap)
+    checkParamAndProcess(channelName) flatMap { _ =>
+      val channel = Channel(UUID.randomUUID, channelName.get, now, now)
+      CRUD.createChannel(channel, Authorization.canCreateChannel(user, _)) map (_.toMap)
+    }
   }
 }

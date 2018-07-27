@@ -4,6 +4,7 @@ import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
+import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.iam.Authorization
 import myproject.iam.Channels.CRUD
 import myproject.iam.Users.User
@@ -15,7 +16,10 @@ class GetChannel extends ApiFunction {
     `return` = "an object containing the requested channel's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: Audit.AuditData) = {
-    val channelId = p.uuid("channel_id")
-    CRUD.getChannel(channelId, Authorization.canReadChannel(user, _)) map (_.toMap)
+    val channelId = required(p.uuid("channel_id"))
+
+    checkParamAndProcess(channelId) flatMap { _ =>
+      CRUD.getChannel(channelId.get, Authorization.canReadChannel(user, _)) map (_.toMap)
+    }
   }
 }

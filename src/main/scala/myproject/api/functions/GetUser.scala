@@ -16,6 +16,9 @@ class GetUser extends ApiFunction {
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val userId = required(p.uuid("user_id"))
-    CRUD.getUser(userId, Authorization.canReadUser(user, _)) map (_.toMap)
+
+    checkParamAndProcess(userId) flatMap { _ =>
+      CRUD.getUser(userId.get, Authorization.canReadUser(user, _)) map (_.toMap)
+    }
   }
 }

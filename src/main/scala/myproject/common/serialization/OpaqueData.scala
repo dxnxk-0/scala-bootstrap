@@ -102,7 +102,7 @@ object OpaqueData {
 
     def enumString(key: String, enum: Enumeration, value: Option[Any] = None, tpe: Type = Type.StringEnumeration): enum.Value = value.getOrElse(get(key, tpe)) match {
       case e => Try(enum.withName(e.toString))
-        .getOrElse(throw InvalidTypeException(s"Value `$e` for key `$key` is invalid. Possible values: ${enum.values.mkString(",")}"))
+        .getOrElse(throw InvalidTypeException(s"value `$e` for key `$key` is invalid. Possible values: ${enum.values.mkString(",")}"))
     }
 
     def enumStringList(key: String, enum: Enumeration, tpe: Type = Type.StringList): List[enum.Value] = {
@@ -114,7 +114,7 @@ object OpaqueData {
     def enumId(key: String, enum: Enumeration, tpe: Type = Type.IntEnumeration): enum.Value = {
 
       def fail(e: Any) =
-        throw InvalidTypeException(s"Value `$e` for key `$key` is invalid. Possible integer values: ${enum.values.map(_.id).mkString(",")}")
+        throw InvalidTypeException(s"value `$e` for key `$key` is invalid. Possible integer values: ${enum.values.map(_.id).mkString(",")}")
 
       val value = int(key, tpe = tpe)
       Try(enum(value)).getOrElse(fail(value))
@@ -188,39 +188,51 @@ object OpaqueData {
 
   object ReifiedDataWrapper {
 
-    def optional[A](v: => A, help: String = ""): Option[A] = {
-      val msg = "this key is OPTIONAL"
+    def optional[A](v: => A, help: String = ""): Try[Option[A]] = Try {
+      val msg = "key is optional, cannot be null"
 
       try {
         Some(v)
       } catch {
         case _: MissingKeyException => None
-        case e: NullValueException => throw e.copy(extra = msg :: help :: e.extra)
-        case e: InvalidTypeException => throw e.copy(extra = msg :: help :: e.extra)
+        case e: NullValueException => throw e.copy(msg = e.msg + s" ($msg)")
+        case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
       }
     }
 
-    def nullable[A](v: => A, help: String = ""): Option[A] = {
-      val msg = "this key is MANDATORY and NULLABLE"
+    def optionalAndNullable[A](v: => A, help: String = ""): Try[Option[Option[A]]] = Try {
+      val msg = "key is optional, can be null"
+
+      try {
+        Some(Some(v))
+      } catch {
+        case e: MissingKeyException => None
+        case e: NullValueException => None
+        case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
+      }
+    }
+
+    def nullable[A](v: => A, help: String = ""): Try[Option[A]] = Try {
+      val msg = "key is required, can be null"
 
       try {
         Some(v)
       } catch {
         case _: NullValueException => None
-        case e: MissingKeyException => throw e.copy(msg = e.msg + " (As an option, null means none)", extra = msg :: help :: e.extra)
-        case e: InvalidTypeException => throw e.copy(msg = e.msg + " (As an option, null means none)", extra = msg :: help :: e.extra)
+        case e: MissingKeyException => throw e.copy(msg = e.msg + s" ($msg)")
+        case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
       }
     }
 
-    def required[A](v: => A, help: String = ""): A = {
-      val msg = "this key is MANDATORY AND NON NULLABLE"
+    def required[A](v: => A, help: String = ""): Try[A] = Try {
+      val msg = "key is required, cannot be null"
 
       try {
         v
       } catch {
-        case e: MissingKeyException => throw e.copy(extra = msg :: help :: e.extra)
-        case e: NullValueException => throw e.copy(extra = msg :: help :: e.extra)
-        case e: InvalidTypeException => throw e.copy(extra = msg :: help :: e.extra)
+        case e: MissingKeyException => throw e.copy(msg = e.msg + s" ($msg)")
+        case e: NullValueException => throw e.copy(msg = e.msg + s" ($msg)")
+        case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
       }
     }
   }

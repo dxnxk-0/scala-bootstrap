@@ -16,6 +16,9 @@ class GetGroup extends ApiFunction {
 
   override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     val groupId = required(p.uuid("group_id"))
-    CRUD.getGroup(groupId, Authorization.canReadGroup(user, _)) map (_.toMap)
+
+    checkParamAndProcess(groupId) flatMap { _ =>
+      CRUD.getGroup(groupId.get, Authorization.canReadGroup(user, _)) map (_.toMap)
+    }
   }
 }

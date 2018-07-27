@@ -19,8 +19,10 @@ class LoginPassword extends ApiFunction {
     val login = required(p.nonEmptyString("login"))
     val password = required(p.nonEmptyString("password"))
 
-    CRUD.loginPassword(login, password, u => Authorization.canLogin(u, _)) map { authData =>
-      Map("whoami" -> authData._1.toMap, "token" -> authData._2.toString)
+    checkParamAndProcess(login) flatMap { _ =>
+      CRUD.loginPassword(login.get, password.get, u => Authorization.canLogin(u, _)) map { authData =>
+        Map("whoami" -> authData._1.toMap, "token" -> authData._2.toString)
+      }
     }
   }
 }
