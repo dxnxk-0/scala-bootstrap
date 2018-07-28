@@ -27,7 +27,7 @@ object Groups {
   class GroupUpdater(source: Group, target: Group) extends Updater(source, target) {
     override val updaters = List(
       (g: Group) => OK(g.copy(name = target.name)),
-      (c: Group) => OK(c.copy(lastUpdate = getCurrentDateTime))
+      (g: Group) => OK(g.copy(lastUpdate = getCurrentDateTime))
     )
     override val validator = GroupValidator
   }
