@@ -14,9 +14,9 @@ object Authorization {
   private def isChannelAdmin(implicit requester: User, data: IAMAuthzData) = if(requester.level==UserLevel.Channel && (requester.channelId==data.channel.map(_.id) || requester.channelId==data.group.map(_.channelId))) grant else refuse
   private def isGroupAdmin(implicit requester: User, data: IAMAuthzData) = if(requester.level==UserLevel.Group && requester.groupRole.contains(GroupRole.Admin) && (requester.groupId==data.group.map(_.id)) || requester.groupId==data.user.flatMap(_.groupId)) grant else refuse
   private def isUserHimself(implicit requester: User, data: IAMAuthzData) = if(data.user.exists(_.id==requester.id)) grant else refuse
-  private def isInTheSameGroup(implicit requester: User, data: IAMAuthzData) = if(requester.groupId==requester.groupId) grant else refuse
+  private def isInTheSameGroup(implicit requester: User, data: IAMAuthzData) = if(data.user.exists(_.groupId==requester.groupId)) grant else refuse
   private def belongToTheGroup(implicit requester: User, data: IAMAuthzData) = if(requester.groupId==data.group.map(_.id)) grant else refuse
-  private def belongToTheChannel(implicit requester: User, data: IAMAuthzData) = if(requester.groupId==data.group.map(_.id)) grant else refuse
+  private def belongToTheChannel(implicit requester: User, data: IAMAuthzData) = if(requester.channelId==data.channel.map(_.id)) grant else refuse
 
   type IAMAuthzChecker = IAMAuthzData => AuthorizationCheck
 
