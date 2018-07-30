@@ -18,17 +18,19 @@ object Channels {
 
   case class Channel(id: UUID, name: String, created: LocalDateTime, lastUpdate: LocalDateTime)
 
-  object ChannelValidator extends Validator[Channel] {
+  private object ChannelValidator extends Validator[Channel] {
     override val validators = Nil
   }
 
-  class ChannelUpdater(source: Channel, target: Channel) extends Updater(source, target) {
+  private class ChannelUpdater(source: Channel, target: Channel) extends Updater(source, target) {
     override val updaters = List(
       (c: Channel) => OK(c.copy(name = target.name)),
       (c: Channel) => OK(c.copy(lastUpdate = getCurrentDateTime))
     )
     override val validator = ChannelValidator
   }
+
+  type ChannelUpdate = Channel => Channel
 
   object CRUD {
     private def retrieveChannelOrFail(id: UUID) = DB.getChannel(id).getOrFail(ObjectNotFoundException(s"channel with id $id was not found"))
@@ -45,7 +47,7 @@ object Channels {
       _       <- authz(IAMAuthzData(channel = Some(channel))).toFuture
     } yield channel
 
-    def updateChannel(id: UUID, upd: Channel => Channel, authz: IAMAuthzChecker) = for {
+    def updateChannel(id: UUID, upd: ChannelUpdate, authz: IAMAuthzChecker) = for {
       existing  <- retrieveChannelOrFail(id)
       _         <- authz(IAMAuthzData(channel = Some(existing))).toFuture
       candidate <- Try(upd(existing)).toFuture

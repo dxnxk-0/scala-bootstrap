@@ -65,7 +65,9 @@ object Users {
   case object InvalidGroupUser extends ValidationError
   case object InvalidSimpleUser extends ValidationError
 
-  object UserValidator extends Validator[User] {
+  type UserUpdate = User => User
+
+  private object UserValidator extends Validator[User] {
 
     val platformUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.Platform => OK
@@ -98,7 +100,7 @@ object Users {
     )
   }
 
-  class UserUpdater(source: User, target: User) extends Updater(source, target) {
+  private class UserUpdater(source: User, target: User) extends Updater(source, target) {
     override val updaters: List[FieldUpdater[User]] = List(
       (u: User) => OK(u.copy(login = target.login)),
       (u: User) => if(source.password!=u.password) OK(u.copy(password = BCrypt.hashPassword(target.password))) else OK(u),
@@ -137,7 +139,7 @@ object Users {
       saved <- DB.insert(user.copy(password = BCrypt.hashPassword(user.password)))
     } yield saved
 
-    def updateUser(userId: UUID, upd: User => User, authz: IAMAuthzChecker) = for {
+    def updateUser(userId: UUID, upd: UserUpdate, authz: IAMAuthzChecker) = for {
       existing <- readUserOrFail(userId)
       updated  <- new UserUpdater(existing, upd(existing)).update.toFuture
       _        <- dbCheckUserAndAuthz(updated, authz)

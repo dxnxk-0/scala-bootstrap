@@ -20,17 +20,19 @@ object Groups {
 
   case class Group(id: UUID, name: String, channelId: UUID, created: LocalDateTime, lastUpdate: LocalDateTime)
 
-  object GroupValidator extends Validator[Group] {
+  private object GroupValidator extends Validator[Group] {
     override val validators = Nil
   }
 
-  class GroupUpdater(source: Group, target: Group) extends Updater(source, target) {
+  private class GroupUpdater(source: Group, target: Group) extends Updater(source, target) {
     override val updaters = List(
       (g: Group) => OK(g.copy(name = target.name)),
       (g: Group) => OK(g.copy(lastUpdate = getCurrentDateTime))
     )
     override val validator = GroupValidator
   }
+
+  type GroupUpdate = Group => Group
 
   object CRUD {
     private def retrieveGroupOrFail(id: UUID): Future[Group] = DB.getGroup(id).getOrFail(ObjectNotFoundException(s"group with id $id was not found"))
@@ -47,7 +49,7 @@ object Groups {
       _     <- authz(IAMAuthzData(None, Some(group), None)).toFuture
     } yield group
 
-    def updateGroup(id: UUID, upd: Group => Group, authz: IAMAuthzChecker) = for {
+    def updateGroup(id: UUID, upd: GroupUpdate, authz: IAMAuthzChecker) = for {
       existing  <- retrieveGroupOrFail(id)
       channel   <- getChannel(existing.channelId, voidIAMAuthzChecker)
       _         <- authz(IAMAuthzData(channel = Some(channel), group = Some(existing))).toFuture
