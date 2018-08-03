@@ -30,6 +30,8 @@ trait UserDAO extends DAO { self: GroupDAO with ChannelDAO =>
   protected class UsersTable(tag: Tag) extends Table[User](tag, "USERS") {
     def id = column[UUID]("USER_ID", O.PrimaryKey, O.SqlType("UUID"))
     def login = column[String]("LOGIN", O.Unique)
+    def firstName = column[String]("FIRST_NAME")
+    def lastName = column[String]("LAST_NAME")
     def password = column[String]("PASSWORD")
     def groupRole = column[Option[GroupRole]]("GROUP_ROLE")
     def level = column[UserLevel]("LEVEL")
@@ -40,10 +42,10 @@ trait UserDAO extends DAO { self: GroupDAO with ChannelDAO =>
     def lastUpdate = column[LocalDateTime]("LAST_UPDATE")
     def channel = foreignKey("USER_CHANNEL_FK", channelId, channels)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
     def group = foreignKey("USER_GROUP_FK", groupId, groups)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
-    def idxLogin = index("idx_login", login)
-    def idxEmail = index("idx_email", email)
-    def idxGroupId = index("idx_group", groupId)
-    def * = (id, level, login, email, password, channelId, groupId, groupRole, created, lastUpdate) <> (User.tupled, User.unapply)
+    def idxLogin = index("IDX_USERS_LOGIN", login)
+    def idxEmail = index("IDX_USERS_EMAIL", email)
+    def idxGroupId = index("IDX_USERS_GROUP_ID", groupId)
+    def * = (id, level, login, firstName, lastName, email, password, channelId, groupId, groupRole, created, lastUpdate) <> (User.tupled, User.unapply)
   }
 
   protected val users = TableQuery[UsersTable]

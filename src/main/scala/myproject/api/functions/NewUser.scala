@@ -15,7 +15,9 @@ trait NewUserParameters {
   def getCommonParameters(implicit p: ReifiedDataWrapper) = (
     required(p.nonEmptyString("login")),
     required(p.nonEmptyString("password")),
-    required(p.email("email"))
+    required(p.email("email")),
+    required(p.email("first_name")),
+    required(p.email("last_name"))
   )
 }
 
@@ -28,10 +30,10 @@ class NewPlatformUser extends ApiFunction with NewUserParameters {
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val now = getCurrentDateTime
-    val (login, password, email) = getCommonParameters
+    val (login, password, email, fn, ln) = getCommonParameters
 
-    checkParamAndProcess(login, password, email) flatMap { _ =>
-      val user = User(UUID.randomUUID, UserLevel.Platform, login.get, email.get, password.get, None, None, None, now, now)
+    checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>
+      val user = User(UUID.randomUUID, UserLevel.Platform, login.get, fn.get, ln.get, email.get, password.get, None, None, None, now, now)
       CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }
@@ -46,11 +48,11 @@ class NewChannelUser extends ApiFunction with NewUserParameters {
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val now = getCurrentDateTime
-    val (login, password, email) = getCommonParameters
+    val (login, password, email, fn, ln) = getCommonParameters
     val channelId = required(p.uuid("channel_id"))
 
-    checkParamAndProcess(login, password, email, channelId) flatMap { _ =>
-      val user = User(UUID.randomUUID, UserLevel.Channel, login.get, email.get, password.get, Some(channelId.get), None, None, now, now)
+    checkParamAndProcess(login, password, email, channelId, fn, ln) flatMap { _ =>
+      val user = User(UUID.randomUUID, UserLevel.Channel, login.get, fn.get, ln.get, email.get, password.get, Some(channelId.get), None, None, now, now)
       CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }
@@ -65,11 +67,11 @@ class NewGroupUser extends ApiFunction with NewUserParameters {
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val now = getCurrentDateTime
-    val (login, password, email) = getCommonParameters
+    val (login, password, email, fn, ln) = getCommonParameters
     val (groupId, groupRole) = (required(p.uuid("group_id")), nullable(p.enumString("group_role", GroupRole)))
 
-    checkParamAndProcess(login, email, password, groupId, groupRole) flatMap { _ =>
-      val user = User(UUID.randomUUID, UserLevel.Group, login.get, email.get, password.get, None, Some(groupId.get), groupRole.get, now, now)
+    checkParamAndProcess(login, email, password, groupId, groupRole, fn, ln) flatMap { _ =>
+      val user = User(UUID.randomUUID, UserLevel.Group, login.get, fn.get, ln.get, email.get, password.get, None, Some(groupId.get), groupRole.get, now, now)
       CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }
@@ -83,10 +85,10 @@ class NewSimpleUser extends ApiFunction with NewUserParameters {
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val now = getCurrentDateTime
-    val (login, password, email) = getCommonParameters
+    val (login, password, email, fn, ln) = getCommonParameters
 
-    checkParamAndProcess(login, password, email) flatMap { _ =>
-      val user = User(UUID.randomUUID, UserLevel.NoLevel, login.get, email.get, password.get, None, None, None, now, now)
+    checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>
+      val user = User(UUID.randomUUID, UserLevel.NoLevel, login.get, fn.get, ln.get, email.get, password.get, None, None, None, now, now)
       CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }

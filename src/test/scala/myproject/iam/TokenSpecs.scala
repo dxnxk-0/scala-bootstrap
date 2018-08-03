@@ -23,7 +23,7 @@ class TokenSpecs extends DatabaseSpec {
   val now = getCurrentDateTime
   val channel = Channel(UUID.randomUUID, "TESTS", now, now)
   val group = Group(UUID.randomUUID, "ACME", channel.id, now, now)
-  val user = User(UUID.randomUUID, UserLevel.Group, "tokens-specs", EmailAddress("token-specs@tests.com"), "secret", None, Some(group.id), None, now, now)
+  val user = User(UUID.randomUUID, UserLevel.Group, "tokens-specs", "John", "Smith", EmailAddress("token-specs@tests.com"), "secret", None, Some(group.id), None, now, now)
   val expiredToken = Token(UUID.randomUUID, user.id, TokenRole.Authentication, now, Some(TimeManagement.getCurrentDateTime.plusSeconds(0)))
   val validToken = Token(UUID.randomUUID, user.id, TokenRole.Signup, now, Some(TimeManagement.getCurrentDateTime.plusMinutes(10)))
 

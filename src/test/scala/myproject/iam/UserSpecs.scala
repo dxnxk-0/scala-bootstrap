@@ -22,7 +22,7 @@ class UserSpecs extends DatabaseSpec {
   val now = getCurrentDateTime
   val channel = Channel(UUID.randomUUID, "TEST", now, now)
   val group = Group(UUID.randomUUID, "ACME", channel.id, now, now)
-  val jdoe = User(UUID.randomUUID, UserLevel.Group, "user-specs", EmailAddress("user-specs@tests.com"), "Kondor_123", None, Some(group.id), None, now, now)
+  val jdoe = User(UUID.randomUUID, UserLevel.Group, "user-specs", "John", "Doe", EmailAddress("user-specs@tests.com"), "Kondor_123", None, Some(group.id), None, now, now)
 
   it should "create a user" in {
     createChannel(channel, voidIAMAuthzChecker)

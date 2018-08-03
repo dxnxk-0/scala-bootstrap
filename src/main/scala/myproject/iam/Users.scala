@@ -45,6 +45,8 @@ object Users {
       id: UUID,
       level: UserLevel,
       login: String,
+      firstName: String,
+      lastName: String,
       email: EmailAddress,
       password: String,
       channelId: Option[UUID],
@@ -71,25 +73,25 @@ object Users {
 
     val platformUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.Platform => OK
-      case User(_, UserLevel.Platform, _, _ , _, None, None, None, _, _) => OK
+      case User(_, UserLevel.Platform, _, _, _, _ , _, None, None, None, _, _) => OK
       case _ => NOK(InvalidPlatformUser)
     }
 
     val channelUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.Channel => OK
-      case User(_, UserLevel.Channel, _, _ , _, Some(_), None, None, _, _) => OK
+      case User(_, UserLevel.Channel, _, _, _, _ , _, Some(_), None, None, _, _) => OK
       case _ => NOK(InvalidChannelUser)
     }
 
     val groupUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.Group=> OK
-      case User(_, UserLevel.Group, _, _ , _, None, Some(_), _, _, _) => OK
+      case User(_, UserLevel.Group, _, _, _, _ , _, None, Some(_), _, _, _) => OK
       case _ => NOK(InvalidGroupUser)
     }
 
     val simpleUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.NoLevel => OK
-      case User(_, UserLevel.NoLevel, _, _ , _, None, None, None, _, _) => OK
+      case User(_, UserLevel.NoLevel, _, _ , _, _, _, None, None, None, _, _) => OK
       case _ => NOK(InvalidSimpleUser)
     }
 
