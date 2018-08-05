@@ -141,8 +141,8 @@ object Users {
       saved <- DB.insert(user.copy(password = BCrypt.hashPassword(user.password)))
     } yield saved
 
-    def updateUser(userId: UUID, upd: UserUpdate, authz: IAMAuthzChecker) = for {
-      existing <- readUserOrFail(userId)
+    def updateUser(id: UUID, upd: UserUpdate, authz: IAMAuthzChecker) = for {
+      existing <- readUserOrFail(id)
       updated  <- new UserUpdater(existing, upd(existing)).update.toFuture
       _        <- dbCheckUserAndAuthz(updated, authz)
       saved    <- DB.update(updated)
