@@ -33,7 +33,7 @@ class NewPlatformUser extends ApiFunction with NewUserParameters {
     val (login, password, email, fn, ln) = getCommonParameters
 
     checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>
-      val user = User(UUID.randomUUID, UserLevel.Platform, login.get, fn.get, ln.get, email.get, password.get, None, None, None, now, now)
+      val user = User(UUID.randomUUID, UserLevel.Platform, login.get, fn.get, ln.get, email.get, password.get, None, None, None, None, None)
       CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }
@@ -52,7 +52,7 @@ class NewChannelUser extends ApiFunction with NewUserParameters {
     val channelId = required(p.uuid("channel_id"))
 
     checkParamAndProcess(login, password, email, channelId, fn, ln) flatMap { _ =>
-      val user = User(UUID.randomUUID, UserLevel.Channel, login.get, fn.get, ln.get, email.get, password.get, Some(channelId.get), None, None, now, now)
+      val user = User(UUID.randomUUID, UserLevel.Channel, login.get, fn.get, ln.get, email.get, password.get, Some(channelId.get), None, None, None, None)
       CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }
@@ -71,7 +71,7 @@ class NewGroupUser extends ApiFunction with NewUserParameters {
     val (groupId, groupRole) = (required(p.uuid("group_id")), nullable(p.enumString("group_role", GroupRole)))
 
     checkParamAndProcess(login, email, password, groupId, groupRole, fn, ln) flatMap { _ =>
-      val user = User(UUID.randomUUID, UserLevel.Group, login.get, fn.get, ln.get, email.get, password.get, None, Some(groupId.get), groupRole.get, now, now)
+      val user = User(UUID.randomUUID, UserLevel.Group, login.get, fn.get, ln.get, email.get, password.get, None, Some(groupId.get), groupRole.get, None, None)
       CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }
@@ -88,7 +88,7 @@ class NewSimpleUser extends ApiFunction with NewUserParameters {
     val (login, password, email, fn, ln) = getCommonParameters
 
     checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>
-      val user = User(UUID.randomUUID, UserLevel.NoLevel, login.get, fn.get, ln.get, email.get, password.get, None, None, None, now, now)
+      val user = User(UUID.randomUUID, UserLevel.NoLevel, login.get, fn.get, ln.get, email.get, password.get, None, None, None, None, None)
       CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }

@@ -4,11 +4,11 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import myproject.common.FutureImplicits._
-import myproject.common.ObjectNotFoundException
 import myproject.common.Runtime.ec
 import myproject.common.TimeManagement.getCurrentDateTime
 import myproject.common.Updater.Updater
 import myproject.common.Validation.Validator
+import myproject.common.{IllegalOperationException, ObjectNotFoundException}
 import myproject.database.DB
 import myproject.iam.Authorization.{IAMAuthzChecker, IAMAuthzData, voidIAMAuthzChecker}
 import myproject.iam.Channels.CRUD.getChannel
@@ -18,7 +18,7 @@ import scala.util.Try
 
 object Groups {
 
-  case class Group(id: UUID, name: String, channelId: UUID, created: LocalDateTime, lastUpdate: LocalDateTime)
+  case class Group(id: UUID, name: String, channelId: UUID, created: Option[LocalDateTime], lastUpdate: Option[LocalDateTime])
 
   private object GroupValidator extends Validator[Group] {
     override val validators = Nil
@@ -27,7 +27,7 @@ object Groups {
   private class GroupUpdater(source: Group, target: Group) extends Updater(source, target) {
     override val updaters = List(
       (g: Group) => OK(g.copy(name = target.name)),
-      (g: Group) => OK(g.copy(lastUpdate = getCurrentDateTime))
+      (g: Group) => OK(g.copy(lastUpdate = Some(getCurrentDateTime)))
     )
     override val validator = GroupValidator
   }
@@ -71,5 +71,37 @@ object Groups {
       _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
       users   <- DB.getGroupUsers(groupId)
     } yield users
+
+    def getGroupChildren(groupId: UUID, authz: IAMAuthzChecker) = for {
+      group   <- retrieveGroupOrFail(groupId)
+      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
+      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
+      result  <- DB.getGroupChildren(groupId)
+    } yield result
+
+    def getGroupParents(groupId: UUID, authz: IAMAuthzChecker) = for {
+      group   <- retrieveGroupOrFail(groupId)
+      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
+      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
+      result  <- DB.getGroupParents(groupId)
+    } yield result
+
+    def attachGroup(groupId: UUID, parentId: UUID, authz: IAMAuthzChecker) = for {
+      group <- retrieveGroupOrFail(groupId)
+      _ <- retrieveGroupOrFail(parentId) map {
+        case p if p.channelId!=group.channelId => throw IllegalOperationException(s"cannot attach groups belonging to different channels")
+        case p => p
+      }
+      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
+      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
+      result <- DB.attachGroup(groupId, parentId)
+    } yield result
+
+    def detachGroup(groupId: UUID, authz: IAMAuthzChecker) = for {
+      group <- retrieveGroupOrFail(groupId)
+      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
+      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
+      result <- DB.detachGroup(groupId)
+    } yield result
   }
 }

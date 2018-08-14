@@ -52,8 +52,8 @@ object Users {
       channelId: Option[UUID],
       groupId: Option[UUID],
       groupRole: Option[GroupRole],
-      created: LocalDateTime,
-      lastUpdate: LocalDateTime)
+      created: Option[LocalDateTime],
+      lastUpdate: Option[LocalDateTime])
     extends UserGeneric
 
   case class Guest() extends UserGeneric {
@@ -108,7 +108,7 @@ object Users {
       (u: User) => if(source.password!=u.password) OK(u.copy(password = BCrypt.hashPassword(target.password))) else OK(u),
       (u: User) => OK(u.copy(email = target.email)),
       (u: User) => OK(u.copy(groupRole = target.groupRole)),
-      (u: User) => OK(u.copy(lastUpdate = getCurrentDateTime))
+      (u: User) => OK(u.copy(lastUpdate = Some(getCurrentDateTime)))
     )
     override val validator = UserValidator
   }

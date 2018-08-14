@@ -16,7 +16,7 @@ import scala.util.Try
 
 object Channels {
 
-  case class Channel(id: UUID, name: String, created: LocalDateTime, lastUpdate: LocalDateTime)
+  case class Channel(id: UUID, name: String, created: Option[LocalDateTime], lastUpdate: Option[LocalDateTime])
 
   private object ChannelValidator extends Validator[Channel] {
     override val validators = Nil
@@ -25,7 +25,7 @@ object Channels {
   private class ChannelUpdater(source: Channel, target: Channel) extends Updater(source, target) {
     override val updaters = List(
       (c: Channel) => OK(c.copy(name = target.name)),
-      (c: Channel) => OK(c.copy(lastUpdate = getCurrentDateTime))
+      (c: Channel) => OK(c.copy(lastUpdate = Some(getCurrentDateTime)))
     )
     override val validator = ChannelValidator
   }
