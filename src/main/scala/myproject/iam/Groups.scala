@@ -18,7 +18,7 @@ import scala.util.Try
 
 object Groups {
 
-  case class Group(id: UUID, name: String, channelId: UUID, created: Option[LocalDateTime], lastUpdate: Option[LocalDateTime])
+  case class Group(id: UUID, name: String, parentId: Option[UUID], channelId: UUID, created: Option[LocalDateTime], lastUpdate: Option[LocalDateTime])
 
   private object GroupValidator extends Validator[Group] {
     override val validators = Nil
@@ -41,7 +41,7 @@ object Groups {
       _       <- GroupValidator.validate(group).toFuture
       channel <- Channels.CRUD.getChannel(group.channelId, voidIAMAuthzChecker)
       _       <- authz(IAMAuthzData(None, Some(group), Some(channel))).toFuture
-      saved   <- DB.insert(group)
+      saved   <- DB.insert(group.copy(parentId = None, created = Some(getCurrentDateTime)))
     } yield saved
 
     def getGroup(id: UUID, authz: IAMAuthzChecker) = for {
@@ -79,6 +79,13 @@ object Groups {
       result  <- DB.getGroupChildren(groupId)
     } yield result
 
+    def getGroupOrganization(groupId: UUID, authz: IAMAuthzChecker) = for {
+      group   <- retrieveGroupOrFail(groupId)
+      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
+      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
+      result  <- DB.getGroupOrganization(groupId)
+    } yield result
+
     def getGroupParents(groupId: UUID, authz: IAMAuthzChecker) = for {
       group   <- retrieveGroupOrFail(groupId)
       channel <- getChannel(group.channelId, voidIAMAuthzChecker)
@@ -87,6 +94,7 @@ object Groups {
     } yield result
 
     def attachGroup(groupId: UUID, parentId: UUID, authz: IAMAuthzChecker) = for {
+      _ <- if(groupId==parentId) Future.failed(IllegalOperationException("cannot attach a group to itself")) else Future.unit
       group <- retrieveGroupOrFail(groupId)
       _ <- retrieveGroupOrFail(parentId) map {
         case p if p.channelId!=group.channelId => throw IllegalOperationException(s"cannot attach groups belonging to different channels")

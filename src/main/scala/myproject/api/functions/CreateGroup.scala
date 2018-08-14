@@ -23,7 +23,7 @@ class CreateGroup extends ApiFunction {
     val channelId = required(p.uuid("channel_id"), "the channel id the new group will belong to")
 
     checkParamAndProcess(groupName, channelId) flatMap { _ =>
-      val group = Group(UUID.randomUUID, groupName.get, channelId.get, None, None)
+      val group = Group(UUID.randomUUID, groupName.get, None, channelId.get, None, None)
       CRUD.createGroup(group, Authorization.canCreateGroup(user, _)) map (_.toMap)
     }
   }

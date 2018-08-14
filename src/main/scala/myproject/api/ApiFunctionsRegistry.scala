@@ -62,7 +62,7 @@ object ApiFunctionsRegistry {
   register(new GetGroupUsers)
   register(new AttachGroup)
   register(new DetachGroup)
-  register(new GetGroupChildren)
+  register(new GetGroupOrganization)
   register(new NewPlatformUser)
   register(new NewChannelUser)
   register(new NewGroupUser)

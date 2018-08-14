@@ -138,7 +138,7 @@ object Users {
     def createUser(user: User, authz: IAMAuthzChecker) = for {
       _     <- UserValidator.validate(user).toFuture
       _     <- dbCheckUserAndAuthz(user, authz)
-      saved <- DB.insert(user.copy(password = BCrypt.hashPassword(user.password)))
+      saved <- DB.insert(user.copy(password = BCrypt.hashPassword(user.password), created = Some(getCurrentDateTime)))
     } yield saved
 
     def updateUser(id: UUID, upd: UserUpdate, authz: IAMAuthzChecker) = for {

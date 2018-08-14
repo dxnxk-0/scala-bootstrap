@@ -20,7 +20,7 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 class ChannelSpecs extends DatabaseSpec {
   val now = getCurrentDateTime
   val channel = Channel(UUID.randomUUID, "TEST", None, None)
-  val group = Group(UUID.randomUUID, "ACME", channel.id, None, None)
+  val group = Group(UUID.randomUUID, "ACME", None, channel.id, None, None)
   val smith = User(UUID.randomUUID, UserLevel.Group, "channel-specs", "John", "Smith", EmailAddress("channel-specs@tests.com"), "whatever", None, Some(group.id), None, None, None)
 
   it should "create a channel" in {

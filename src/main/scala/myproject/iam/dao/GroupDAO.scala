@@ -16,11 +16,12 @@ trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
   protected class GroupsTable(tag: Tag) extends Table[Group](tag, "GROUPS") {
     def id = column[UUID]("GROUP_ID", O.PrimaryKey, O.SqlType("UUID"))
     def name = column[String]("NAME")
+    def parentId = column[Option[UUID]]("PARENT_ID", O.SqlType("UUID"))
     def channelId = column[UUID]("CHANNEL_ID", O.SqlType("UUID"))
     def created = column[Option[LocalDateTime]]("CREATED")
     def lastUpdate = column[Option[LocalDateTime]]("LAST_UPDATE")
     def channel = foreignKey("GROUP_CHANNEL_FK", channelId, channels)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
-    def * = (id, name, channelId, created, lastUpdate) <> (Group.tupled, Group.unapply)
+    def * = (id, name, parentId, channelId, created, lastUpdate) <> (Group.tupled, Group.unapply)
   }
 
   protected class OrganizationTable(tag: Tag) extends Table[(UUID, UUID, Int)](tag, "ORGANIZATION_TREES") {
@@ -58,24 +59,58 @@ trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
         case _ => DBIO.failed(IllegalOperationException(s"group with group id $groupId is already attached to an organization"))
       }
       _ <- insertInto
-      parents <- organizations.filter(_.descendantId===groupId).map(p => (p.ancestorId, p.depth)).result
-    } yield parents
+      _ <- groups.filter(_.id===groupId).map(_.parentId).update(Some(parentId))
+    } yield Unit
 
     db.run(action.withTransactionIsolation(TransactionIsolation.Serializable).transactionally)
+      .flatMap(_ => getGroupOrganization(groupId))
   }
 
   def detachGroup(groupId: UUID) = {
     val inClause = organizations.filter(_.ancestorId===groupId).map(_.descendantId)
     val select = organizations.filter(_.descendantId in inClause)
-    val insert = organizations += ((groupId, groupId, 0))
+    val children = groups.filter(_.id in inClause).map(_.parentId)
+
     val action = for {
-      _ <- select.delete
-      _ <- insert
+      _ <- children.update(None)
+      _ <- groups.filter(_.id===groupId).map(_.parentId).update(None)
+      _ <- select.filter(t => !(t.depth===0)).delete
     } yield Done
 
     db.run(action.withTransactionIsolation(TransactionIsolation.Serializable).transactionally)
   }
 
-  def getGroupChildren(groupId: UUID) = db.run(organizations.filter(_.ancestorId===groupId).map(p => (p.descendantId, p.depth)).result)
-  def getGroupParents(groupId: UUID) = db.run(organizations.filter(_.descendantId===groupId).map(p => (p.ancestorId, p.depth)).result)
+  def getGroupOrganization(groupId: UUID) = {
+    getGroupParents(groupId).map(_.maxBy(_._2)) flatMap { root =>
+      getGroupChildren(root._1.id)
+    }
+  }
+
+  def getGroupChildren(groupId: UUID) = {
+    val groupIdAndDepthQuery = organizations.filter(_.ancestorId===groupId).map(p => (p.descendantId, p.depth))
+    val childrenQuery = groups.filter(_.id in groupIdAndDepthQuery.map(_._1))
+
+    val action = for {
+      idAndDepth <- groupIdAndDepthQuery.result
+      children <- childrenQuery.result
+    } yield {
+      children.map(p => (p, idAndDepth.find(_._1==p.id).map(_._2).get))
+    }
+
+    db.run(action)
+  }
+
+  def getGroupParents(groupId: UUID) = {
+    val groupIdAndDepthQuery = organizations.filter(_.descendantId===groupId).map(p => (p.ancestorId, p.depth))
+    val parentQuery = groups.filter(_.id in groupIdAndDepthQuery.map(_._1))
+
+    val action = for {
+      idAndDepth <- groupIdAndDepthQuery.result
+      parents <- parentQuery.result
+    } yield {
+      parents.map(p => (p, idAndDepth.find(_._1==p.id).map(_._2).get))
+    }
+
+    db.run(action)
+  }
 }

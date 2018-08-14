@@ -39,7 +39,7 @@ object Channels {
 
     def createChannel(channel: Channel, authz: IAMAuthzChecker) = for {
       _     <- authz(IAMAuthzData()).toFuture
-      saved <- DB.insert(channel)
+      saved <- DB.insert(channel.copy(created = Some(getCurrentDateTime)))
     } yield saved
 
     def getChannel(id: UUID, authz: IAMAuthzChecker) = for {

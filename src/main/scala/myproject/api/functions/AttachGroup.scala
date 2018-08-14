@@ -1,5 +1,6 @@
 package myproject.api.functions
 
+import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData
@@ -19,9 +20,10 @@ class AttachGroup extends ApiFunction {
 
     checkParamAndProcess(groupId, parentId) flatMap { _ =>
       CRUD.attachGroup(groupId.get, parentId.get, Authorization.canAdminGroup(user, _)) map { tuples =>
-        Map("parents" -> tuples.map( t =>
-            Map("parent_id" -> t._1, "depth" -> t._2)
-          )
+        Map(
+          "organization" -> tuples.map { t =>
+            t._1.toMap ++ Map("depth" -> t._2)
+          }
         )
       }
     }
