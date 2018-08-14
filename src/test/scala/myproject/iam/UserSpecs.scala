@@ -41,7 +41,7 @@ class UserSpecs extends DatabaseSpec {
   }
 
   it should "not log in a non existent user" in {
-    a [ObjectNotFoundException] shouldBe thrownBy(
+    a [AuthenticationFailedException] shouldBe thrownBy(
       loginPassword("non-existent", "Kondor_123", _ => voidIAMAuthzChecker).futureValue
     )
   }

@@ -37,6 +37,8 @@ object Groups {
   object CRUD {
     private def retrieveGroupOrFail(id: UUID): Future[Group] = DB.getGroup(id).getOrFail(ObjectNotFoundException(s"group with id $id was not found"))
 
+    def getParentGroupChain(id: UUID) = DB.getGroupParents(id).map(_.map(_._1).toList)
+
     def createGroup(group: Group, authz: IAMAuthzChecker) = for {
       _       <- GroupValidator.validate(group).toFuture
       channel <- Channels.CRUD.getChannel(group.channelId, voidIAMAuthzChecker)
@@ -52,7 +54,8 @@ object Groups {
     def updateGroup(id: UUID, upd: GroupUpdate, authz: IAMAuthzChecker) = for {
       existing  <- retrieveGroupOrFail(id)
       channel   <- getChannel(existing.channelId, voidIAMAuthzChecker)
-      _         <- authz(IAMAuthzData(channel = Some(channel), group = Some(existing))).toFuture
+      parents   <- getParentGroupChain(id)
+      _         <- authz(IAMAuthzData(channel = Some(channel), group = Some(existing), parentGroupChain = parents)).toFuture
       candidate <- Try(upd(existing)).toFuture
       updated   <- new GroupUpdater(existing, candidate).update.toFuture
       saved     <- DB.update(updated)
@@ -68,16 +71,17 @@ object Groups {
     def getGroupUsers(groupId: UUID, authz: IAMAuthzChecker) = for {
       group   <- retrieveGroupOrFail(groupId)
       channel <- getChannel(group.channelId, voidIAMAuthzChecker)
-      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
+      parents <- getParentGroupChain(groupId)
+      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel), parentGroupChain = parents)).toFuture
       users   <- DB.getGroupUsers(groupId)
     } yield users
 
     def getGroupChildren(groupId: UUID, authz: IAMAuthzChecker) = for {
-      group   <- retrieveGroupOrFail(groupId)
-      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
-      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
-      result  <- DB.getGroupChildren(groupId)
-    } yield result
+      group    <- retrieveGroupOrFail(groupId)
+      channel  <- getChannel(group.channelId, voidIAMAuthzChecker)
+      _        <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
+      children <- DB.getGroupChildren(groupId)
+    } yield children
 
     def getGroupOrganization(groupId: UUID, authz: IAMAuthzChecker) = for {
       group   <- retrieveGroupOrFail(groupId)
@@ -90,8 +94,8 @@ object Groups {
       group   <- retrieveGroupOrFail(groupId)
       channel <- getChannel(group.channelId, voidIAMAuthzChecker)
       _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
-      result  <- DB.getGroupParents(groupId)
-    } yield result
+      parents <- DB.getGroupParents(groupId)
+    } yield parents
 
     def attachGroup(groupId: UUID, parentId: UUID, authz: IAMAuthzChecker) = for {
       _ <- if(groupId==parentId) Future.failed(IllegalOperationException("cannot attach a group to itself")) else Future.unit

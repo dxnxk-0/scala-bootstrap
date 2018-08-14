@@ -126,13 +126,25 @@ object Users {
       checkUniqueUserProperty(u, DB.getUserByLoginName(u.login), s"login name `${u.login}` does already exist")
     private def checkChannel(u: User) = u.channelId map (id => Channels.CRUD.getChannel(id, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
     private def checkGroup(u: User) = u.groupId map (id => Groups.CRUD.getGroup(id, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+    private def getParentGroupChain(groupId: Option[UUID]) = groupId match {
+      case Some(id) => Groups.CRUD.getParentGroupChain(id)
+      case None => Future.successful(Nil)
+    }
 
     private def dbCheckUserAndAuthz(u: User, authz: IAMAuthzChecker) = for {
-      _          <- checkEmailOwnership(u)
-      _          <- checkLoginOwnership(u)
-      groupOpt   <- checkGroup(u)
-      channelOpt <- checkChannel(u)
-      _          <- authz(IAMAuthzData(user = Some(u), group = groupOpt, channel = channelOpt)).toFuture
+      _            <- checkEmailOwnership(u)
+      _            <- checkLoginOwnership(u)
+      groupOpt     <- checkGroup(u)
+      channelOpt   <- checkChannel(u)
+      parentGroups <- getParentGroupChain(groupOpt.map(_.id))
+      _            <- authz(IAMAuthzData(user = Some(u), group = groupOpt, channel = channelOpt, parentGroupChain = parentGroups)).toFuture
+    } yield Done
+
+    private def checkUserAuthz(user: User, authz: IAMAuthzChecker) = for {
+      groupOpt     <- user.groupId map (gid => getGroup(gid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+      channelOpt   <- user.channelId map (cid => getChannel(cid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+      parentGroups <- getParentGroupChain(groupOpt.map(_.id))
+      _            <- authz(IAMAuthzData(group = groupOpt, channel = channelOpt, parentGroupChain = parentGroups)).toFuture
     } yield Done
 
     def createUser(user: User, authz: IAMAuthzChecker) = for {
@@ -149,16 +161,18 @@ object Users {
     } yield saved
 
     def getUser(id: UUID, authz: IAMAuthzChecker) = for {
-      user       <- readUserOrFail(id)
-      groupOpt   <- user.groupId map (gid => getGroup(gid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-      channelOpt <- user.channelId map (cid => getChannel(cid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-      _          <- authz(IAMAuthzData(group = groupOpt, channel = channelOpt)).toFuture
+      user <- readUserOrFail(id)
+      _    <- checkUserAuthz(user, authz)
     } yield user
 
-    def deleteUser(id: UUID, authz: IAMAuthzChecker) = DB.deleteUser(id)
+    def deleteUser(id: UUID, authz: IAMAuthzChecker) = for {
+      user <- readUserOrFail(id)
+      _    <- checkUserAuthz(user, authz)
+      _    <- DB.deleteUser(id)
+    } yield Done
 
     def loginPassword(login: String, candidate: String, authz: User => IAMAuthzChecker) = for {
-      user       <- DB.getUserByLoginName(login).getOrFail(ObjectNotFoundException(s"user with login $login was not found"))
+      user       <- DB.getUserByLoginName(login).getOrFail(AuthenticationFailedException(s"Bad user or password"))
       groupOpt   <- checkGroup(user)
       channelOpt <- checkChannel(user)
       _          <- authz(user)(IAMAuthzData(Some(user), groupOpt, channelOpt)).toFuture
