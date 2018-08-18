@@ -26,8 +26,7 @@ object Groups {
 
   private class GroupUpdater(source: Group, target: Group) extends Updater(source, target) {
     override val updaters = List(
-      (g: Group) => OK(g.copy(name = target.name)),
-      (g: Group) => OK(g.copy(lastUpdate = Some(getCurrentDateTime)))
+      (g: Group) => OK(g.copy(name = target.name))
     )
     override val validator = GroupValidator
   }
@@ -81,7 +80,7 @@ object Groups {
       channel  <- getChannel(group.channelId, voidIAMAuthzChecker)
       _        <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
       children <- DB.getGroupChildren(groupId)
-    } yield children
+    } yield children.toList
 
     def getGroupOrganization(groupId: UUID, authz: IAMAuthzChecker) = for {
       group   <- retrieveGroupOrFail(groupId)
@@ -95,7 +94,7 @@ object Groups {
       channel <- getChannel(group.channelId, voidIAMAuthzChecker)
       _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
       parents <- DB.getGroupParents(groupId)
-    } yield parents
+    } yield parents.toList
 
     def attachGroup(groupId: UUID, parentId: UUID, authz: IAMAuthzChecker) = for {
       _ <- if(groupId==parentId) Future.failed(IllegalOperationException("cannot attach a group to itself")) else Future.unit

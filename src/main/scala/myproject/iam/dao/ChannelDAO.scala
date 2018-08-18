@@ -15,12 +15,12 @@ trait ChannelDAO extends DAO { self: GroupDAO =>
   protected class ChannelsTable(tag: Tag) extends Table[Channel](tag, "CHANNELS") {
     def id = column[UUID]("CHANNEL_ID", O.PrimaryKey, O.SqlType("UUID"))
     def name = column[String]("NAME")
-    def created = column[Option[LocalDateTime]]("CREATED")
+    def created = column[LocalDateTime]("CREATED")
     def lastUpdate = column[Option[LocalDateTime]]("LAST_UPDATE")
-    def * = (id, name, created, lastUpdate) <> (Channel.tupled, Channel.unapply)
+    def * = (id, name, created.?, lastUpdate).mapTo[Channel]
   }
 
-  protected val channels = TableQuery[ChannelsTable]
+  protected lazy val channels = TableQuery[ChannelsTable]
 
   def getChannel(id: UUID) = db.run(channels.filter(_.id===id).result) map (_.headOption)
   def insert(channel: Channel) = db.run(channels += channel) map (_ => channel)

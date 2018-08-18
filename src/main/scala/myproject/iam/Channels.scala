@@ -24,8 +24,7 @@ object Channels {
 
   private class ChannelUpdater(source: Channel, target: Channel) extends Updater(source, target) {
     override val updaters = List(
-      (c: Channel) => OK(c.copy(name = target.name)),
-      (c: Channel) => OK(c.copy(lastUpdate = Some(getCurrentDateTime)))
+      (c: Channel) => OK(c.copy(name = target.name))
     )
     override val validator = ChannelValidator
   }

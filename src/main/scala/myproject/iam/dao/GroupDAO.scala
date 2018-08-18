@@ -7,7 +7,6 @@ import myproject.common.Runtime.ec
 import myproject.common.{Done, IllegalOperationException}
 import myproject.database.DAO
 import myproject.iam.Groups.Group
-import slick.jdbc.TransactionIsolation
 
 trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
 
@@ -18,10 +17,10 @@ trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
     def name = column[String]("NAME")
     def parentId = column[Option[UUID]]("PARENT_ID", O.SqlType("UUID"))
     def channelId = column[UUID]("CHANNEL_ID", O.SqlType("UUID"))
-    def created = column[Option[LocalDateTime]]("CREATED")
+    def created = column[LocalDateTime]("CREATED")
     def lastUpdate = column[Option[LocalDateTime]]("LAST_UPDATE")
     def channel = foreignKey("GROUP_CHANNEL_FK", channelId, channels)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
-    def * = (id, name, parentId, channelId, created, lastUpdate) <> (Group.tupled, Group.unapply)
+    def * = (id, name, parentId, channelId, created.?, lastUpdate).mapTo[Group]
   }
 
   protected class OrganizationTable(tag: Tag) extends Table[(UUID, UUID, Int)](tag, "ORGANIZATION_TREES") {
@@ -33,8 +32,8 @@ trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
     def * = (ancestorId, descendantId, depth)
   }
 
-  protected val groups = TableQuery[GroupsTable]
-  protected val organizations = TableQuery[OrganizationTable]
+  protected lazy val groups = TableQuery[GroupsTable]
+  protected lazy val organizations = TableQuery[OrganizationTable]
 
   def getGroup(id: UUID) = db.run(groups.filter(_.id===id).result) map (_.headOption)
   def insert(group: Group) = {
@@ -62,7 +61,7 @@ trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
       _ <- groups.filter(_.id===groupId).map(_.parentId).update(Some(parentId))
     } yield Unit
 
-    db.run(action.withTransactionIsolation(TransactionIsolation.Serializable).transactionally)
+    db.run(action.transactionally) //TODO: Concurrency mgmt
       .flatMap(_ => getGroupOrganization(groupId))
   }
 
@@ -77,7 +76,7 @@ trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
       _ <- select.filter(t => !(t.depth===0)).delete
     } yield Done
 
-    db.run(action.withTransactionIsolation(TransactionIsolation.Serializable).transactionally)
+    db.run(action.transactionally) //TODO: Concurrency mgmt
   }
 
   def getGroupOrganization(groupId: UUID) = {

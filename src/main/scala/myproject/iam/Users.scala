@@ -104,11 +104,12 @@ object Users {
 
   private class UserUpdater(source: User, target: User) extends Updater(source, target) {
     override val updaters: List[FieldUpdater[User]] = List(
-      (u: User) => OK(u.copy(login = target.login)),
-      (u: User) => if(source.password!=u.password) OK(u.copy(password = BCrypt.hashPassword(target.password))) else OK(u),
-      (u: User) => OK(u.copy(email = target.email)),
-      (u: User) => OK(u.copy(groupRole = target.groupRole)),
-      (u: User) => OK(u.copy(lastUpdate = Some(getCurrentDateTime)))
+      (u: User) => OK(
+        u.copy(
+          login = target.login,
+          password = if(source.password!=u.password) BCrypt.hashPassword(target.password) else u.password,
+          email = target.email,
+          groupRole = target.groupRole))
     )
     override val validator = UserValidator
   }
@@ -140,9 +141,9 @@ object Users {
       _            <- authz(IAMAuthzData(user = Some(u), group = groupOpt, channel = channelOpt, parentGroupChain = parentGroups)).toFuture
     } yield Done
 
-    private def checkUserAuthz(user: User, authz: IAMAuthzChecker) = for {
-      groupOpt     <- user.groupId map (gid => getGroup(gid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-      channelOpt   <- user.channelId map (cid => getChannel(cid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+    private def checkUserAuthz(u: User, authz: IAMAuthzChecker) = for {
+      groupOpt     <- u.groupId map (gid => getGroup(gid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+      channelOpt   <- u.channelId map (cid => getChannel(cid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
       parentGroups <- getParentGroupChain(groupOpt.map(_.id))
       _            <- authz(IAMAuthzData(group = groupOpt, channel = channelOpt, parentGroupChain = parentGroups)).toFuture
     } yield Done

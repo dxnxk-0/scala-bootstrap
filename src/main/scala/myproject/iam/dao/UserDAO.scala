@@ -38,17 +38,17 @@ trait UserDAO extends DAO { self: GroupDAO with ChannelDAO =>
     def email = column[EmailAddress]("EMAIL", O.Unique)
     def groupId = column[Option[UUID]]("GROUP_ID", O.SqlType("UUID"))
     def channelId = column[Option[UUID]]("CHANNEL_ID", O.SqlType("UUID"))
-    def created = column[Option[LocalDateTime]]("CREATED")
+    def created = column[LocalDateTime]("CREATED")
     def lastUpdate = column[Option[LocalDateTime]]("LAST_UPDATE")
     def channel = foreignKey("USER_CHANNEL_FK", channelId, channels)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
     def group = foreignKey("USER_GROUP_FK", groupId, groups)(_.id.?, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
     def idxLogin = index("IDX_USERS_LOGIN", login)
     def idxEmail = index("IDX_USERS_EMAIL", email)
     def idxGroupId = index("IDX_USERS_GROUP_ID", groupId)
-    def * = (id, level, login, firstName, lastName, email, password, channelId, groupId, groupRole, created, lastUpdate) <> (User.tupled, User.unapply)
+    def * = (id, level, login, firstName, lastName, email, password, channelId, groupId, groupRole, created.?, lastUpdate).mapTo[User]
   }
 
-  protected val users = TableQuery[UsersTable]
+  protected lazy val users = TableQuery[UsersTable]
 
   def getUserById(id: UUID) = db.run(users.filter(_.id===id).result) map (_.headOption)
   def getUserByLoginName(login: String) = db.run(users.filter(_.login===login).result) map (_.headOption)
