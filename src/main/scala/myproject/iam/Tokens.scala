@@ -6,7 +6,7 @@ import java.util.UUID
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.TimeManagement._
-import myproject.common.{ObjectNotFoundException, TokenExpiredException}
+import myproject.common.{ObjectNotFoundException, TimeManagement, TokenExpiredException}
 import myproject.database.DB
 
 import scala.util.{Failure, Success}
@@ -30,7 +30,7 @@ object Tokens {
   }
 
   object CRUD {
-    def createToken(token: Token) = DB.insert(token)
+    def createToken(token: Token) = DB.insert(token.copy(created = Some(TimeManagement.getCurrentDateTime)))
     def getToken(id: UUID) = DB.getToken(id).getOrFail(ObjectNotFoundException(s"token with id $id was not found")) flatMap (validateToken(_).toFuture)
     def deleteToken(id: UUID) = DB.deleteToken(id)
   }
