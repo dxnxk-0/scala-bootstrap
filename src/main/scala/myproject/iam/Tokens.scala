@@ -20,7 +20,7 @@ object Tokens {
     val Authentication, Signup = Value
   }
 
-  case class Token(id: UUID, userId: UUID, role: TokenRole, created: Option[LocalDateTime], expires: Option[LocalDateTime])
+  case class Token(id: UUID, userId: UUID, role: TokenRole, created: Option[LocalDateTime] = None, expires: Option[LocalDateTime] = None)
 
   def validateToken(token: Token) = token match {
     case Token(_, _, _, _, Some(dt)) if getCurrentDateTime.isAfter(dt) =>

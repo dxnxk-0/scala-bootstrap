@@ -16,7 +16,7 @@ import scala.util.Try
 
 object Channels {
 
-  case class Channel(id: UUID, name: String, created: Option[LocalDateTime], lastUpdate: Option[LocalDateTime])
+  case class Channel(id: UUID, name: String, created: Option[LocalDateTime] = None, lastUpdate: Option[LocalDateTime] = None)
 
   private object ChannelValidator extends Validator[Channel] {
     override val validators = Nil

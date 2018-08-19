@@ -21,11 +21,11 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 @DoNotDiscover
 class TokenSpecs extends DatabaseSpec {
   val now = getCurrentDateTime
-  val channel = Channel(UUID.randomUUID, "TESTS", None, None)
+  val channel = Channel(UUID.randomUUID, "TESTS")
   val group = Group(UUID.randomUUID, "ACME", channel.id)
-  val user = User(UUID.randomUUID, UserLevel.Group, "tokens-specs", "John", "Smith", EmailAddress("token-specs@tests.com"), "secret", None, Some(group.id), None, None, None)
-  val expiredToken = Token(UUID.randomUUID, user.id, TokenRole.Authentication, None, Some(TimeManagement.getCurrentDateTime.plusSeconds(0)))
-  val validToken = Token(UUID.randomUUID, user.id, TokenRole.Signup, None, Some(TimeManagement.getCurrentDateTime.plusMinutes(10)))
+  val user = User(UUID.randomUUID, UserLevel.Group, "tokens-specs", "John", "Smith", EmailAddress("token-specs@tests.com"), "secret", groupId = Some(group.id))
+  val expiredToken = Token(UUID.randomUUID, user.id, TokenRole.Authentication, expires = Some(TimeManagement.getCurrentDateTime.plusSeconds(0)))
+  val validToken = Token(UUID.randomUUID, user.id, TokenRole.Signup, expires = Some(TimeManagement.getCurrentDateTime.plusMinutes(10)))
 
   it should "create a token" in {
     createChannel(channel, voidIAMAuthzChecker)

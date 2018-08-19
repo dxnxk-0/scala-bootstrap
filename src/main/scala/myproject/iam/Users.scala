@@ -50,11 +50,11 @@ object Users {
       lastName: String,
       email: EmailAddress,
       password: String,
-      channelId: Option[UUID],
-      groupId: Option[UUID],
-      groupRole: Option[GroupRole],
-      created: Option[LocalDateTime],
-      lastUpdate: Option[LocalDateTime])
+      channelId: Option[UUID] = None,
+      groupId: Option[UUID] = None,
+      groupRole: Option[GroupRole] = None,
+      created: Option[LocalDateTime] = None,
+      lastUpdate: Option[LocalDateTime] = None)
     extends UserGeneric
 
   case class Guest() extends UserGeneric {

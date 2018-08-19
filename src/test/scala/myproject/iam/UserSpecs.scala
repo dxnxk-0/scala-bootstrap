@@ -20,9 +20,9 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 @DoNotDiscover
 class UserSpecs extends DatabaseSpec {
   val now = getCurrentDateTime
-  val channel = Channel(UUID.randomUUID, "TEST", None, None)
+  val channel = Channel(UUID.randomUUID, "TEST")
   val group = Group(UUID.randomUUID, "ACME", channel.id)
-  val jdoe = User(UUID.randomUUID, UserLevel.Group, "user-specs", "John", "Doe", EmailAddress("user-specs@tests.com"), "Kondor_123", None, Some(group.id), None, None, None)
+  val jdoe = User(UUID.randomUUID, UserLevel.Group, "user-specs", "John", "Doe", EmailAddress("user-specs@tests.com"), "Kondor_123", groupId = Some(group.id))
 
   it should "create a user" in {
     createChannel(channel, voidIAMAuthzChecker)
