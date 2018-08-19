@@ -21,9 +21,10 @@ class CreateGroup extends ApiFunction {
     val now = TimeManagement.getCurrentDateTime
     val groupName = required(p.nonEmptyString("name"))
     val channelId = required(p.uuid("channel_id"), "the channel id the new group will belong to")
+    val parentId = optional(p.uuid("parent_id"), "an optional parent group id can be provided in case the created group belongs to an organization")
 
-    checkParamAndProcess(groupName, channelId) flatMap { _ =>
-      val group = Group(UUID.randomUUID, groupName.get, None, channelId.get, None, None)
+    checkParamAndProcess(groupName, channelId, parentId) flatMap { _ =>
+      val group = Group(UUID.randomUUID, groupName.get, channelId.get, parentId = parentId.get)
       CRUD.createGroup(group, Authorization.canCreateGroup(user, _)) map (_.toMap)
     }
   }

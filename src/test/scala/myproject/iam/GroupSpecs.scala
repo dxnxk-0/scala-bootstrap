@@ -17,7 +17,7 @@ import test.DatabaseSpec
 class GroupSpecs extends DatabaseSpec {
   val now = getCurrentDateTime
   val channel = Channel(UUID.randomUUID, "TEST", None, None)
-  val group = Group(UUID.randomUUID, "ACME", None, channel.id, None, None)
+  val group = Group(UUID.randomUUID, "ACME", channel.id)
 
   it should "create a group" in {
     createChannel(channel, voidIAMAuthzChecker).futureValue

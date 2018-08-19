@@ -7,8 +7,8 @@ import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.TimeManagement.getCurrentDateTime
 import myproject.common.Updater.Updater
-import myproject.common.Validation.Validator
-import myproject.common.{IllegalOperationException, ObjectNotFoundException}
+import myproject.common.Validation.{ValidationError, Validator}
+import myproject.common.{Done, IllegalOperationException, ObjectNotFoundException}
 import myproject.database.DB
 import myproject.iam.Authorization.{IAMAuthzChecker, IAMAuthzData, voidIAMAuthzChecker}
 import myproject.iam.Channels.CRUD.getChannel
@@ -18,15 +18,27 @@ import scala.util.Try
 
 object Groups {
 
-  case class Group(id: UUID, name: String, parentId: Option[UUID], channelId: UUID, created: Option[LocalDateTime], lastUpdate: Option[LocalDateTime])
+  case class Group(
+      id: UUID,
+      name: String,
+      channelId: UUID,
+      created: Option[LocalDateTime] = None,
+      lastUpdate: Option[LocalDateTime] = None,
+      parentId: Option[UUID] = None)
+
+  case object InvalidParentId extends ValidationError
 
   private object GroupValidator extends Validator[Group] {
-    override val validators = Nil
+    override val validators = List(
+      (g: Group) => if(g.parentId.contains(g.id)) NOK(InvalidParentId) else OK
+    )
   }
 
   private class GroupUpdater(source: Group, target: Group) extends Updater(source, target) {
     override val updaters = List(
-      (g: Group) => OK(g.copy(name = target.name))
+      (g: Group) => OK(g.copy(
+        name = target.name,
+        parentId = target.parentId))
     )
     override val validator = GroupValidator
   }
@@ -36,13 +48,25 @@ object Groups {
   object CRUD {
     private def retrieveGroupOrFail(id: UUID): Future[Group] = DB.getGroup(id).getOrFail(ObjectNotFoundException(s"group with id $id was not found"))
 
-    def getParentGroupChain(id: UUID) = DB.getGroupParents(id).map(_.map(_._1).toList)
+    def getParentGroupChain(group: Group) = group.parentId match {
+      case None => Future.successful(Nil)
+      case Some(_) => DB.getGroupParents(group.id).map(_.toList)
+    }
+
+    private def checkParentGroup(group: Group) = group.parentId match {
+      case None => Future.successful(Done)
+      case Some(id) => retrieveGroupOrFail(id) map { parent =>
+        if(parent.channelId==group.channelId) Done
+        else throw IllegalOperationException(s"parent group has to be in the same channel")
+      }
+    }
 
     def createGroup(group: Group, authz: IAMAuthzChecker) = for {
       _       <- GroupValidator.validate(group).toFuture
+      _       <- checkParentGroup(group)
       channel <- Channels.CRUD.getChannel(group.channelId, voidIAMAuthzChecker)
       _       <- authz(IAMAuthzData(None, Some(group), Some(channel))).toFuture
-      saved   <- DB.insert(group.copy(parentId = None, created = Some(getCurrentDateTime)))
+      saved   <- DB.insert(group.copy(created = Some(getCurrentDateTime)))
     } yield saved
 
     def getGroup(id: UUID, authz: IAMAuthzChecker) = for {
@@ -53,10 +77,11 @@ object Groups {
     def updateGroup(id: UUID, upd: GroupUpdate, authz: IAMAuthzChecker) = for {
       existing  <- retrieveGroupOrFail(id)
       channel   <- getChannel(existing.channelId, voidIAMAuthzChecker)
-      parents   <- getParentGroupChain(id)
+      parents   <- getParentGroupChain(existing)
       _         <- authz(IAMAuthzData(channel = Some(channel), group = Some(existing), parentGroupChain = parents)).toFuture
       candidate <- Try(upd(existing)).toFuture
       updated   <- new GroupUpdater(existing, candidate).update.toFuture
+      _         <- checkParentGroup(updated)
       saved     <- DB.update(updated)
     } yield saved
 
@@ -70,7 +95,7 @@ object Groups {
     def getGroupUsers(groupId: UUID, authz: IAMAuthzChecker) = for {
       group   <- retrieveGroupOrFail(groupId)
       channel <- getChannel(group.channelId, voidIAMAuthzChecker)
-      parents <- getParentGroupChain(groupId)
+      parents <- getParentGroupChain(group)
       _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel), parentGroupChain = parents)).toFuture
       users   <- DB.getGroupUsers(groupId)
     } yield users
@@ -82,37 +107,11 @@ object Groups {
       children <- DB.getGroupChildren(groupId)
     } yield children.toList
 
-    def getGroupOrganization(groupId: UUID, authz: IAMAuthzChecker) = for {
-      group   <- retrieveGroupOrFail(groupId)
-      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
-      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
-      result  <- DB.getGroupOrganization(groupId)
-    } yield result
-
     def getGroupParents(groupId: UUID, authz: IAMAuthzChecker) = for {
       group   <- retrieveGroupOrFail(groupId)
       channel <- getChannel(group.channelId, voidIAMAuthzChecker)
       _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
       parents <- DB.getGroupParents(groupId)
     } yield parents.toList
-
-    def attachGroup(groupId: UUID, parentId: UUID, authz: IAMAuthzChecker) = for {
-      _ <- if(groupId==parentId) Future.failed(IllegalOperationException("cannot attach a group to itself")) else Future.unit
-      group <- retrieveGroupOrFail(groupId)
-      _ <- retrieveGroupOrFail(parentId) map {
-        case p if p.channelId!=group.channelId => throw IllegalOperationException(s"cannot attach groups belonging to different channels")
-        case p => p
-      }
-      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
-      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
-      result <- DB.attachGroup(groupId, parentId)
-    } yield result
-
-    def detachGroup(groupId: UUID, authz: IAMAuthzChecker) = for {
-      group <- retrieveGroupOrFail(groupId)
-      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
-      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
-      result <- DB.detachGroup(groupId)
-    } yield result
   }
 }

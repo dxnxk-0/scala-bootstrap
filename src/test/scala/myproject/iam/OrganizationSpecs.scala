@@ -3,7 +3,7 @@ package myproject.iam
 import java.util.UUID
 
 import myproject.common.FutureImplicits._
-import myproject.common.IllegalOperationException
+import myproject.common.{IllegalOperationException, ValidationErrorException}
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.CRUD._
@@ -15,15 +15,15 @@ import test.DatabaseSpec
 class OrganizationSpecs extends DatabaseSpec {
 
   val channel = Channel(UUID.randomUUID, "organization specs channel", None, None)
-  val g1 = Group(UUID.randomUUID, "group 1", None, channel.id, None, None)
-  val g2 = Group(UUID.randomUUID, "group 2", None, channel.id, None, None)
-  val g3 = Group(UUID.randomUUID, "group 3", None, channel.id, None, None)
-  val g4 = Group(UUID.randomUUID, "group 4", None, channel.id, None, None)
-  val g5 = Group(UUID.randomUUID, "group 5", None, channel.id, None, None)
-  val g6 = Group(UUID.randomUUID, "group 6", None, channel.id, None, None)
-  val g7 = Group(UUID.randomUUID, "group 7", None, channel.id, None, None)
-  val g8 = Group(UUID.randomUUID, "group 8", None, channel.id, None, None)
-  val g9 = Group(UUID.randomUUID, "group 9", None, channel.id, None, None)
+  val g1 = Group(UUID.randomUUID, "group 1", channel.id)
+  val g2 = Group(UUID.randomUUID, "group 2", channel.id, parentId = Some(g1.id))
+  val g3 = Group(UUID.randomUUID, "group 3", channel.id, parentId = Some(g1.id))
+  val g4 = Group(UUID.randomUUID, "group 4", channel.id, parentId = Some(g2.id))
+  val g5 = Group(UUID.randomUUID, "group 5", channel.id, parentId = Some(g2.id))
+  val g6 = Group(UUID.randomUUID, "group 6", channel.id, parentId = Some(g5.id))
+  val g7 = Group(UUID.randomUUID, "group 7", channel.id, parentId = Some(g5.id))
+  val g8 = Group(UUID.randomUUID, "group 8", channel.id, parentId = Some(g3.id))
+  val g9 = Group(UUID.randomUUID, "group 9", channel.id, parentId = Some(g3.id))
 
   it should "create all groups" in {
     createChannel(channel, Authorization.voidIAMAuthzChecker).futureValue
@@ -38,191 +38,140 @@ class OrganizationSpecs extends DatabaseSpec {
     createGroup(g9, Authorization.voidIAMAuthzChecker).futureValue
   }
 
-  it should "create the organization" in {
-    attachGroup(g2.id, g1.id, Authorization.voidIAMAuthzChecker).futureValue.size shouldBe 2
-    attachGroup(g3.id, g1.id, Authorization.voidIAMAuthzChecker).futureValue.size shouldBe 3
-    attachGroup(g4.id, g2.id, Authorization.voidIAMAuthzChecker).futureValue.size shouldBe 4
-    attachGroup(g5.id, g2.id, Authorization.voidIAMAuthzChecker).futureValue.size shouldBe 5
-    attachGroup(g6.id, g5.id, Authorization.voidIAMAuthzChecker).futureValue.size shouldBe 6
-    attachGroup(g7.id, g5.id, Authorization.voidIAMAuthzChecker).futureValue.size shouldBe 7
-    attachGroup(g8.id, g3.id, Authorization.voidIAMAuthzChecker).futureValue.size shouldBe 8
-    attachGroup(g9.id, g3.id, Authorization.voidIAMAuthzChecker).futureValue.size shouldBe 9
-  }
-
   it should "return the correct children for 1" in {
     val children = getGroupChildren(g1.id, Authorization.voidIAMAuthzChecker).futureValue
-    children.size shouldBe 9
-    children.filter(t => t._1.id==g1.id).map(t => (t._1.id, t._2)) shouldBe List((g1.id, 0))
-    children.filter(t => t._1.id==g2.id).map(t => (t._1.id, t._2)) shouldBe List((g2.id, 1))
-    children.filter(t => t._1.id==g3.id).map(t => (t._1.id, t._2)) shouldBe List((g3.id, 1))
-    children.filter(t => t._1.id==g4.id).map(t => (t._1.id, t._2)) shouldBe List((g4.id, 2))
-    children.filter(t => t._1.id==g5.id).map(t => (t._1.id, t._2)) shouldBe List((g5.id, 2))
-    children.filter(t => t._1.id==g8.id).map(t => (t._1.id, t._2)) shouldBe List((g8.id, 2))
-    children.filter(t => t._1.id==g9.id).map(t => (t._1.id, t._2)) shouldBe List((g9.id, 2))
-    children.filter(t => t._1.id==g6.id).map(t => (t._1.id, t._2)) shouldBe List((g6.id, 3))
-    children.filter(t => t._1.id==g7.id).map(t => (t._1.id, t._2)) shouldBe List((g7.id, 3))
+    children.size shouldBe 8
+    children.find(_.id==g2.id).map(_.id) shouldBe Some(g2.id)
+    children.find(_.id==g3.id).map(_.id) shouldBe Some(g3.id)
+    children.find(_.id==g4.id).map(_.id) shouldBe Some(g4.id)
+    children.find(_.id==g5.id).map(_.id) shouldBe Some(g5.id)
+    children.find(_.id==g8.id).map(_.id) shouldBe Some(g8.id)
+    children.find(_.id==g9.id).map(_.id) shouldBe Some(g9.id)
+    children.find(_.id==g6.id).map(_.id) shouldBe Some(g6.id)
+    children.find(_.id==g7.id).map(_.id) shouldBe Some(g7.id)
   }
 
   it should "return the correct children for 2" in {
     val children = getGroupChildren(g2.id, Authorization.voidIAMAuthzChecker).futureValue
-    children.size shouldBe 5
-    children.filter(t => t._1.id==g2.id).map(t => (t._1.id, t._2)) shouldBe List((g2.id, 0))
-    children.filter(t => t._1.id==g4.id).map(t => (t._1.id, t._2)) shouldBe List((g4.id, 1))
-    children.filter(t => t._1.id==g5.id).map(t => (t._1.id, t._2)) shouldBe List((g5.id, 1))
-    children.filter(t => t._1.id==g6.id).map(t => (t._1.id, t._2)) shouldBe List((g6.id, 2))
-    children.filter(t => t._1.id==g7.id).map(t => (t._1.id, t._2)) shouldBe List((g7.id, 2))
+    children.size shouldBe 4
+    children.find(_.id==g4.id).map(_.id) shouldBe Some(g4.id)
+    children.find(_.id==g5.id).map(_.id) shouldBe Some(g5.id)
+    children.find(_.id==g6.id).map(_.id) shouldBe Some(g6.id)
+    children.find(_.id==g7.id).map(_.id) shouldBe Some(g7.id)
   }
 
   it should "return the correct children for 3" in {
     val children = getGroupChildren(g3.id, Authorization.voidIAMAuthzChecker).futureValue
-    children.size shouldBe 3
-    children.filter(t => t._1.id==g3.id).map(t => (t._1.id, t._2)) shouldBe List((g3.id, 0))
-    children.filter(t => t._1.id==g8.id).map(t => (t._1.id, t._2)) shouldBe List((g8.id, 1))
-    children.filter(t => t._1.id==g9.id).map(t => (t._1.id, t._2)) shouldBe List((g9.id, 1))
+    children.size shouldBe 2
+    children.find(_.id==g8.id).map(_.id) shouldBe Some(g8.id)
+    children.find(_.id==g9.id).map(_.id) shouldBe Some(g9.id)
   }
 
   it should "return the correct children for 4" in {
     val children = getGroupChildren(g4.id, Authorization.voidIAMAuthzChecker).futureValue
-    children.size shouldBe 1
-    children.filter(t => t._1.id==g4.id).map(t => (t._1.id, t._2)) shouldBe List((g4.id, 0))
+    children.size shouldBe 0
   }
 
   it should "return the correct children for 5" in {
     val children = getGroupChildren(g5.id, Authorization.voidIAMAuthzChecker).futureValue
-    children.size shouldBe 3
-    children.filter(t => t._1.id==g5.id).map(t => (t._1.id, t._2)) shouldBe List((g5.id, 0))
-    children.filter(t => t._1.id==g6.id).map(t => (t._1.id, t._2)) shouldBe List((g6.id, 1))
-    children.filter(t => t._1.id==g7.id).map(t => (t._1.id, t._2)) shouldBe List((g7.id, 1))
+    children.size shouldBe 2
+    children.find(_.id==g6.id).map(_.id) shouldBe Some(g6.id)
+    children.find(_.id==g7.id).map(_.id) shouldBe Some(g7.id)
   }
 
   it should "return the correct children for 6" in {
     val children = getGroupChildren(g6.id, Authorization.voidIAMAuthzChecker).futureValue
-    children.size shouldBe 1
-    children.filter(t => t._1.id==g6.id).map(t => (t._1.id, t._2)) shouldBe List((g6.id, 0))
+    children.size shouldBe 0
   }
 
   it should "return the correct children for 7" in {
     val children = getGroupChildren(g7.id, Authorization.voidIAMAuthzChecker).futureValue
-    children.size shouldBe 1
-    children.filter(t => t._1.id==g7.id).map(t => (t._1.id, t._2)) shouldBe List((g7.id, 0))
+    children.size shouldBe 0
   }
 
   it should "return the correct children for 8" in {
     val children = getGroupChildren(g8.id, Authorization.voidIAMAuthzChecker).futureValue
-    children.size shouldBe 1
-    children.filter(t => t._1.id==g8.id).map(t => (t._1.id, t._2)) shouldBe List((g8.id, 0))
+    children.size shouldBe 0
   }
 
   it should "return the correct children for 9" in {
     val children = getGroupChildren(g9.id, Authorization.voidIAMAuthzChecker).futureValue
-    children.size shouldBe 1
-    children.filter(t => t._1.id==g9.id).map(t => (t._1.id, t._2)) shouldBe List((g9.id, 0))
+    children.size shouldBe 0
   }
 
   it should "return the correct parents for 1" in {
     val parents = getGroupParents(g1.id, Authorization.voidIAMAuthzChecker).futureValue
-    parents.map(t => (t._1.id, t._2)) shouldBe List((g1.id, 0))
+    parents.size shouldBe 0
   }
 
   it should "return the correct parents for 2" in {
     val parents = getGroupParents(g2.id, Authorization.voidIAMAuthzChecker).futureValue
-    parents.size shouldBe 2
-    parents.filter(_._1.id==g2.id).map(t => (t._1.id, t._2)) shouldBe List((g2.id, 0))
-    parents.filter(_._1.id==g1.id).map(t => (t._1.id, t._2)) shouldBe List((g1.id, 1))
+    parents.size shouldBe 1
+    parents.find(_.id==g1.id).map(_.id) shouldBe Some(g1.id)
   }
 
   it should "return the correct parents for 3" in {
     val parents = getGroupParents(g3.id, Authorization.voidIAMAuthzChecker).futureValue
-    parents.size shouldBe 2
-    parents.filter(_._1.id==g3.id).map(t => (t._1.id, t._2)) shouldBe List((g3.id, 0))
-    parents.filter(_._1.id==g1.id).map(t => (t._1.id, t._2)) shouldBe List((g1.id, 1))
+    parents.size shouldBe 1
+    parents.find(_.id==g1.id).map(_.id) shouldBe Some(g1.id)
   }
 
   it should "return the correct parents for 4" in {
     val parents = getGroupParents(g4.id, Authorization.voidIAMAuthzChecker).futureValue
-    parents.size shouldBe 3
-    parents.filter(_._1.id==g4.id).map(t => (t._1.id, t._2)) shouldBe List((g4.id, 0))
-    parents.filter(_._1.id==g2.id).map(t => (t._1.id, t._2)) shouldBe List((g2.id, 1))
-    parents.filter(_._1.id==g1.id).map(t => (t._1.id, t._2)) shouldBe List((g1.id, 2))
+    parents.size shouldBe 2
+    parents.find(_.id==g2.id).map(_.id) shouldBe Some(g2.id)
+    parents.find(_.id==g1.id).map(_.id) shouldBe Some(g1.id)
   }
 
   it should "return the correct parents for 5" in {
     val parents = getGroupParents(g5.id, Authorization.voidIAMAuthzChecker).futureValue
-    parents.size shouldBe 3
-    parents.filter(_._1.id==g5.id).map(t => (t._1.id, t._2)) shouldBe List((g5.id, 0))
-    parents.filter(_._1.id==g2.id).map(t => (t._1.id, t._2)) shouldBe List((g2.id, 1))
-    parents.filter(_._1.id==g1.id).map(t => (t._1.id, t._2)) shouldBe List((g1.id, 2))
+    parents.size shouldBe 2
+    parents.find(_.id==g2.id).map(_.id) shouldBe Some(g2.id)
+    parents.find(_.id==g1.id).map(_.id) shouldBe Some(g1.id)
   }
 
   it should "return the correct parents for 6" in {
     val parents = getGroupParents(g6.id, Authorization.voidIAMAuthzChecker).futureValue
-    parents.size shouldBe 4
-    parents.filter(_._1.id==g6.id).map(t => (t._1.id, t._2)) shouldBe List((g6.id, 0))
-    parents.filter(_._1.id==g5.id).map(t => (t._1.id, t._2)) shouldBe List((g5.id, 1))
-    parents.filter(_._1.id==g2.id).map(t => (t._1.id, t._2)) shouldBe List((g2.id, 2))
-    parents.filter(_._1.id==g1.id).map(t => (t._1.id, t._2)) shouldBe List((g1.id, 3))
+    parents.size shouldBe 3
+    parents.find(_.id==g5.id).map(_.id) shouldBe Some(g5.id)
+    parents.find(_.id==g2.id).map(_.id) shouldBe Some(g2.id)
+    parents.find(_.id==g1.id).map(_.id) shouldBe Some(g1.id)
   }
 
   it should "return the correct parents for 7" in {
     val parents = getGroupParents(g7.id, Authorization.voidIAMAuthzChecker).futureValue
-    parents.size shouldBe 4
-    parents.filter(_._1.id==g7.id).map(t => (t._1.id, t._2)) shouldBe List((g7.id, 0))
-    parents.filter(_._1.id==g5.id).map(t => (t._1.id, t._2)) shouldBe List((g5.id, 1))
-    parents.filter(_._1.id==g2.id).map(t => (t._1.id, t._2)) shouldBe List((g2.id, 2))
-    parents.filter(_._1.id==g1.id).map(t => (t._1.id, t._2)) shouldBe List((g1.id, 3))
+    parents.size shouldBe 3
+    parents.find(_.id==g5.id).map(_.id) shouldBe Some(g5.id)
+    parents.find(_.id==g2.id).map(_.id) shouldBe Some(g2.id)
+    parents.find(_.id==g1.id).map(_.id) shouldBe Some(g1.id)
   }
 
   it should "return the correct parents for 8" in {
     val parents = getGroupParents(g8.id, Authorization.voidIAMAuthzChecker).futureValue
-    parents.size shouldBe 3
-    parents.filter(_._1.id==g8.id).map(t => (t._1.id, t._2)) shouldBe List((g8.id, 0))
-    parents.filter(_._1.id==g3.id).map(t => (t._1.id, t._2)) shouldBe List((g3.id, 1))
-    parents.filter(_._1.id==g1.id).map(t => (t._1.id, t._2)) shouldBe List((g1.id, 2))
+    parents.size shouldBe 2
+    parents.find(_.id==g3.id).map(_.id) shouldBe Some(g3.id)
+    parents.find(_.id==g1.id).map(_.id) shouldBe Some(g1.id)
   }
 
   it should "return the correct parents for 9" in {
     val parents = getGroupParents(g9.id, Authorization.voidIAMAuthzChecker).futureValue
-    parents.size shouldBe 3
-    parents.filter(_._1.id==g9.id).map(t => (t._1.id, t._2)) shouldBe List((g9.id, 0))
-    parents.filter(_._1.id==g3.id).map(t => (t._1.id, t._2)) shouldBe List((g3.id, 1))
-    parents.filter(_._1.id==g1.id).map(t => (t._1.id, t._2)) shouldBe List((g1.id, 2))
-  }
-
-  it should "give the whole organization for a group member" in {
-    val organization = getGroupOrganization(g3.id, Authorization.voidIAMAuthzChecker).futureValue
-    organization.size shouldBe 9
-  }
-
-  it should "not attach an already attached group" in {
-    an[IllegalOperationException] shouldBe thrownBy(attachGroup(g2.id, g3.id, Authorization.voidIAMAuthzChecker).futureValue)
+    parents.size shouldBe 2
+    parents.find(_.id==g3.id).map(_.id) shouldBe Some(g3.id)
+    parents.find(_.id==g1.id).map(_.id) shouldBe Some(g1.id)
   }
 
   it should "not attach two groups in different channels" in {
-    val g10 = Group(UUID.randomUUID, "group 10", None, channel.id, None, None)
+    val g10 = Group(UUID.randomUUID, "group 10", channel.id, None, None)
     val otherChannel = Channel(UUID.randomUUID, "another organization channel", None, None)
-    val g11 = Group(UUID.randomUUID, "group 11", None, otherChannel.id, None, None)
+    val g11 = Group(UUID.randomUUID, "group 11", otherChannel.id, parentId = Some(g10.id))
     createChannel(otherChannel, Authorization.voidIAMAuthzChecker).futureValue
     createGroup(g10, Authorization.voidIAMAuthzChecker).futureValue
-    createGroup(g11, Authorization.voidIAMAuthzChecker).futureValue
-    an[ IllegalOperationException] shouldBe thrownBy(attachGroup(g10.id, g11.id, Authorization.voidIAMAuthzChecker).futureValue)
+    an[ IllegalOperationException] shouldBe thrownBy(createGroup(g11, Authorization.voidIAMAuthzChecker).futureValue)
   }
 
   it should "not attach a group to itself" in {
-    val g12 = Group(UUID.randomUUID, "group 12", None, channel.id, None, None)
-    createGroup(g12, Authorization.voidIAMAuthzChecker).futureValue
-    an[IllegalOperationException] shouldBe thrownBy(attachGroup(g12.id, g12.id, Authorization.voidIAMAuthzChecker).futureValue)
-  }
-
-  it should "delete the whole subtree on detach and reset the groups parent id" in {
-    detachGroup(g5.id, Authorization.voidIAMAuthzChecker).futureValue
-    val children = getGroupChildren(g5.id, Authorization.voidIAMAuthzChecker).futureValue
-    val parents = getGroupParents(g5.id, Authorization.voidIAMAuthzChecker).futureValue
-    children.map(t => (t._1.id, t._2)) shouldBe List((g5.id, 0))
-    parents.map(t => (t._1.id, t._2)) shouldBe List((g5.id, 0))
-    val organization = getGroupOrganization(g1.id, Authorization.voidIAMAuthzChecker).futureValue
-    organization.size shouldBe 6
-    getGroup(g5.id, Authorization.voidIAMAuthzChecker).futureValue.parentId shouldBe None
-    getGroup(g6.id, Authorization.voidIAMAuthzChecker).futureValue.parentId shouldBe None
-    getGroup(g7.id, Authorization.voidIAMAuthzChecker).futureValue.parentId shouldBe None
+    val id = UUID.randomUUID
+    val g12 = Group(id, "group 12", channel.id, parentId = Some(id))
+    a[ValidationErrorException] shouldBe thrownBy(createGroup(g12, Authorization.voidIAMAuthzChecker).futureValue)
   }
 }

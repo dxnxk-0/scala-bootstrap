@@ -15,6 +15,7 @@ import myproject.database.DB
 import myproject.iam.Authorization.{IAMAuthzChecker, IAMAuthzData, voidIAMAuthzChecker}
 import myproject.iam.Channels.CRUD.getChannel
 import myproject.iam.Groups.CRUD.getGroup
+import myproject.iam.Groups.Group
 import myproject.iam.Users.GroupRole.GroupRole
 import myproject.iam.Users.UserLevel.UserLevel
 import uk.gov.hmrc.emailaddress.EmailAddress
@@ -127,9 +128,9 @@ object Users {
       checkUniqueUserProperty(u, DB.getUserByLoginName(u.login), s"login name `${u.login}` does already exist")
     private def checkChannel(u: User) = u.channelId map (id => Channels.CRUD.getChannel(id, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
     private def checkGroup(u: User) = u.groupId map (id => Groups.CRUD.getGroup(id, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-    private def getParentGroupChain(groupId: Option[UUID]) = groupId match {
-      case Some(id) => Groups.CRUD.getParentGroupChain(id)
+    private def getParentGroupChain(group: Option[Group]) = group match {
       case None => Future.successful(Nil)
+      case Some(g) => Groups.CRUD.getParentGroupChain(g)
     }
 
     private def dbCheckUserAndAuthz(u: User, authz: IAMAuthzChecker) = for {
@@ -137,14 +138,14 @@ object Users {
       _            <- checkLoginOwnership(u)
       groupOpt     <- checkGroup(u)
       channelOpt   <- checkChannel(u)
-      parentGroups <- getParentGroupChain(groupOpt.map(_.id))
+      parentGroups <- getParentGroupChain(groupOpt)
       _            <- authz(IAMAuthzData(user = Some(u), group = groupOpt, channel = channelOpt, parentGroupChain = parentGroups)).toFuture
     } yield Done
 
     private def checkUserAuthz(u: User, authz: IAMAuthzChecker) = for {
       groupOpt     <- u.groupId map (gid => getGroup(gid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
       channelOpt   <- u.channelId map (cid => getChannel(cid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-      parentGroups <- getParentGroupChain(groupOpt.map(_.id))
+      parentGroups <- getParentGroupChain(groupOpt)
       _            <- authz(IAMAuthzData(group = groupOpt, channel = channelOpt, parentGroupChain = parentGroups)).toFuture
     } yield Done
 

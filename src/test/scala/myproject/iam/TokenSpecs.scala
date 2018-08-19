@@ -22,7 +22,7 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 class TokenSpecs extends DatabaseSpec {
   val now = getCurrentDateTime
   val channel = Channel(UUID.randomUUID, "TESTS", None, None)
-  val group = Group(UUID.randomUUID, "ACME", None, channel.id, None, None)
+  val group = Group(UUID.randomUUID, "ACME", channel.id)
   val user = User(UUID.randomUUID, UserLevel.Group, "tokens-specs", "John", "Smith", EmailAddress("token-specs@tests.com"), "secret", None, Some(group.id), None, None, None)
   val expiredToken = Token(UUID.randomUUID, user.id, TokenRole.Authentication, None, Some(TimeManagement.getCurrentDateTime.plusSeconds(0)))
   val validToken = Token(UUID.randomUUID, user.id, TokenRole.Signup, None, Some(TimeManagement.getCurrentDateTime.plusMinutes(10)))
