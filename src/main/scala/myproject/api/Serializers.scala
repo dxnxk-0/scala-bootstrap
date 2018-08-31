@@ -6,8 +6,16 @@ import myproject.iam.Users.{User, UserLevel}
 
 object Serializers {
 
-  implicit class UserSerialization(user: User) {
-    def toMap = {
+  trait MapSerializer[A] {
+    def toMap(value: A): Map[String, Any]
+  }
+
+  implicit class MapSerializationExtension[A](value: A) {
+    def toMap(implicit serializer: MapSerializer[A]): Map[String, Any] = serializer.toMap(value)
+  }
+
+  implicit val userMapSerializer = new MapSerializer[User] {
+    def toMap(user: User) = {
       val common = Map(
         "user_id" -> user.id,
         "login" -> user.login,
@@ -26,16 +34,16 @@ object Serializers {
     }
   }
 
-  implicit class ChannelSerialization(channel: Channel) {
-    def toMap = Map(
+  implicit val channelMapSerializer = new MapSerializer[Channel] {
+    def toMap(channel: Channel) = Map(
       "channel_id" -> channel.id,
       "name" -> channel.name,
       "created" -> channel.created.map(_.toString),
       "last_update" -> channel.lastUpdate.map(_.toString))
   }
 
-  implicit class GroupSerialization(group: Group) {
-    def toMap = Map(
+  implicit val groupMapSerializer = new MapSerializer[Group] {
+    def toMap(group: Group) = Map(
       "group_id" -> group.id,
       "name" -> group.name,
       "parent_id" -> group.parentId,

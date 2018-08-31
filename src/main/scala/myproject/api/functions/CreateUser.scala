@@ -5,7 +5,6 @@ import java.util.UUID
 import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit.AuditData
-import myproject.common.TimeManagement._
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.iam.Authorization
@@ -29,7 +28,6 @@ class CreatePlatformUser extends ApiFunction with CreateUserParameters {
     `return` = "an object containing the newly created user's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    val now = getCurrentDateTime
     val (login, password, email, fn, ln) = getCommonParameters
 
     checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>
@@ -47,7 +45,6 @@ class CreateChannelUser extends ApiFunction with CreateUserParameters {
     `return` = "an object containing the newly created user's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    val now = getCurrentDateTime
     val (login, password, email, fn, ln) = getCommonParameters
     val channelId = required(p.uuid("channel_id"))
 
@@ -66,7 +63,6 @@ class CreateGroupUser extends ApiFunction with CreateUserParameters {
     `return` = "an object containing the newly created user's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    val now = getCurrentDateTime
     val (login, password, email, fn, ln) = getCommonParameters
     val (groupId, groupRole) = (required(p.uuid("group_id")), nullable(p.enumString("group_role", GroupRole)))
 
@@ -84,7 +80,6 @@ class CreateSimpleUser extends ApiFunction with CreateUserParameters {
     `return` = "an object containing the newly created user's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
-    val now = getCurrentDateTime
     val (login, password, email, fn, ln) = getCommonParameters
 
     checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>

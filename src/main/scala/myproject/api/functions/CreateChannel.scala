@@ -5,7 +5,6 @@ import java.util.UUID
 import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
-import myproject.common.TimeManagement
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.iam.Channels.{CRUD, Channel}
@@ -18,7 +17,6 @@ class CreateChannel extends ApiFunction {
     `return` = "an object containing the newly created channel's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
-    val now = TimeManagement.getCurrentDateTime
     val channelName = required(p.nonEmptyString("name"))
 
     checkParamAndProcess(channelName) flatMap { _ =>
