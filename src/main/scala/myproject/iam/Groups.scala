@@ -11,7 +11,6 @@ import myproject.common.Validation.{ValidationError, Validator}
 import myproject.common.{Done, IllegalOperationException, ObjectNotFoundException}
 import myproject.database.DB
 import myproject.iam.Authorization.{IAMAuthzChecker, IAMAuthzData, voidIAMAuthzChecker}
-import myproject.iam.Channels.CRUD.getChannel
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -76,7 +75,7 @@ object Groups {
 
     def updateGroup(id: UUID, upd: GroupUpdate, authz: IAMAuthzChecker) = for {
       existing  <- retrieveGroupOrFail(id)
-      channel   <- getChannel(existing.channelId, voidIAMAuthzChecker)
+      channel   <- Channels.CRUD.getChannel(existing.channelId, voidIAMAuthzChecker)
       parents   <- getParentGroupChain(existing)
       _         <- authz(IAMAuthzData(channel = Some(channel), group = Some(existing), parentGroupChain = parents)).toFuture
       candidate <- Try(upd(existing)).toFuture
@@ -87,14 +86,14 @@ object Groups {
 
     def deleteGroup(id: UUID, authz: IAMAuthzChecker) = for {
       group   <- retrieveGroupOrFail(id)
-      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
+      channel <- Channels.CRUD.getChannel(group.channelId, voidIAMAuthzChecker)
       _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
       result  <- DB.deleteGroup(id)
     } yield result
 
     def getGroupUsers(groupId: UUID, authz: IAMAuthzChecker) = for {
       group   <- retrieveGroupOrFail(groupId)
-      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
+      channel <- Channels.CRUD.getChannel(group.channelId, voidIAMAuthzChecker)
       parents <- getParentGroupChain(group)
       _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel), parentGroupChain = parents)).toFuture
       users   <- DB.getGroupUsers(groupId)
@@ -102,16 +101,17 @@ object Groups {
 
     def getGroupChildren(groupId: UUID, authz: IAMAuthzChecker) = for {
       group    <- retrieveGroupOrFail(groupId)
-      channel  <- getChannel(group.channelId, voidIAMAuthzChecker)
-      _        <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
+      channel  <- Channels.CRUD.getChannel(group.channelId, voidIAMAuthzChecker)
+      parents  <- getParentGroupChain(group)
+      _        <- authz(IAMAuthzData(group = Some(group), channel = Some(channel), parentGroupChain = parents)).toFuture
       children <- DB.getGroupChildren(groupId)
     } yield children.toList
 
     def getGroupParents(groupId: UUID, authz: IAMAuthzChecker) = for {
       group   <- retrieveGroupOrFail(groupId)
-      channel <- getChannel(group.channelId, voidIAMAuthzChecker)
-      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel))).toFuture
-      parents <- DB.getGroupParents(groupId)
-    } yield parents.toList
+      channel <- Channels.CRUD.getChannel(group.channelId, voidIAMAuthzChecker)
+      parents <- getParentGroupChain(group)
+      _       <- authz(IAMAuthzData(group = Some(group), channel = Some(channel), parentGroupChain = parents)).toFuture
+    } yield parents
   }
 }

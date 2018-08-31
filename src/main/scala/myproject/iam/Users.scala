@@ -14,7 +14,6 @@ import myproject.common.security.{BCrypt, JWT}
 import myproject.database.DB
 import myproject.iam.Authorization.{IAMAuthzChecker, IAMAuthzData, voidIAMAuthzChecker}
 import myproject.iam.Channels.CRUD.getChannel
-import myproject.iam.Groups.CRUD.getGroup
 import myproject.iam.Groups.Group
 import myproject.iam.Users.GroupRole.GroupRole
 import myproject.iam.Users.UserLevel.UserLevel
@@ -143,7 +142,7 @@ object Users {
     } yield Done
 
     private def checkUserAuthz(u: User, authz: IAMAuthzChecker) = for {
-      groupOpt     <- u.groupId map (gid => getGroup(gid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+      groupOpt     <- u.groupId map (gid => Groups.CRUD.getGroup(gid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
       channelOpt   <- u.channelId map (cid => getChannel(cid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
       parentGroups <- getParentGroupChain(groupOpt)
       _            <- authz(IAMAuthzData(group = groupOpt, channel = channelOpt, parentGroupChain = parentGroups)).toFuture

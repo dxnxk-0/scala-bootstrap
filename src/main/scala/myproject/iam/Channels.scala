@@ -4,11 +4,10 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import myproject.common.FutureImplicits._
-import myproject.common.ObjectNotFoundException
 import myproject.common.Runtime.ec
-import myproject.common.TimeManagement._
 import myproject.common.Updater.Updater
 import myproject.common.Validation.Validator
+import myproject.common.{ObjectNotFoundException, TimeManagement}
 import myproject.database.DB
 import myproject.iam.Authorization.{IAMAuthzChecker, IAMAuthzData, voidIAMAuthzChecker}
 
@@ -38,7 +37,7 @@ object Channels {
 
     def createChannel(channel: Channel, authz: IAMAuthzChecker) = for {
       _     <- authz(IAMAuthzData()).toFuture
-      saved <- DB.insert(channel.copy(created = Some(getCurrentDateTime)))
+      saved <- DB.insert(channel.copy(created = Some(TimeManagement.getCurrentDateTime)))
     } yield saved
 
     def getChannel(id: UUID, authz: IAMAuthzChecker) = for {

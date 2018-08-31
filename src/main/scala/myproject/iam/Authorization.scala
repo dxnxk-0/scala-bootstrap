@@ -24,6 +24,10 @@ object Authorization {
   private def belongToTheChannel(implicit requester: User, data: IAMAuthzData) = if(requester.channelId==data.channel.map(_.id)) grant else refuse
 
   type IAMAuthzChecker = IAMAuthzData => AuthorizationCheck
+  type Requester = User
+  type IAMChannelAuthzChecker = (Requester, Channel) => AuthorizationCheck
+  type IAMGroupAuthzChecker = (Requester, Channel, Group) => AuthorizationCheck
+  type IAMUserAuthzChecker = (Requester, Channel, Group, User) => AuthorizationCheck
 
   def voidIAMAuthzChecker = (_: IAMAuthzData) => grant
   def canLogin(implicit requester: User, data: IAMAuthzData) = grant

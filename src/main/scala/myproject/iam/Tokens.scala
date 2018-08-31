@@ -5,7 +5,6 @@ import java.util.UUID
 
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
-import myproject.common.TimeManagement._
 import myproject.common.{ObjectNotFoundException, TimeManagement, TokenExpiredException}
 import myproject.database.DB
 
@@ -23,7 +22,7 @@ object Tokens {
   case class Token(id: UUID, userId: UUID, role: TokenRole, created: Option[LocalDateTime] = None, expires: Option[LocalDateTime] = None)
 
   def validateToken(token: Token) = token match {
-    case Token(_, _, _, _, Some(dt)) if getCurrentDateTime.isAfter(dt) =>
+    case Token(_, _, _, _, Some(dt)) if TimeManagement.getCurrentDateTime.isAfter(dt) =>
       Failure(TokenExpiredException(s"token with id ${token.id} has expired"))
     case t =>
       Success(t)
