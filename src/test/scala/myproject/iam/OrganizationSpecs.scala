@@ -161,8 +161,8 @@ class OrganizationSpecs extends DatabaseSpec {
   }
 
   it should "not attach two groups in different channels" in {
-    val g10 = Group(UUID.randomUUID, "group 10", channel.id, None, None)
-    val otherChannel = Channel(UUID.randomUUID, "another organization channel", None, None)
+    val g10 = Group(UUID.randomUUID, "group 10", channel.id)
+    val otherChannel = Channel(UUID.randomUUID, "another organization channel")
     val g11 = Group(UUID.randomUUID, "group 11", otherChannel.id, parentId = Some(g10.id))
     createChannel(otherChannel, Authorization.voidIAMAuthzChecker).futureValue
     createGroup(g10, Authorization.voidIAMAuthzChecker).futureValue

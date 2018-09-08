@@ -2,8 +2,8 @@ package myproject.iam
 
 import myproject.common.Authorization.{AuthorizationCheck, AuthzData, _}
 import myproject.iam.Channels.Channel
-import myproject.iam.Groups.Group
-import myproject.iam.Users.{GroupRole, User, UserLevel}
+import myproject.iam.Groups.{Group, GroupStatus}
+import myproject.iam.Users.{GroupRole, User, UserLevel, UserStatus}
 
 object Authorization {
 
@@ -11,27 +11,30 @@ object Authorization {
       user: Option[User] = None,
       group: Option[Group] = None,
       channel: Option[Channel] = None,
-      parentGroupChain: List[Group] = Nil)
+      parentGroups: List[Group] = Nil,
+      childrenGroups: List[Group] = Nil)
     extends AuthzData
 
   private def isPlatformAdmin(implicit requester: User, data: IAMAuthzData) = if(requester.level==UserLevel.Platform) grant else refuse
   private def isChannelAdmin(implicit requester: User, data: IAMAuthzData) = if(requester.level==UserLevel.Channel && (requester.channelId==data.channel.map(_.id) || requester.channelId==data.group.map(_.channelId))) grant else refuse
   private def isGroupAdmin(implicit requester: User, data: IAMAuthzData) = if(requester.level==UserLevel.Group && requester.groupRole.contains(GroupRole.Admin) && (requester.groupId==data.group.map(_.id)) || requester.groupId==data.user.flatMap(_.groupId)) grant else refuse
-  private def isParentGroupAdmin(implicit requester: User, data: IAMAuthzData) = if(data.parentGroupChain.exists(g => requester.groupId.contains(g.id)) && requester.groupRole.contains(GroupRole.Admin)) grant else refuse
+  private def isParentGroupAdmin(implicit requester: User, data: IAMAuthzData) = if(data.parentGroups.exists(g => requester.groupId.contains(g.id)) && requester.groupRole.contains(GroupRole.Admin)) grant else refuse
   private def isUserHimself(implicit requester: User, data: IAMAuthzData) = if(data.user.exists(_.id==requester.id)) grant else refuse
   private def isInTheSameGroup(implicit requester: User, data: IAMAuthzData) = if(data.user.exists(_.groupId==requester.groupId)) grant else refuse
   private def belongToTheGroup(implicit requester: User, data: IAMAuthzData) = if(requester.groupId==data.group.map(_.id)) grant else refuse
-  private def belongToTheChannel(implicit requester: User, data: IAMAuthzData) = if(requester.channelId==data.channel.map(_.id)) grant else refuse
+  private def belongToTheOrganization(implicit requester: User, data: IAMAuthzData) = if((data.parentGroups ++ data.childrenGroups).exists(g => requester.groupId.contains(g.id))) grant else refuse
 
   type IAMAuthzChecker = IAMAuthzData => AuthorizationCheck
-  type Requester = User
-  type IAMChannelAuthzChecker = (Requester, Channel) => AuthorizationCheck
-  type IAMGroupAuthzChecker = (Requester, Channel, Group) => AuthorizationCheck
-  type IAMUserAuthzChecker = (Requester, Channel, Group, User) => AuthorizationCheck
 
   def voidIAMAuthzChecker = (_: IAMAuthzData) => grant
-  def canLogin(implicit requester: User, data: IAMAuthzData) = grant
-  def canReadUser(implicit requester: User, data: IAMAuthzData) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isParentGroupAdmin orElse isUserHimself orElse isInTheSameGroup
+
+  def canLogin(implicit requester: User, data: IAMAuthzData) = if(data.user.exists(_.status==UserStatus.Active)) {
+    data.group map { g =>
+      if(g.status==GroupStatus.Active) grant else refuse
+    } getOrElse grant
+  } else refuse
+
+  def canReadUser(implicit requester: User, data: IAMAuthzData) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isParentGroupAdmin orElse isUserHimself orElse isInTheSameGroup orElse belongToTheOrganization
   def canCreateUser(implicit requester: User, data: IAMAuthzData) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isParentGroupAdmin
   def canUpdateUser(implicit requester: User, data: IAMAuthzData) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isParentGroupAdmin orElse isUserHimself
   def canAdminUser(implicit requester: User, data: IAMAuthzData) = isPlatformAdmin orElse isChannelAdmin

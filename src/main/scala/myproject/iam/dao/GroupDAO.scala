@@ -7,7 +7,8 @@ import java.util.UUID
 import myproject.common.Done
 import myproject.common.Runtime.ec
 import myproject.database.DAO
-import myproject.iam.Groups.Group
+import myproject.iam.Groups.GroupStatus.GroupStatus
+import myproject.iam.Groups.{Group, GroupStatus}
 import slick.jdbc.{GetResult, PositionedParameters, SetParameter}
 
 trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
@@ -22,15 +23,21 @@ trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
     }
   }
 
+  implicit def groupStatusMapper = MappedColumnType.base[GroupStatus, Int](
+    e => e.id,
+    i => GroupStatus(i))
+
+
   protected class GroupsTable(tag: Tag) extends Table[Group](tag, "GROUPS") {
     def id = column[UUID]("GROUP_ID", O.PrimaryKey, O.SqlType("UUID"))
     def name = column[String]("NAME")
+    def status = column[GroupStatus]("STATUS")
     def parentId = column[Option[UUID]]("PARENT_ID", O.SqlType("UUID"))
     def channelId = column[UUID]("CHANNEL_ID", O.SqlType("UUID"))
     def created = column[LocalDateTime]("CREATED")
     def lastUpdate = column[Option[LocalDateTime]]("LAST_UPDATE")
     def channel = foreignKey("GROUP_CHANNEL_FK", channelId, channels)(_.id, onUpdate=ForeignKeyAction.Restrict, onDelete=ForeignKeyAction.Cascade)
-    def * = (id, name, channelId, created.?, lastUpdate, parentId).mapTo[Group]
+    def * = (id, name, channelId, status, created.?, lastUpdate, parentId) <> (Group.tupled, Group.unapply)
   }
 
   protected lazy val groups = TableQuery[GroupsTable]

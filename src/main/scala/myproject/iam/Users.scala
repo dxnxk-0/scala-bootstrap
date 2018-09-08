@@ -13,10 +13,10 @@ import myproject.common._
 import myproject.common.security.{BCrypt, JWT}
 import myproject.database.DB
 import myproject.iam.Authorization.{IAMAuthzChecker, IAMAuthzData, voidIAMAuthzChecker}
-import myproject.iam.Channels.CRUD.getChannel
 import myproject.iam.Groups.Group
 import myproject.iam.Users.GroupRole.GroupRole
 import myproject.iam.Users.UserLevel.UserLevel
+import myproject.iam.Users.UserStatus.UserStatus
 import uk.gov.hmrc.emailaddress.EmailAddress
 
 import scala.concurrent.Future
@@ -41,6 +41,14 @@ object Users {
     val Admin = Value("admin")
   }
 
+  object UserStatus extends Enumeration {
+    type UserStatus = Value
+    val Active = Value("active")
+    val Inactive = Value("inactive")
+    val Locked = Value("locked")
+    val PendingActivation = Value("pending_activation")
+  }
+
   case class User(
       id: UUID,
       level: UserLevel,
@@ -52,6 +60,7 @@ object Users {
       channelId: Option[UUID] = None,
       groupId: Option[UUID] = None,
       groupRole: Option[GroupRole] = None,
+      status: UserStatus = UserStatus.Active,
       created: Option[LocalDateTime] = None,
       lastUpdate: Option[LocalDateTime] = None)
     extends UserGeneric
@@ -73,25 +82,25 @@ object Users {
 
     val platformUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.Platform => OK
-      case User(_, UserLevel.Platform, _, _, _, _ , _, None, None, None, _, _) => OK
+      case User(_, UserLevel.Platform, _, _, _, _, _, None, None, None, _, _, _) => OK
       case _ => NOK(InvalidPlatformUser)
     }
 
     val channelUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.Channel => OK
-      case User(_, UserLevel.Channel, _, _, _, _ , _, Some(_), None, None, _, _) => OK
+      case User(_, UserLevel.Channel, _, _, _, _, _, Some(_), None, _, _, None, _) => OK
       case _ => NOK(InvalidChannelUser)
     }
 
     val groupUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.Group=> OK
-      case User(_, UserLevel.Group, _, _, _, _ , _, None, Some(_), _, _, _) => OK
+      case User(_, UserLevel.Group, _,  _, _, _, _, None, Some(_), _, _, _, _) => OK
       case _ => NOK(InvalidGroupUser)
     }
 
     val simpleUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.NoLevel => OK
-      case User(_, UserLevel.NoLevel, _, _ , _, _, _, None, None, None, _, _) => OK
+      case User(_, UserLevel.NoLevel, _,  _, _ , _, _, None, None, None, _, _, _) => OK
       case _ => NOK(InvalidSimpleUser)
     }
 
@@ -109,7 +118,8 @@ object Users {
           login = target.login,
           password = if(source.password!=u.password) BCrypt.hashPassword(target.password) else u.password,
           email = target.email,
-          groupRole = target.groupRole))
+          groupRole = target.groupRole,
+          status = target.status))
     )
     override val validator = UserValidator
   }
@@ -131,21 +141,27 @@ object Users {
       case None => Future.successful(Nil)
       case Some(g) => Groups.CRUD.getParentGroupChain(g)
     }
+    private def getChildrenGroups(group: Option[Group]) = group match {
+      case None => Future.successful(Nil)
+      case Some(g) => DB.getGroupChildren(g.id).map(_.toList)
+    }
 
     private def dbCheckUserAndAuthz(u: User, authz: IAMAuthzChecker) = for {
-      _            <- checkEmailOwnership(u)
-      _            <- checkLoginOwnership(u)
-      groupOpt     <- checkGroup(u)
-      channelOpt   <- checkChannel(u)
-      parentGroups <- getParentGroupChain(groupOpt)
-      _            <- authz(IAMAuthzData(user = Some(u), group = groupOpt, channel = channelOpt, parentGroupChain = parentGroups)).toFuture
+      _              <- checkEmailOwnership(u)
+      _              <- checkLoginOwnership(u)
+      groupOpt       <- checkGroup(u)
+      channelOpt     <- checkChannel(u)
+      parentGroups   <- getParentGroupChain(groupOpt)
+      childrenGroups <- getChildrenGroups(groupOpt)
+      _              <- authz(IAMAuthzData(user = Some(u), group = groupOpt, channel = channelOpt, parentGroups = parentGroups, childrenGroups = childrenGroups)).toFuture
     } yield Done
 
     private def checkUserAuthz(u: User, authz: IAMAuthzChecker) = for {
-      groupOpt     <- u.groupId map (gid => Groups.CRUD.getGroup(gid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-      channelOpt   <- u.channelId map (cid => getChannel(cid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-      parentGroups <- getParentGroupChain(groupOpt)
-      _            <- authz(IAMAuthzData(group = groupOpt, channel = channelOpt, parentGroupChain = parentGroups)).toFuture
+      groupOpt       <- u.groupId map (gid => Groups.CRUD.getGroup(gid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+      channelOpt     <- u.channelId map (cid => Channels.CRUD.getChannel(cid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+      parentGroups   <- getParentGroupChain(groupOpt)
+      childrenGroups <- getChildrenGroups(groupOpt)
+      _              <- authz(IAMAuthzData(group = groupOpt, channel = channelOpt, parentGroups = parentGroups, childrenGroups = childrenGroups)).toFuture
     } yield Done
 
     def createUser(user: User, authz: IAMAuthzChecker) = for {

@@ -8,7 +8,8 @@ import myproject.common.Runtime.ec
 import myproject.database.DAO
 import myproject.iam.Users.GroupRole.GroupRole
 import myproject.iam.Users.UserLevel.UserLevel
-import myproject.iam.Users.{GroupRole, User, UserLevel}
+import myproject.iam.Users.UserStatus.UserStatus
+import myproject.iam.Users.{GroupRole, User, UserLevel, UserStatus}
 import uk.gov.hmrc.emailaddress.EmailAddress
 
 trait UserDAO extends DAO { self: GroupDAO with ChannelDAO =>
@@ -27,6 +28,11 @@ trait UserDAO extends DAO { self: GroupDAO with ChannelDAO =>
     address => address.toString,
     str => EmailAddress(str))
 
+  implicit def userStatusMapper = MappedColumnType.base[UserStatus, Int](
+    e => e.id,
+    i => UserStatus(i))
+
+
   protected class UsersTable(tag: Tag) extends Table[User](tag, "USERS") {
     def id = column[UUID]("USER_ID", O.PrimaryKey, O.SqlType("UUID"))
     def login = column[String]("LOGIN", O.Unique)
@@ -35,6 +41,7 @@ trait UserDAO extends DAO { self: GroupDAO with ChannelDAO =>
     def password = column[String]("PASSWORD")
     def groupRole = column[Option[GroupRole]]("GROUP_ROLE")
     def level = column[UserLevel]("LEVEL")
+    def status = column[UserStatus]("STATUS")
     def email = column[EmailAddress]("EMAIL", O.Unique)
     def groupId = column[Option[UUID]]("GROUP_ID", O.SqlType("UUID"))
     def channelId = column[Option[UUID]]("CHANNEL_ID", O.SqlType("UUID"))
@@ -45,7 +52,7 @@ trait UserDAO extends DAO { self: GroupDAO with ChannelDAO =>
     def idxLogin = index("IDX_USERS_LOGIN", login)
     def idxEmail = index("IDX_USERS_EMAIL", email)
     def idxGroupId = index("IDX_USERS_GROUP_ID", groupId)
-    def * = (id, level, login, firstName, lastName, email, password, channelId, groupId, groupRole, created.?, lastUpdate).mapTo[User]
+    def * = (id, level, login, firstName, lastName, email, password, channelId, groupId, groupRole, status, created.?, lastUpdate) <> (User.tupled, User.unapply)
   }
 
   protected lazy val users = TableQuery[UsersTable]
