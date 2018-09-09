@@ -25,7 +25,7 @@ class CreateGroup extends ApiFunction {
 
     checkParamAndProcess(groupName, channelId, parentId) flatMap { _ =>
       val group = Group(UUID.randomUUID, groupName.get, channelId.get, parentId = parentId.get)
-      CRUD.createGroup(group, Authorization.canCreateGroup(user, _)) map (_.toMap)
+      CRUD.createGroup(group)(Authorization.canCreateGroup(user, _)) map (_.toMap)
     }
   }
 }

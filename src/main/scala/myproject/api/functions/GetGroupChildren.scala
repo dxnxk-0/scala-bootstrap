@@ -18,7 +18,7 @@ class GetGroupChildren extends ApiFunction {
     val groupId = required(p.uuid("group_id"))
 
     checkParamAndProcess(groupId) flatMap { _ =>
-      CRUD.getGroupChildren(groupId.get, Authorization.canGetHierarchy(user, _)) map(_.map(_.toMap))
+      CRUD.getGroupChildren(groupId.get)(Authorization.canGetHierarchy(user, _)) map(_.map(_.toMap))
     }
   }
 }

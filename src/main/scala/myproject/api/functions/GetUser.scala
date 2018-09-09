@@ -18,7 +18,7 @@ class GetUser extends ApiFunction {
     val userId = required(p.uuid("user_id"))
 
     checkParamAndProcess(userId) flatMap { _ =>
-      CRUD.getUser(userId.get, Authorization.canReadUser(user, _)) map (_.toMap)
+      CRUD.getUser(userId.get)(Authorization.canReadUser(user, _)) map (_.toMap)
     }
   }
 }

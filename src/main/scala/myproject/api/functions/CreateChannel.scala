@@ -21,7 +21,7 @@ class CreateChannel extends ApiFunction {
 
     checkParamAndProcess(channelName) flatMap { _ =>
       val channel = Channel(UUID.randomUUID, channelName.get)
-      CRUD.createChannel(channel, Authorization.canCreateChannel(user, _)) map (_.toMap)
+      CRUD.createChannel(channel)(Authorization.canCreateChannel(user, _)) map (_.toMap)
     }
   }
 }

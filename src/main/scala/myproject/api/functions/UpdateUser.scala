@@ -31,7 +31,7 @@ class UpdateUser extends ApiFunction {
           login = login.get.getOrElse(u.login),
           email = email.get.getOrElse(u.email),
           password = password.get.getOrElse(u.password),
-          groupRole = groupRole.get.getOrElse(u.groupRole)), authzHandler) map(_.toMap)
+          groupRole = groupRole.get.getOrElse(u.groupRole)))(authzHandler) map(_.toMap)
     }
   }
 }

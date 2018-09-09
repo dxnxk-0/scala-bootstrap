@@ -93,8 +93,8 @@ object Users {
     }
 
     val groupUserValidator = (u: User) => u match {
-      case _ if u.level!= UserLevel.Group=> OK
-      case User(_, UserLevel.Group, _,  _, _, _, _, None, Some(_), _, _, _, _) => OK
+      case _ if u.level!= UserLevel.Group => OK
+      case User(_, UserLevel.Group, _, _, _, _, _, None, Some(_), _, _, _, _) => OK
       case _ => NOK(InvalidGroupUser)
     }
 
@@ -106,7 +106,7 @@ object Users {
 
     override val validators = List(
       platformUserValidator, channelUserValidator, groupUserValidator, simpleUserValidator,
-      (u: User) => if(Option(u.login).isEmpty || u.login=="" || u.login!=u.login.trim || u.login!=u.login.toLowerCase) NOK(InvalidLogin) else OK,
+      (u: User) => if(Option(u.login).isEmpty || u.login=="" || u.login!=u.login.trim) NOK(InvalidLogin) else OK,
       (u: User) => if(u.email.value.toLowerCase!=u.email.value) NOK(InvalidEmail) else OK
     )
   }
@@ -135,8 +135,8 @@ object Users {
       checkUniqueUserProperty(u, DB.getUserByEmail(u.email), s"email `${u.email}` does already exist")
     private def checkLoginOwnership(u: User) =
       checkUniqueUserProperty(u, DB.getUserByLoginName(u.login), s"login name `${u.login}` does already exist")
-    private def checkChannel(u: User) = u.channelId map (id => Channels.CRUD.getChannel(id, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-    private def checkGroup(u: User) = u.groupId map (id => Groups.CRUD.getGroup(id, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+    private def checkChannel(u: User) = u.channelId map (id => Channels.CRUD.getChannel(id)(voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+    private def checkGroup(u: User) = u.groupId map (id => Groups.CRUD.getGroup(id)(voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
     private def getParentGroupChain(group: Option[Group]) = group match {
       case None => Future.successful(Nil)
       case Some(g) => Groups.CRUD.getParentGroupChain(g)
@@ -146,7 +146,7 @@ object Users {
       case Some(g) => DB.getGroupChildren(g.id).map(_.toList)
     }
 
-    private def dbCheckUserAndAuthz(u: User, authz: IAMAuthzChecker) = for {
+    private def dbCheckUserAndAuthz(u: User)(implicit authz: IAMAuthzChecker) = for {
       _              <- checkEmailOwnership(u)
       _              <- checkLoginOwnership(u)
       groupOpt       <- checkGroup(u)
@@ -156,35 +156,35 @@ object Users {
       _              <- authz(IAMAuthzData(user = Some(u), group = groupOpt, channel = channelOpt, parentGroups = parentGroups, childrenGroups = childrenGroups)).toFuture
     } yield Done
 
-    private def checkUserAuthz(u: User, authz: IAMAuthzChecker) = for {
-      groupOpt       <- u.groupId map (gid => Groups.CRUD.getGroup(gid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-      channelOpt     <- u.channelId map (cid => Channels.CRUD.getChannel(cid, voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+    private def checkUserAuthz(u: User)(implicit authz: IAMAuthzChecker) = for {
+      groupOpt       <- u.groupId map (gid => Groups.CRUD.getGroup(gid)(voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
+      channelOpt     <- u.channelId map (cid => Channels.CRUD.getChannel(cid)(voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
       parentGroups   <- getParentGroupChain(groupOpt)
       childrenGroups <- getChildrenGroups(groupOpt)
       _              <- authz(IAMAuthzData(group = groupOpt, channel = channelOpt, parentGroups = parentGroups, childrenGroups = childrenGroups)).toFuture
     } yield Done
 
-    def createUser(user: User, authz: IAMAuthzChecker) = for {
+    def createUser(user: User)(implicit authz: IAMAuthzChecker) = for {
       _     <- UserValidator.validate(user).toFuture
-      _     <- dbCheckUserAndAuthz(user, authz)
+      _     <- dbCheckUserAndAuthz(user)
       saved <- DB.insert(user.copy(password = BCrypt.hashPassword(user.password), created = Some(getCurrentDateTime)))
     } yield saved
 
-    def updateUser(id: UUID, upd: UserUpdate, authz: IAMAuthzChecker) = for {
+    def updateUser(id: UUID, upd: UserUpdate)(implicit authz: IAMAuthzChecker) = for {
       existing <- readUserOrFail(id)
       updated  <- new UserUpdater(existing, upd(existing)).update.toFuture
-      _        <- dbCheckUserAndAuthz(updated, authz)
+      _        <- dbCheckUserAndAuthz(updated)
       saved    <- DB.update(updated)
     } yield saved
 
-    def getUser(id: UUID, authz: IAMAuthzChecker) = for {
+    def getUser(id: UUID)(implicit authz: IAMAuthzChecker) = for {
       user <- readUserOrFail(id)
-      _    <- checkUserAuthz(user, authz)
+      _    <- checkUserAuthz(user)
     } yield user
 
-    def deleteUser(id: UUID, authz: IAMAuthzChecker) = for {
+    def deleteUser(id: UUID)(implicit authz: IAMAuthzChecker) = for {
       user <- readUserOrFail(id)
-      _    <- checkUserAuthz(user, authz)
+      _    <- checkUserAuthz(user)
       _    <- DB.deleteUser(id)
     } yield Done
 

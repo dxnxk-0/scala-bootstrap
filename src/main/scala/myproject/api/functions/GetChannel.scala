@@ -19,7 +19,7 @@ class GetChannel extends ApiFunction {
     val channelId = required(p.uuid("channel_id"))
 
     checkParamAndProcess(channelId) flatMap { _ =>
-      CRUD.getChannel(channelId.get, Authorization.canReadChannel(user, _)) map (_.toMap)
+      CRUD.getChannel(channelId.get)(Authorization.canReadChannel(user, _)) map (_.toMap)
     }
   }
 }

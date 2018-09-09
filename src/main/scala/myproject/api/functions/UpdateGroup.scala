@@ -19,7 +19,7 @@ class UpdateGroup extends ApiFunction {
     val name = optional(p.nonEmptyString("name"))
 
     checkParamAndProcess(groupId, name) flatMap { _ =>
-      CRUD.updateGroup(groupId.get, g => g.copy(name = name.get.getOrElse(g.name)), Authorization.canUpdateGroup(user, _))
+      CRUD.updateGroup(groupId.get, g => g.copy(name = name.get.getOrElse(g.name)))(Authorization.canUpdateGroup(user, _))
         .map(_.toMap)
     }
   }

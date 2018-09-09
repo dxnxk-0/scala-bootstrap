@@ -19,7 +19,7 @@ class AdminGroup extends ApiFunction {
     val parentId = optionalAndNullable(p.uuid("parent_id"))
 
     checkParamAndProcess(groupId, parentId) flatMap { _ =>
-      CRUD.updateGroup(groupId.get, g => g.copy(parentId = parentId.get.getOrElse(g.parentId)), Authorization.canAdminGroup(user, _))
+      CRUD.updateGroup(groupId.get, g => g.copy(parentId = parentId.get.getOrElse(g.parentId)))(Authorization.canAdminGroup(user, _))
         .map(_.toMap)
     }
   }

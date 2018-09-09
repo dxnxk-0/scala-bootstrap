@@ -18,7 +18,7 @@ class GetGroupUsers extends ApiFunction {
     val groupId = required(p.uuid("group_id"))
 
     checkParamAndProcess(groupId) flatMap { _ =>
-      CRUD.getGroupUsers(groupId.get, Authorization.canListGroupUsers(user, _)) map { users =>
+      CRUD.getGroupUsers(groupId.get)(Authorization.canListGroupUsers(user, _)) map { users =>
         users.map(_.toMap)
       }
     }

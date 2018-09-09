@@ -18,7 +18,7 @@ class GetGroups extends ApiFunction{
     val channelId = required(p.uuid("channel_id"))
 
     checkParamAndProcess(channelId) flatMap { _ =>
-      CRUD.getChannelGroups(channelId.get, Authorization.canListChannelGroups(user, _)) map { groups =>
+      CRUD.getChannelGroups(channelId.get)(Authorization.canListChannelGroups(user, _)) map { groups =>
         groups.map(_.toMap)
       }
     }

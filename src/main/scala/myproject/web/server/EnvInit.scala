@@ -25,15 +25,16 @@ object EnvInit {
     val groupUser1 = User(UUID.fromString("db9a9f93-eabd-4923-8a59-da5653f0a626"), UserLevel.Group, "group-user-1", "John", "Doe2", EmailAddress("user-1@group.com"), "Kondor_123", None, Some(group.id))
     val groupUser2 = User(UUID.fromString("096f2116-f3b6-4d26-be26-d000d67806b9"), UserLevel.Group, "group-user-2", "John", "Doe3", EmailAddress("user-2@group.com"), "Kondor_123", None, Some(group.id))
 
+    implicit val authz = voidIAMAuthzChecker
     val initFuture = for {
       _ <- DB.reset
-      _ <- createUser(root, voidIAMAuthzChecker)
-      _ <- createChannel(channel, voidIAMAuthzChecker)
-      _ <- createUser(channelAdmin, voidIAMAuthzChecker)
-      _ <- createGroup(group, voidIAMAuthzChecker)
-      _ <- createUser(groupAdmin, voidIAMAuthzChecker)
-      _ <- createUser(groupUser1, voidIAMAuthzChecker)
-      _ <- createUser(groupUser2, voidIAMAuthzChecker)
+      _ <- createUser(root)
+      _ <- createChannel(channel)
+      _ <- createUser(channelAdmin)
+      _ <- createGroup(group)
+      _ <- createUser(groupAdmin)
+      _ <- createUser(groupUser1)
+      _ <- createUser(groupUser2)
     } yield Unit
 
     initFuture.futureValue

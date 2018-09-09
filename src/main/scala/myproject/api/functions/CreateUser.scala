@@ -32,7 +32,7 @@ class CreatePlatformUser extends ApiFunction with CreateUserParameters {
 
     checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.Platform, login.get, fn.get, ln.get, email.get, password.get)
-      CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
+      CRUD.createUser(user)(Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }
 }
@@ -50,7 +50,7 @@ class CreateChannelUser extends ApiFunction with CreateUserParameters {
 
     checkParamAndProcess(login, password, email, channelId, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.Channel, login.get, fn.get, ln.get, email.get, password.get, Some(channelId.get))
-      CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
+      CRUD.createUser(user)(Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }
 }
@@ -68,7 +68,7 @@ class CreateGroupUser extends ApiFunction with CreateUserParameters {
 
     checkParamAndProcess(login, email, password, groupId, groupRole, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.Group, login.get, fn.get, ln.get, email.get, password.get, None, Some(groupId.get), groupRole.get)
-      CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
+      CRUD.createUser(user)(Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }
 }
@@ -84,7 +84,7 @@ class CreateSimpleUser extends ApiFunction with CreateUserParameters {
 
     checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.NoLevel, login.get, fn.get, ln.get, email.get, password.get)
-      CRUD.createUser(user, Authorization.canCreateUser(user, _)) map (_.toMap)
+      CRUD.createUser(user)(Authorization.canCreateUser(user, _)) map (_.toMap)
     }
   }
 }

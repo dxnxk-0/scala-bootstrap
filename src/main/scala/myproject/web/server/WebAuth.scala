@@ -17,7 +17,7 @@ object WebAuth {
     Future(JWT.extractToken(token)) flatMap {
       case Left(_) => Future.successful(None)
       case Right(payload) =>
-        Users.CRUD.getUser(payload.uid, voidIAMAuthzChecker) map (Some(_)) recover { case ObjectNotFoundException(_) => None }
+        Users.CRUD.getUser(payload.uid)(voidIAMAuthzChecker) map (Some(_)) recover { case ObjectNotFoundException(_) => None }
     }
   }
 

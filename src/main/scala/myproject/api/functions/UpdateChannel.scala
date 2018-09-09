@@ -19,7 +19,7 @@ class UpdateChannel extends ApiFunction {
     val name = optional(p.nonEmptyString("name"))
 
     checkParamAndProcess(channelId, name) flatMap { _ =>
-      CRUD.updateChannel(channelId.get, c => c.copy(name = name.get.getOrElse(c.name)), Authorization.canUpdateChannel(user, _))
+      CRUD.updateChannel(channelId.get, c => c.copy(name = name.get.getOrElse(c.name)))(Authorization.canUpdateChannel(user, _))
         .map(_.toMap)
     }
   }

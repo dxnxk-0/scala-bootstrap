@@ -35,17 +35,17 @@ object Channels {
 
     def getAllChannels(authz: IAMAuthzChecker) = authz(IAMAuthzData()).toFuture flatMap (_ => DB.getAllChannels)
 
-    def createChannel(channel: Channel, authz: IAMAuthzChecker) = for {
+    def createChannel(channel: Channel)(implicit authz: IAMAuthzChecker) = for {
       _     <- authz(IAMAuthzData()).toFuture
       saved <- DB.insert(channel.copy(created = Some(TimeManagement.getCurrentDateTime)))
     } yield saved
 
-    def getChannel(id: UUID, authz: IAMAuthzChecker) = for {
+    def getChannel(id: UUID)(implicit authz: IAMAuthzChecker) = for {
       channel <- retrieveChannelOrFail(id)
       _       <- authz(IAMAuthzData(channel = Some(channel))).toFuture
     } yield channel
 
-    def updateChannel(id: UUID, upd: ChannelUpdate, authz: IAMAuthzChecker) = for {
+    def updateChannel(id: UUID, upd: ChannelUpdate)(implicit authz: IAMAuthzChecker) = for {
       existing  <- retrieveChannelOrFail(id)
       _         <- authz(IAMAuthzData(channel = Some(existing))).toFuture
       candidate <- Try(upd(existing)).toFuture
@@ -53,14 +53,14 @@ object Channels {
       saved     <- DB.update(updated)
     } yield saved
 
-    def deleteChannel(id: UUID, authz: IAMAuthzChecker) = for {
+    def deleteChannel(id: UUID)(implicit authz: IAMAuthzChecker) = for {
       channel <- retrieveChannelOrFail(id)
       _       <- authz(IAMAuthzData(channel = Some(channel))).toFuture
       result  <- DB.deleteChannel(id)
     } yield result
 
-    def getChannelGroups(id: UUID, authz: IAMAuthzChecker) = for {
-      channel <- getChannel(id, voidIAMAuthzChecker)
+    def getChannelGroups(id: UUID)(implicit authz: IAMAuthzChecker) = for {
+      channel <- getChannel(id)(voidIAMAuthzChecker)
       _       <- authz(IAMAuthzData(channel = Some(channel))).toFuture
       groups  <- DB.getChannelGroups(id)
     } yield groups
