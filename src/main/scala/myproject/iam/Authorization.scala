@@ -2,8 +2,8 @@ package myproject.iam
 
 import myproject.common.Authorization.{AuthorizationCheck, AuthzData, _}
 import myproject.iam.Channels.Channel
-import myproject.iam.Groups.{Group, GroupStatus}
-import myproject.iam.Users.{GroupRole, User, UserLevel, UserStatus}
+import myproject.iam.Groups.Group
+import myproject.iam.Users.{GroupRole, User, UserLevel}
 
 object Authorization {
 
@@ -27,12 +27,6 @@ object Authorization {
   type IAMAuthzChecker = IAMAuthzData => AuthorizationCheck
 
   def voidIAMAuthzChecker = (_: IAMAuthzData) => grant
-
-  def canLogin(implicit requester: User, data: IAMAuthzData) = if(data.user.exists(_.status==UserStatus.Active)) {
-    data.group map { g =>
-      if(g.status==GroupStatus.Active) grant else refuse
-    } getOrElse grant
-  } else refuse
 
   def canReadUser(implicit requester: User, data: IAMAuthzData) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isParentGroupAdmin orElse isUserHimself orElse isInTheSameGroup orElse belongToTheOrganization
   def canCreateUser(implicit requester: User, data: IAMAuthzData) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isParentGroupAdmin

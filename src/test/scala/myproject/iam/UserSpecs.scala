@@ -17,66 +17,74 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 class UserSpecs extends DatabaseSpec {
   val channel = IAMTestDataFactory.getChannel
   val group = IAMTestDataFactory.getGroup(channel.id)
-  val user = IAMTestDataFactory.getGroupUser(group.id, Some(GroupRole.Admin))
+  val groupUser = IAMTestDataFactory.getGroupUser(group.id, Some(GroupRole.Admin))
+  val channelUser = IAMTestDataFactory.getChannelUser(channel.id)
+  val platformUser = IAMTestDataFactory.getPlatformUser
 
   implicit val authz = voidIAMAuthzChecker
 
   it should "create a user and silently put the email and login in lower case" in {
     createChannel(channel)
     createGroup(group)
-    createUser(user.copy(email = EmailAddress(user.email.value.toUpperCase), login = user.login.toUpperCase)).futureValue.login shouldBe user.login
+    createUser(groupUser.copy(email = EmailAddress(groupUser.email.value.toUpperCase), login = groupUser.login.toUpperCase)).futureValue.login shouldBe groupUser.login
+    createUser(channelUser).futureValue.id shouldBe channelUser.id
+    createUser(platformUser).futureValue.id shouldBe platformUser.id
   }
 
   it should "get the created user by id" in {
-    getUser(user.id).futureValue.login shouldBe user.login
+    getUser(groupUser.id).futureValue.login shouldBe groupUser.login
   }
 
   it should "not log in the user with incorrect password" in {
     an[AuthenticationFailedException] shouldBe thrownBy(
-      loginPassword(user.login, "incorrect", _ => voidIAMAuthzChecker).futureValue
+      loginPassword(groupUser.login, "incorrect").futureValue
     )
   }
 
   it should "not log in a non existent user" in {
-    an[AuthenticationFailedException] shouldBe thrownBy(loginPassword("non-existent", "Kondor_123", _ => voidIAMAuthzChecker).futureValue)
+    an[AuthenticationFailedException] shouldBe thrownBy(loginPassword("non-existent", "Kondor_123").futureValue)
   }
 
   it should "should not log in the user if he is not active" in {
-    updateUser(user.id, u => u.copy(status = UserStatus.Locked)).futureValue
-    an[AccessRefusedException] shouldBe thrownBy(loginPassword(user.login,user.password, _ => Authorization.canLogin(user, _)).futureValue)
-    updateUser(user.id, u => u.copy(status = UserStatus.Inactive)).futureValue
-    an[AccessRefusedException] shouldBe thrownBy(loginPassword(user.login,user.password, _ => Authorization.canLogin(user, _)).futureValue)
-    updateUser(user.id, u => u.copy(status = UserStatus.PendingActivation)).futureValue
-    an[AccessRefusedException] shouldBe thrownBy(loginPassword(user.login,user.password, _ => Authorization.canLogin(user, _)).futureValue)
-    updateUser(user.id, u => u.copy(status = UserStatus.Active)).futureValue
+    updateUser(groupUser.id, u => u.copy(status = UserStatus.Locked)).futureValue
+    an[AccessRefusedException] shouldBe thrownBy(loginPassword(groupUser.login,groupUser.password).futureValue)
+    updateUser(groupUser.id, u => u.copy(status = UserStatus.Inactive)).futureValue
+    an[AccessRefusedException] shouldBe thrownBy(loginPassword(groupUser.login,groupUser.password).futureValue)
+    updateUser(groupUser.id, u => u.copy(status = UserStatus.PendingActivation)).futureValue
+    an[AccessRefusedException] shouldBe thrownBy(loginPassword(groupUser.login,groupUser.password).futureValue)
+    updateUser(groupUser.id, u => u.copy(status = UserStatus.Active)).futureValue
   }
 
   it should "should not log in the user if its group is locked or inactive" in {
     updateGroup(group.id, g => g.copy(status = GroupStatus.Inactive)).futureValue
-    an[AccessRefusedException] shouldBe thrownBy(loginPassword(user.login,user.password, _ => Authorization.canLogin(user, _)).futureValue)
+    an[AccessRefusedException] shouldBe thrownBy(loginPassword(groupUser.login,groupUser.password).futureValue)
     updateGroup(group.id, g => g.copy(status = GroupStatus.Locked)).futureValue
-    an[AccessRefusedException] shouldBe thrownBy(loginPassword(user.login,user.password, _ => Authorization.canLogin(user, _)).futureValue)
+    an[AccessRefusedException] shouldBe thrownBy(loginPassword(groupUser.login,groupUser.password).futureValue)
     updateGroup(group.id, g => g.copy(status = GroupStatus.Active)).futureValue
   }
 
   it should "log in the user" in {
-    val (logged, token) = loginPassword(user.login,user.password, _ => voidIAMAuthzChecker).futureValue
-    logged.id shouldBe user.id
-    JWT.extractToken(token).right.get.uid shouldBe user.id
+    val (logged, token) = loginPassword(groupUser.login, groupUser.password).futureValue
+    logged.id shouldBe groupUser.id
+    JWT.extractToken(token).right.get.uid shouldBe groupUser.id
+
+    loginPassword(channelUser.login, channelUser.password).futureValue._1.id shouldBe channelUser.id
+
+    loginPassword(platformUser.login, platformUser.password).futureValue._1.id shouldBe platformUser.id
   }
 
   it should "update the user" in {
-    updateUser(user.id, u => u.copy(login = "SMITH")).futureValue
-    getUser(user.id).futureValue.login shouldBe "smith"
+    updateUser(groupUser.id, u => u.copy(login = "SMITH")).futureValue
+    getUser(groupUser.id).futureValue.login shouldBe "smith"
   }
 
   it should "update the password" in {
-    updateUser(user.id, u => u.copy(password = "new password"))
-    loginPassword(user.login, "new password", _ => voidIAMAuthzChecker)
+    updateUser(groupUser.id, u => u.copy(password = "new password"))
+    loginPassword(groupUser.login, "new password")
   }
 
   it should "delete the user" in {
-    deleteUser(user.id).futureValue
-    a [ObjectNotFoundException] shouldBe thrownBy(getUser(user.id).futureValue)
+    deleteUser(groupUser.id).futureValue
+    a [ObjectNotFoundException] shouldBe thrownBy(getUser(groupUser.id).futureValue)
   }
 }

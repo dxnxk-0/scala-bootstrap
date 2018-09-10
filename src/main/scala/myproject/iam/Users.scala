@@ -13,7 +13,7 @@ import myproject.common._
 import myproject.common.security.{BCrypt, JWT}
 import myproject.database.DB
 import myproject.iam.Authorization.{IAMAuthzChecker, IAMAuthzData, voidIAMAuthzChecker}
-import myproject.iam.Groups.Group
+import myproject.iam.Groups.{Group, GroupStatus}
 import myproject.iam.Users.GroupRole.GroupRole
 import myproject.iam.Users.UserLevel.UserLevel
 import myproject.iam.Users.UserStatus.UserStatus
@@ -88,7 +88,7 @@ object Users {
 
     val channelUserValidator = (u: User) => u match {
       case _ if u.level!= UserLevel.Channel => OK
-      case User(_, UserLevel.Channel, _, _, _, _, _, Some(_), None, _, _, None, _) => OK
+      case User(_, UserLevel.Channel, _, _, _, _, _, Some(_), None, _, _, _, _) => OK
       case _ => NOK(InvalidChannelUser)
     }
 
@@ -188,11 +188,11 @@ object Users {
       _    <- DB.deleteUser(id)
     } yield Done
 
-    def loginPassword(login: String, candidate: String, authz: User => IAMAuthzChecker) = for {
+    def loginPassword(login: String, candidate: String) = for {
       user       <- DB.getUserByLoginName(login).getOrFail(AuthenticationFailedException(s"Bad user or password"))
       groupOpt   <- checkGroup(user)
-      channelOpt <- checkChannel(user)
-      _          <- authz(user)(IAMAuthzData(Some(user), groupOpt, channelOpt)).toFuture
+      _          <- checkChannel(user)
+      _          <- if(user.status==UserStatus.Active && !groupOpt.exists(_.status!=GroupStatus.Active)) Future.successful(Done) else Future.failed(AccessRefusedException(s"user is not authorized to log in"))
       _          <- Authentication.loginPassword(user, candidate).toFuture
     } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive.seconds)))
   }

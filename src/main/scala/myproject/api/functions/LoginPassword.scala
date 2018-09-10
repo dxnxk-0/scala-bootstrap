@@ -5,7 +5,6 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Authorization
 import myproject.iam.Users.CRUD
 
 class LoginPassword extends ApiFunction {
@@ -20,7 +19,7 @@ class LoginPassword extends ApiFunction {
     val password = required(p.nonEmptyString("password"))
 
     checkParamAndProcess(login, password) flatMap { _ =>
-      CRUD.loginPassword(login.get, password.get, u => Authorization.canLogin(u, _)) map { authData =>
+      CRUD.loginPassword(login.get, password.get) map { authData =>
         Map("whoami" -> authData._1.toMap, "token" -> authData._2.toString)
       }
     }
