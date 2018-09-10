@@ -106,7 +106,7 @@ object Users {
 
     override val validators = List(
       platformUserValidator, channelUserValidator, groupUserValidator, simpleUserValidator,
-      (u: User) => if(Option(u.login).isEmpty || u.login=="" || u.login!=u.login.trim) NOK(InvalidLogin) else OK,
+      (u: User) => if(Option(u.login).isEmpty || u.login=="" || u.login!=u.login.trim || u.login!=u.login.toLowerCase) NOK(InvalidLogin) else OK,
       (u: User) => if(u.email.value.toLowerCase!=u.email.value) NOK(InvalidEmail) else OK
     )
   }
@@ -115,9 +115,9 @@ object Users {
     override val updaters: List[FieldUpdater[User]] = List(
       (u: User) => OK(
         u.copy(
-          login = target.login,
+          login = target.login.toLowerCase,
           password = if(source.password!=u.password) BCrypt.hashPassword(target.password) else u.password,
-          email = target.email,
+          email = EmailAddress(target.email.value.toLowerCase),
           groupRole = target.groupRole,
           status = target.status))
     )
@@ -165,9 +165,9 @@ object Users {
     } yield Done
 
     def createUser(user: User)(implicit authz: IAMAuthzChecker) = for {
-      _     <- UserValidator.validate(user).toFuture
-      _     <- dbCheckUserAndAuthz(user)
-      saved <- DB.insert(user.copy(password = BCrypt.hashPassword(user.password), created = Some(getCurrentDateTime)))
+      validated <- UserValidator.validate(user.copy(password = BCrypt.hashPassword(user.password), created = Some(getCurrentDateTime), login = user.login.toLowerCase, email = EmailAddress(user.email.value.toLowerCase))).toFuture
+      _         <- dbCheckUserAndAuthz(user)
+      saved     <- DB.insert(validated)
     } yield saved
 
     def updateUser(id: UUID, upd: UserUpdate)(implicit authz: IAMAuthzChecker) = for {

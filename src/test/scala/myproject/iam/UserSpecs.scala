@@ -11,6 +11,7 @@ import myproject.iam.Users.CRUD._
 import myproject.iam.Users.{GroupRole, UserStatus}
 import org.scalatest.DoNotDiscover
 import test.{DatabaseSpec, IAMTestDataFactory}
+import uk.gov.hmrc.emailaddress.EmailAddress
 
 @DoNotDiscover
 class UserSpecs extends DatabaseSpec {
@@ -19,11 +20,11 @@ class UserSpecs extends DatabaseSpec {
   val user = IAMTestDataFactory.getGroupUser(group.id, Some(GroupRole.Admin))
 
   implicit val authz = voidIAMAuthzChecker
-  
-  it should "create a user" in {
+
+  it should "create a user and silently put the email and login in lower case" in {
     createChannel(channel)
     createGroup(group)
-    createUser(user).futureValue.login shouldBe user.login
+    createUser(user.copy(email = EmailAddress(user.email.value.toUpperCase), login = user.login.toUpperCase)).futureValue.login shouldBe user.login
   }
 
   it should "get the created user by id" in {
@@ -65,7 +66,7 @@ class UserSpecs extends DatabaseSpec {
   }
 
   it should "update the user" in {
-    updateUser(user.id, u => u.copy(login = "smith")).futureValue
+    updateUser(user.id, u => u.copy(login = "SMITH")).futureValue
     getUser(user.id).futureValue.login shouldBe "smith"
   }
 
