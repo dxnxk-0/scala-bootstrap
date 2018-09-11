@@ -2,7 +2,7 @@ package myproject.iam
 
 import myproject.common.Done
 import myproject.common.FutureImplicits._
-import myproject.iam.Authorization.voidIAMAuthzChecker
+import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Groups.CRUD._
 import myproject.iam.Users.CRUD._
@@ -15,7 +15,7 @@ class ChannelSpecs extends DatabaseSpec {
   val group = IAMTestDataFactory.getGroup(channel.id)
   val user = IAMTestDataFactory.getGroupAdmin(group.id)
 
-  implicit val authz = voidIAMAuthzChecker
+  implicit val authz = VoidIAMAccessChecker
 
   it should "create a channel" in {
     createChannel(channel).futureValue.name shouldBe channel.name

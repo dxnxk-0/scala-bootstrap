@@ -5,8 +5,9 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
+import myproject.iam.Authorization.DefaultIAMAccessChecker
 import myproject.iam.Groups.CRUD
-import myproject.iam.{Authorization, Users}
+import myproject.iam.Users
 
 class AdminGroup extends ApiFunction {
   override val name = "admin_group"
@@ -18,8 +19,10 @@ class AdminGroup extends ApiFunction {
     val groupId = required(p.uuid("group_id"))
     val parentId = optionalAndNullable(p.uuid("parent_id"))
 
+    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+
     checkParamAndProcess(groupId, parentId) flatMap { _ =>
-      CRUD.updateGroup(groupId.get, g => g.copy(parentId = parentId.get.getOrElse(g.parentId)))(Authorization.canAdminGroup(user, _))
+      CRUD.updateGroup(groupId.get, g => g.copy(parentId = parentId.get.getOrElse(g.parentId)))
         .map(_.toMap)
     }
   }

@@ -7,7 +7,7 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Authorization
+import myproject.iam.Authorization.DefaultIAMAccessChecker
 import myproject.iam.Users.{CRUD, GroupRole, User, UserLevel}
 
 trait CreateUserParameters {
@@ -30,9 +30,11 @@ class CreatePlatformUser extends ApiFunction with CreateUserParameters {
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val (login, password, email, fn, ln) = getCommonParameters
 
+    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+
     checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.Platform, login.get, fn.get, ln.get, email.get, password.get)
-      CRUD.createUser(user)(Authorization.canCreateUser(user, _)) map (_.toMap)
+      CRUD.createUser(user) map (_.toMap)
     }
   }
 }
@@ -48,9 +50,11 @@ class CreateChannelUser extends ApiFunction with CreateUserParameters {
     val (login, password, email, fn, ln) = getCommonParameters
     val channelId = required(p.uuid("channel_id"))
 
+    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+
     checkParamAndProcess(login, password, email, channelId, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.Channel, login.get, fn.get, ln.get, email.get, password.get, Some(channelId.get))
-      CRUD.createUser(user)(Authorization.canCreateUser(user, _)) map (_.toMap)
+      CRUD.createUser(user) map (_.toMap)
     }
   }
 }
@@ -66,9 +70,11 @@ class CreateGroupUser extends ApiFunction with CreateUserParameters {
     val (login, password, email, fn, ln) = getCommonParameters
     val (groupId, groupRole) = (required(p.uuid("group_id")), nullable(p.enumString("group_role", GroupRole)))
 
+    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+
     checkParamAndProcess(login, email, password, groupId, groupRole, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.Group, login.get, fn.get, ln.get, email.get, password.get, None, Some(groupId.get), groupRole.get)
-      CRUD.createUser(user)(Authorization.canCreateUser(user, _)) map (_.toMap)
+      CRUD.createUser(user) map (_.toMap)
     }
   }
 }
@@ -82,9 +88,11 @@ class CreateSimpleUser extends ApiFunction with CreateUserParameters {
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val (login, password, email, fn, ln) = getCommonParameters
 
+    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+
     checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.NoLevel, login.get, fn.get, ln.get, email.get, password.get)
-      CRUD.createUser(user)(Authorization.canCreateUser(user, _)) map (_.toMap)
+      CRUD.createUser(user) map (_.toMap)
     }
   }
 }

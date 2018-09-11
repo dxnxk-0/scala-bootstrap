@@ -72,7 +72,7 @@ trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
       children <- groups.filter(_.id.inSet(idList)).result
     } yield children
 
-    db.run(action)
+    db.run(action).map(_.toList)
   }
 
   def getGroupParents(groupId: UUID) = { // CTE not supported by Slick
@@ -93,6 +93,6 @@ trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
       parents <- groups.filter(_.id.inSet(idList)).result
     } yield parents
 
-    db.run(action)
+    db.run(action).map(_.toList)
   }
 }

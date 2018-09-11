@@ -1,12 +1,10 @@
 package myproject.api.functions
 
-import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Authorization
-import myproject.iam.Authorization.IAMAuthzChecker
+import myproject.iam.Authorization.DefaultIAMAccessChecker
 import myproject.iam.Users.{CRUD, GroupRole, User}
 
 class UpdateUser extends ApiFunction {
@@ -23,15 +21,14 @@ class UpdateUser extends ApiFunction {
     val groupRole = optionalAndNullable(p.enumString("group_role", GroupRole))
 
     checkParamAndProcess(userId, email, password, login, groupRole) flatMap { _ =>
-      val authzHandler: IAMAuthzChecker =
-        if(groupRole.get.isDefined) Authorization.canAdminUser(user, _) else Authorization.canUpdateUser(user, _)
+
+      implicit val authz = new DefaultIAMAccessChecker(Some(user))
 
       CRUD.updateUser(userId.get, u =>
         u.copy(
           login = login.get.getOrElse(u.login),
           email = email.get.getOrElse(u.email),
-          password = password.get.getOrElse(u.password),
-          groupRole = groupRole.get.getOrElse(u.groupRole)))(authzHandler) map(_.toMap)
+          password = password.get.getOrElse(u.password)))
     }
   }
 }

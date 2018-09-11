@@ -3,7 +3,7 @@ package myproject.iam
 import myproject.common.FutureImplicits._
 import myproject.common.security.JWT
 import myproject.common.{AccessRefusedException, AuthenticationFailedException, ObjectNotFoundException}
-import myproject.iam.Authorization.voidIAMAuthzChecker
+import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Groups.CRUD.{createGroup, _}
 import myproject.iam.Groups.GroupStatus
@@ -21,7 +21,7 @@ class UserSpecs extends DatabaseSpec {
   val channelUser = IAMTestDataFactory.getChannelUser(channel.id)
   val platformUser = IAMTestDataFactory.getPlatformUser
 
-  implicit val authz = voidIAMAuthzChecker
+  implicit val authz = VoidIAMAccessChecker
 
   it should "create a user and silently put the email and login in lower case" in {
     createChannel(channel)

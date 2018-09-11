@@ -5,8 +5,9 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
+import myproject.iam.Authorization.DefaultIAMAccessChecker
 import myproject.iam.Groups.CRUD
-import myproject.iam.{Authorization, Users}
+import myproject.iam.Users
 
 class GetGroupUsers extends ApiFunction {
   override val name = "get_group_users"
@@ -17,8 +18,10 @@ class GetGroupUsers extends ApiFunction {
   override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     val groupId = required(p.uuid("group_id"))
 
+    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+
     checkParamAndProcess(groupId) flatMap { _ =>
-      CRUD.getGroupUsers(groupId.get)(Authorization.canListGroupUsers(user, _)) map { users =>
+      CRUD.getGroupUsers(groupId.get) map { users =>
         users.map(_.toMap)
       }
     }

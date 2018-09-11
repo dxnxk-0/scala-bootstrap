@@ -4,7 +4,7 @@ import java.util.UUID
 
 import myproject.common.FutureImplicits._
 import myproject.common.{ObjectNotFoundException, TimeManagement, TokenExpiredException}
-import myproject.iam.Authorization.voidIAMAuthzChecker
+import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.CRUD.createChannel
 import myproject.iam.Groups.CRUD.createGroup
 import myproject.iam.Tokens.CRUD._
@@ -22,7 +22,7 @@ class TokenSpecs extends DatabaseSpec {
   val expiredToken = Token(UUID.randomUUID, user.id, TokenRole.Authentication, expires = Some(TimeManagement.getCurrentDateTime.plusSeconds(0)))
   val validToken = Token(UUID.randomUUID, user.id, TokenRole.Signup, expires = Some(TimeManagement.getCurrentDateTime.plusMinutes(10)))
 
-  implicit val authz = voidIAMAuthzChecker
+  implicit val authz = VoidIAMAccessChecker
   
   it should "create a token" in {
     createChannel(channel)

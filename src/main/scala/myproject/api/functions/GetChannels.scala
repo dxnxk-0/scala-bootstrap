@@ -4,8 +4,9 @@ import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
+import myproject.iam.Authorization.DefaultIAMAccessChecker
 import myproject.iam.Channels.CRUD
-import myproject.iam.{Authorization, Users}
+import myproject.iam.Users
 
 class GetChannels extends ApiFunction {
   override val name = "get_channels"
@@ -14,7 +15,10 @@ class GetChannels extends ApiFunction {
     `return` = "a list of objects containing the requested channel's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
-    CRUD.getAllChannels(Authorization.canListChannels(user, _)) map { channels =>
+
+    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+
+    CRUD.getAllChannels map { channels =>
       channels.map(_.toMap)
     }
   }

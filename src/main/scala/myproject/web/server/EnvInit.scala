@@ -5,7 +5,7 @@ import java.util.UUID
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.database.DB
-import myproject.iam.Authorization.voidIAMAuthzChecker
+import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.CRUD._
@@ -25,7 +25,8 @@ object EnvInit {
     val groupUser1 = User(UUID.fromString("db9a9f93-eabd-4923-8a59-da5653f0a626"), UserLevel.Group, "group-user-1", "John", "Doe2", EmailAddress("user-1@group.com"), "Kondor_123", None, Some(group.id))
     val groupUser2 = User(UUID.fromString("096f2116-f3b6-4d26-be26-d000d67806b9"), UserLevel.Group, "group-user-2", "John", "Doe3", EmailAddress("user-2@group.com"), "Kondor_123", None, Some(group.id))
 
-    implicit val authz = voidIAMAuthzChecker
+    implicit val authz = VoidIAMAccessChecker
+
     val initFuture = for {
       _ <- DB.reset
       _ <- createUser(root)

@@ -5,8 +5,9 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper.required
+import myproject.iam.Authorization.DefaultIAMAccessChecker
 import myproject.iam.Groups.CRUD
-import myproject.iam.{Authorization, Users}
+import myproject.iam.Users
 
 class GetGroupChildren extends ApiFunction {
   override val name = "get_group_children"
@@ -17,8 +18,10 @@ class GetGroupChildren extends ApiFunction {
   override def process(implicit p: OpaqueData.ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     val groupId = required(p.uuid("group_id"))
 
+    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+
     checkParamAndProcess(groupId) flatMap { _ =>
-      CRUD.getGroupChildren(groupId.get)(Authorization.canGetHierarchy(user, _)) map(_.map(_.toMap))
+      CRUD.getGroupChildren(groupId.get) map(_.map(_.toMap))
     }
   }
 }

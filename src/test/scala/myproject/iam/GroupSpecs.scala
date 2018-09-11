@@ -2,7 +2,7 @@ package myproject.iam
 
 import myproject.common.Done
 import myproject.common.FutureImplicits._
-import myproject.iam.Authorization.voidIAMAuthzChecker
+import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Groups.CRUD._
 import org.scalatest.DoNotDiscover
@@ -13,7 +13,7 @@ class GroupSpecs extends DatabaseSpec {
   val channel = IAMTestDataFactory.getChannel
   val group = IAMTestDataFactory.getGroup(channel.id)
 
-  implicit val authz = voidIAMAuthzChecker
+  implicit val authz = VoidIAMAccessChecker
   
   it should "create a group" in {
     createChannel(channel).futureValue

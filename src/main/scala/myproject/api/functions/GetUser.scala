@@ -5,7 +5,7 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Authorization
+import myproject.iam.Authorization.DefaultIAMAccessChecker
 import myproject.iam.Users.{CRUD, User}
 
 class GetUser extends ApiFunction {
@@ -17,8 +17,10 @@ class GetUser extends ApiFunction {
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val userId = required(p.uuid("user_id"))
 
+    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+
     checkParamAndProcess(userId) flatMap { _ =>
-      CRUD.getUser(userId.get)(Authorization.canReadUser(user, _)) map (_.toMap)
+      CRUD.getUser(userId.get) map (_.toMap)
     }
   }
 }

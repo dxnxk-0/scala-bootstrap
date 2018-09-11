@@ -30,5 +30,10 @@ object FutureImplicits {
       case Some(v) => Future.successful(v)
       case None => Future.failed(exception)
     }
+
+    def getOrFailNotFound(msg: String): Future[A] = future flatMap {
+      case Some(v) => Future.successful(v)
+      case None => Future.failed(ObjectNotFoundException(msg))
+    }
   }
 }

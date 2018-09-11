@@ -7,8 +7,9 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
+import myproject.iam.Authorization.DefaultIAMAccessChecker
 import myproject.iam.Channels.{CRUD, Channel}
-import myproject.iam.{Authorization, Users}
+import myproject.iam.Users
 
 class CreateChannel extends ApiFunction {
   override val name = "create_channel"
@@ -19,9 +20,11 @@ class CreateChannel extends ApiFunction {
   override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     val channelName = required(p.nonEmptyString("name"))
 
+    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+
     checkParamAndProcess(channelName) flatMap { _ =>
       val channel = Channel(UUID.randomUUID, channelName.get)
-      CRUD.createChannel(channel)(Authorization.canCreateChannel(user, _)) map (_.toMap)
+      CRUD.createChannel(channel) map (_.toMap)
     }
   }
 }

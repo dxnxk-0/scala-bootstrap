@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import myproject.Config
+import myproject.common.Authorization.AuthorizationCheck
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.TimeManagement._
@@ -12,7 +13,8 @@ import myproject.common.Validation._
 import myproject.common._
 import myproject.common.security.{BCrypt, JWT}
 import myproject.database.DB
-import myproject.iam.Authorization.{IAMAuthzChecker, IAMAuthzData, voidIAMAuthzChecker}
+import myproject.iam.Authorization.{IAMAccessChecker, VoidIAMAccessChecker}
+import myproject.iam.Channels.Channel
 import myproject.iam.Groups.{Group, GroupStatus}
 import myproject.iam.Users.GroupRole.GroupRole
 import myproject.iam.Users.UserLevel.UserLevel
@@ -135,65 +137,85 @@ object Users {
       checkUniqueUserProperty(u, DB.getUserByEmail(u.email), s"email `${u.email}` does already exist")
     private def checkLoginOwnership(u: User) =
       checkUniqueUserProperty(u, DB.getUserByLoginName(u.login), s"login name `${u.login}` does already exist")
-    private def checkChannel(u: User) = u.channelId map (id => Channels.CRUD.getChannel(id)(voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-    private def checkGroup(u: User) = u.groupId map (id => Groups.CRUD.getGroup(id)(voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-    private def getParentGroupChain(group: Option[Group]) = group match {
-      case None => Future.successful(Nil)
-      case Some(g) => Groups.CRUD.getParentGroupChain(g)
+    private def checkPlatformUserAuthz(u: User, authz: User => AuthorizationCheck) = authz(u).toFuture.map(_ => u)
+    private def checkChannelUserAuthz(u: User, authz: (Channel, User) => AuthorizationCheck) = Channels.CRUD.getChannel(u.channelId.get)(VoidIAMAccessChecker).flatMap(c => authz(c, u).toFuture).map(_ => u)
+    private def checkGroupUserAuthz3(u: User, authz: (Channel, Group, List[Group], User) => AuthorizationCheck) = for {
+      group   <- Groups.CRUD.getGroup(u.groupId.get)(VoidIAMAccessChecker)
+      channel <- Channels.CRUD.getChannel(group.channelId)(VoidIAMAccessChecker)
+      parents <- group.parentId.map(_ => DB.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
+      _       <- authz(channel, group, parents, u).toFuture
+    } yield u
+    private def checkGroupUserAuthz4(u: User, authz: (Channel, Group, List[Group], List[Group], User) => AuthorizationCheck) = for {
+      group    <- Groups.CRUD.getGroup(u.groupId.get)(VoidIAMAccessChecker)
+      channel  <- Channels.CRUD.getChannel(group.channelId)(VoidIAMAccessChecker)
+      parents  <- group.parentId.map(_ => DB.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
+      children <- Groups.CRUD.getGroupChildren(group.id)(VoidIAMAccessChecker)
+      _        <- authz(channel, group, parents, children, u).toFuture
+    } yield u
+
+    def createUser(user: User)(implicit authz: IAMAccessChecker) = {
+      val validatedFuture = UserValidator.validate(user.copy(
+        password = BCrypt.hashPassword(user.password),
+        created = Some(getCurrentDateTime),
+        login = user.login.toLowerCase,
+        email = EmailAddress(user.email.value.toLowerCase))).toFuture
+
+      for {
+        validated <- validatedFuture
+        _         <- checkEmailOwnership(validated)
+        _         <- checkLoginOwnership(validated)
+        checked   <- user.level match {
+          case UserLevel.Platform => checkPlatformUserAuthz(validated, authz.canOperatePlatformUser(_))
+          case UserLevel.Channel => checkChannelUserAuthz(validated, authz.canOperateChannelUser(_, _))
+          case UserLevel.Group => checkGroupUserAuthz3(validated, authz.canCreateGroupUser(_, _, _, _))
+          case _ => ???
+        }
+        saved     <- DB.insert(checked)
+      } yield saved
     }
-    private def getChildrenGroups(group: Option[Group]) = group match {
-      case None => Future.successful(Nil)
-      case Some(g) => DB.getGroupChildren(g.id).map(_.toList)
+
+    def updateUser(id: UUID, upd: UserUpdate)(implicit authz: IAMAccessChecker) = {
+      for {
+        existing <- readUserOrFail(id)
+        updated  <- new UserUpdater(existing, upd(existing)).update.toFuture
+        _        <- checkEmailOwnership(updated)
+        _        <- checkLoginOwnership(updated)
+        _        <- updated.level match {
+          case UserLevel.Platform => checkPlatformUserAuthz(updated, authz.canOperatePlatformUser(_))
+          case UserLevel.Channel => checkChannelUserAuthz(updated, authz.canOperateChannelUser(_, _))
+          case UserLevel.Group => checkGroupUserAuthz3(updated, authz.canUpdateGroupUser(_, _, _, _))
+          case _ => ???
+        }
+        saved    <- DB.update(updated)
+      } yield saved
     }
 
-    private def dbCheckUserAndAuthz(u: User)(implicit authz: IAMAuthzChecker) = for {
-      _              <- checkEmailOwnership(u)
-      _              <- checkLoginOwnership(u)
-      groupOpt       <- checkGroup(u)
-      channelOpt     <- checkChannel(u)
-      parentGroups   <- getParentGroupChain(groupOpt)
-      childrenGroups <- getChildrenGroups(groupOpt)
-      _              <- authz(IAMAuthzData(user = Some(u), group = groupOpt, channel = channelOpt, parentGroups = parentGroups, childrenGroups = childrenGroups)).toFuture
-    } yield Done
-
-    private def checkUserAuthz(u: User)(implicit authz: IAMAuthzChecker) = for {
-      groupOpt       <- u.groupId map (gid => Groups.CRUD.getGroup(gid)(voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-      channelOpt     <- u.channelId map (cid => Channels.CRUD.getChannel(cid)(voidIAMAuthzChecker) map (Some(_))) getOrElse Future.successful(None)
-      parentGroups   <- getParentGroupChain(groupOpt)
-      childrenGroups <- getChildrenGroups(groupOpt)
-      _              <- authz(IAMAuthzData(group = groupOpt, channel = channelOpt, parentGroups = parentGroups, childrenGroups = childrenGroups)).toFuture
-    } yield Done
-
-    def createUser(user: User)(implicit authz: IAMAuthzChecker) = for {
-      validated <- UserValidator.validate(user.copy(password = BCrypt.hashPassword(user.password), created = Some(getCurrentDateTime), login = user.login.toLowerCase, email = EmailAddress(user.email.value.toLowerCase))).toFuture
-      _         <- dbCheckUserAndAuthz(user)
-      saved     <- DB.insert(validated)
-    } yield saved
-
-    def updateUser(id: UUID, upd: UserUpdate)(implicit authz: IAMAuthzChecker) = for {
-      existing <- readUserOrFail(id)
-      updated  <- new UserUpdater(existing, upd(existing)).update.toFuture
-      _        <- dbCheckUserAndAuthz(updated)
-      saved    <- DB.update(updated)
-    } yield saved
-
-    def getUser(id: UUID)(implicit authz: IAMAuthzChecker) = for {
+    def getUser(id: UUID)(implicit authz: IAMAccessChecker) = for {
       user <- readUserOrFail(id)
-      _    <- checkUserAuthz(user)
+      _    <- user.level match {
+        case UserLevel.Platform => checkPlatformUserAuthz(user, authz.canOperatePlatformUser(_))
+        case UserLevel.Channel => checkChannelUserAuthz(user, authz.canOperateChannelUser(_, _))
+        case UserLevel.Group => checkGroupUserAuthz4(user, authz.canReadGroupUser(_, _, _, _, _))
+        case _ => ???
+      }
     } yield user
 
-    def deleteUser(id: UUID)(implicit authz: IAMAuthzChecker) = for {
+    def deleteUser(id: UUID)(implicit authz: IAMAccessChecker) = for {
       user <- readUserOrFail(id)
-      _    <- checkUserAuthz(user)
+      _    <- user.level match {
+        case UserLevel.Platform => checkPlatformUserAuthz(user, authz.canOperatePlatformUser(_))
+        case UserLevel.Channel => checkChannelUserAuthz(user, authz.canOperateChannelUser(_, _))
+        case UserLevel.Group => checkGroupUserAuthz3(user, authz.canDeleteGroupUser(_, _, _, _))
+        case _ => ???
+      }
       _    <- DB.deleteUser(id)
     } yield Done
 
     def loginPassword(login: String, candidate: String) = for {
-      user       <- DB.getUserByLoginName(login).getOrFail(AuthenticationFailedException(s"Bad user or password"))
-      groupOpt   <- checkGroup(user)
-      _          <- checkChannel(user)
-      _          <- if(user.status==UserStatus.Active && !groupOpt.exists(_.status!=GroupStatus.Active)) Future.successful(Done) else Future.failed(AccessRefusedException(s"user is not authorized to log in"))
-      _          <- Authentication.loginPassword(user, candidate).toFuture
+      user     <- DB.getUserByLoginName(login).getOrFail(AuthenticationFailedException(s"Bad user or password"))
+      groupOpt <- user.groupId.map(gid => Groups.CRUD.getGroup(gid)(VoidIAMAccessChecker).map(Some(_))) getOrElse Future.successful(None)
+      _        <- if(user.status==UserStatus.Active && !groupOpt.exists(_.status!=GroupStatus.Active)) Future.successful(Done) else Future.failed(AccessRefusedException(s"user is not authorized to log in"))
+      _        <- Authentication.loginPassword(user, candidate).toFuture
     } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive.seconds)))
   }
 }

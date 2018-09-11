@@ -4,7 +4,7 @@ import java.util.UUID
 
 import myproject.common.FutureImplicits._
 import myproject.common.{IllegalOperationException, ValidationErrorException}
-import myproject.iam.Authorization.voidIAMAuthzChecker
+import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.CRUD._
@@ -15,7 +15,7 @@ import test.DatabaseSpec
 @DoNotDiscover
 class OrganizationSpecs extends DatabaseSpec {
 
-  implicit val authz = voidIAMAuthzChecker
+  implicit val authz = VoidIAMAccessChecker
 
   val channel = Channel(UUID.randomUUID, "organization specs channel", None, None)
   val g1 = Group(UUID.randomUUID, "group 1", channel.id)

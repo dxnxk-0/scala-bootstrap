@@ -9,7 +9,7 @@ import myproject.common.Updater.Updater
 import myproject.common.Validation.Validator
 import myproject.common.{ObjectNotFoundException, TimeManagement}
 import myproject.database.DB
-import myproject.iam.Authorization.{IAMAuthzChecker, IAMAuthzData, voidIAMAuthzChecker}
+import myproject.iam.Authorization.{IAMAccessChecker, VoidIAMAccessChecker}
 
 import scala.util.Try
 
@@ -33,35 +33,35 @@ object Channels {
   object CRUD {
     private def retrieveChannelOrFail(id: UUID) = DB.getChannel(id).getOrFail(ObjectNotFoundException(s"channel with id $id was not found"))
 
-    def getAllChannels(authz: IAMAuthzChecker) = authz(IAMAuthzData()).toFuture flatMap (_ => DB.getAllChannels)
+    def getAllChannels(implicit authz: IAMAccessChecker) = authz.canListChannels.toFuture flatMap (_ => DB.getAllChannels)
 
-    def createChannel(channel: Channel)(implicit authz: IAMAuthzChecker) = for {
-      _     <- authz(IAMAuthzData()).toFuture
+    def createChannel(channel: Channel)(implicit authz: IAMAccessChecker) = for {
+      _     <- authz.canCreateChannel(channel).toFuture
       saved <- DB.insert(channel.copy(created = Some(TimeManagement.getCurrentDateTime)))
     } yield saved
 
-    def getChannel(id: UUID)(implicit authz: IAMAuthzChecker) = for {
+    def getChannel(id: UUID)(implicit authz: IAMAccessChecker) = for {
       channel <- retrieveChannelOrFail(id)
-      _       <- authz(IAMAuthzData(channel = Some(channel))).toFuture
+      _       <- authz.canReadChannel(channel).toFuture
     } yield channel
 
-    def updateChannel(id: UUID, upd: ChannelUpdate)(implicit authz: IAMAuthzChecker) = for {
+    def updateChannel(id: UUID, upd: ChannelUpdate)(implicit authz: IAMAccessChecker) = for {
       existing  <- retrieveChannelOrFail(id)
-      _         <- authz(IAMAuthzData(channel = Some(existing))).toFuture
+      _         <- authz.canUpdateChannel(existing).toFuture
       candidate <- Try(upd(existing)).toFuture
       updated   <- new ChannelUpdater(existing, candidate).update.toFuture
       saved     <- DB.update(updated)
     } yield saved
 
-    def deleteChannel(id: UUID)(implicit authz: IAMAuthzChecker) = for {
+    def deleteChannel(id: UUID)(implicit authz: IAMAccessChecker) = for {
       channel <- retrieveChannelOrFail(id)
-      _       <- authz(IAMAuthzData(channel = Some(channel))).toFuture
+      _       <- authz.canDeleteChannel(channel).toFuture
       result  <- DB.deleteChannel(id)
     } yield result
 
-    def getChannelGroups(id: UUID)(implicit authz: IAMAuthzChecker) = for {
-      channel <- getChannel(id)(voidIAMAuthzChecker)
-      _       <- authz(IAMAuthzData(channel = Some(channel))).toFuture
+    def getChannelGroups(id: UUID)(implicit authz: IAMAccessChecker) = for {
+      channel <- getChannel(id)(VoidIAMAccessChecker)
+      _       <- authz.canListChannelGroups(channel).toFuture
       groups  <- DB.getChannelGroups(id)
     } yield groups
   }
