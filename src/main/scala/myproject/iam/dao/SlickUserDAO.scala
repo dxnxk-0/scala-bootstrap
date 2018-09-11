@@ -3,16 +3,17 @@ package myproject.iam.dao
 import java.time.LocalDateTime
 import java.util.UUID
 
-import myproject.common.Done
+import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
-import myproject.database.DAO
+import myproject.common.{Done, ObjectNotFoundException}
+import myproject.database.SlickDAO
 import myproject.iam.Users.GroupRole.GroupRole
 import myproject.iam.Users.UserLevel.UserLevel
 import myproject.iam.Users.UserStatus.UserStatus
-import myproject.iam.Users.{GroupRole, User, UserLevel, UserStatus}
+import myproject.iam.Users._
 import uk.gov.hmrc.emailaddress.EmailAddress
 
-trait UserDAO extends DAO { self: GroupDAO with ChannelDAO =>
+trait SlickUserDAO extends UserDAO with SlickDAO { self: SlickGroupDAO with SlickChannelDAO =>
 
   import api._
 
@@ -58,8 +59,11 @@ trait UserDAO extends DAO { self: GroupDAO with ChannelDAO =>
   protected lazy val users = TableQuery[UsersTable]
 
   def getUserById(id: UUID) = db.run(users.filter(_.id===id).result) map (_.headOption)
+  def getUserByIdF(id: UUID) = getUserById(id).getOrFail(ObjectNotFoundException(s"user with id $id was not found"))
   def getUserByLoginName(login: String) = db.run(users.filter(_.login===login).result) map (_.headOption)
+  def getUserByLoginNameF(login: String) = getUserByLoginName(login).getOrFail(ObjectNotFoundException(s"user with login $login was not found"))
   def getUserByEmail(email: EmailAddress) = db.run(users.filter(_.email===email).result) map (_.headOption)
+  def getUserByEmailF(email: EmailAddress) = getUserByEmail(email).getOrFail(ObjectNotFoundException(s"user with email $email was not found"))
   def update(user: User) = db.run(users.filter(_.id===user.id).update(user)) map (_ => user)
   def insert(user: User) = db.run(users += user) map (_ => user)
   def insert(batch: Seq[User]) = db.run(users ++= batch) map (_ => Done)

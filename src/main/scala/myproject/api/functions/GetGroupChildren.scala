@@ -5,11 +5,12 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper.required
-import myproject.iam.Authorization.DefaultIAMAccessChecker
-import myproject.iam.Groups.CRUD
+import myproject.iam.Channels.ChannelDAO
+import myproject.iam.Groups.{CRUD, GroupAccessChecker, GroupDAO}
 import myproject.iam.Users
+import myproject.iam.Users.User
 
-class GetGroupChildren extends ApiFunction {
+class GetGroupChildren(implicit authz: User => GroupAccessChecker, db: GroupDAO with ChannelDAO) extends ApiFunction {
   override val name = "get_group_children"
   override val doc = ApiSummaryDoc(
     description = "get all the descendants of a group (this function is more dedicated to a parent group admin as for a channel or platform admin, the complete group hierarchy can be reconstructed from the group lists of a channel using the parent id property)",
@@ -18,7 +19,7 @@ class GetGroupChildren extends ApiFunction {
   override def process(implicit p: OpaqueData.ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     val groupId = required(p.uuid("group_id"))
 
-    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+    implicit val checker = authz(user)
 
     checkParamAndProcess(groupId) flatMap { _ =>
       CRUD.getGroupChildren(groupId.get) map(_.map(_.toMap))

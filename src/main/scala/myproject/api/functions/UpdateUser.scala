@@ -4,10 +4,11 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Authorization.DefaultIAMAccessChecker
-import myproject.iam.Users.{CRUD, GroupRole, User}
+import myproject.iam.Channels.ChannelDAO
+import myproject.iam.Groups.GroupDAO
+import myproject.iam.Users._
 
-class UpdateUser extends ApiFunction {
+class UpdateUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO)  extends ApiFunction {
   override val name = "update_user"
   override val doc = ApiSummaryDoc(
     description = "fully update or patch a user regardless of his type",
@@ -20,10 +21,9 @@ class UpdateUser extends ApiFunction {
     val login = optional(p.nonEmptyString("login"))
     val groupRole = optionalAndNullable(p.enumString("group_role", GroupRole))
 
+    implicit val checker = authz(user)
+
     checkParamAndProcess(userId, email, password, login, groupRole) flatMap { _ =>
-
-      implicit val authz = new DefaultIAMAccessChecker(Some(user))
-
       CRUD.updateUser(userId.get, u =>
         u.copy(
           login = login.get.getOrElse(u.login),

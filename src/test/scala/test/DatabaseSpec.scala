@@ -6,6 +6,8 @@ import org.scalatest.BeforeAndAfter
 
 trait DatabaseSpec extends UnitSpec with BeforeAndAfter {
 
+  implicit val db = DB
+
   before {
     InitTestData.init
   }

@@ -5,11 +5,12 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Authorization.DefaultIAMAccessChecker
-import myproject.iam.Groups.CRUD
+import myproject.iam.Channels.ChannelDAO
+import myproject.iam.Groups.{CRUD, GroupAccessChecker, GroupDAO}
 import myproject.iam.Users
+import myproject.iam.Users.User
 
-class GetGroupUsers extends ApiFunction {
+class GetGroupUsers(implicit authz: User => GroupAccessChecker, db: GroupDAO with ChannelDAO) extends ApiFunction {
   override val name = "get_group_users"
   override val doc = ApiSummaryDoc(
     description = "get all users in a given group (requires at least group administration capability or higher privileges)",
@@ -18,7 +19,7 @@ class GetGroupUsers extends ApiFunction {
   override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     val groupId = required(p.uuid("group_id"))
 
-    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+    implicit val checker = authz(user)
 
     checkParamAndProcess(groupId) flatMap { _ =>
       CRUD.getGroupUsers(groupId.get) map { users =>

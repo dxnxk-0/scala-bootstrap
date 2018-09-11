@@ -8,11 +8,12 @@ import myproject.audit.Audit
 import myproject.common.TimeManagement
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Authorization.DefaultIAMAccessChecker
-import myproject.iam.Groups.{CRUD, Group}
+import myproject.iam.Channels.ChannelDAO
+import myproject.iam.Groups.{CRUD, Group, GroupAccessChecker, GroupDAO}
 import myproject.iam.Users
+import myproject.iam.Users.User
 
-class CreateGroup extends ApiFunction {
+class CreateGroup(implicit authz: User => GroupAccessChecker, db: GroupDAO with ChannelDAO) extends ApiFunction {
   override val name = "create_group"
   override val doc = ApiSummaryDoc(
     description = "create a new users group (requires admin privileges on the target channel)",
@@ -24,7 +25,7 @@ class CreateGroup extends ApiFunction {
     val channelId = required(p.uuid("channel_id"), "the channel id the new group will belong to")
     val parentId = optional(p.uuid("parent_id"), "an optional parent group id can be provided in case the created group belongs to an organization")
 
-    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+    implicit val checker = authz(user)
 
     checkParamAndProcess(groupName, channelId, parentId) flatMap { _ =>
       val group = Group(UUID.randomUUID, groupName.get, channelId.get, parentId = parentId.get)

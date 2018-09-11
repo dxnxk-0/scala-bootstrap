@@ -1,9 +1,9 @@
 package myproject.database
 
-import myproject.iam.dao.{ChannelDAO, GroupDAO, TokenDAO, UserDAO}
+import myproject.iam.dao.{SlickChannelDAO, SlickGroupDAO, SlickTokenDAO, SlickUserDAO}
 import slick.jdbc.JdbcProfile
 
-object DB extends JdbcProfile with UserDAO with TokenDAO with GroupDAO with ChannelDAO {
+object DB extends JdbcProfile with SlickUserDAO with SlickTokenDAO with SlickGroupDAO with SlickChannelDAO {
 
   import api._
 

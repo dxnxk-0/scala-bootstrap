@@ -5,11 +5,11 @@ import java.util.UUID
 
 import myproject.common.Done
 import myproject.common.Runtime.ec
-import myproject.database.DAO
+import myproject.database.SlickDAO
 import myproject.iam.Tokens.TokenRole.TokenRole
-import myproject.iam.Tokens.{Token, TokenRole}
+import myproject.iam.Tokens.{Token, TokenDAO, TokenRole}
 
-trait TokenDAO extends DAO { self: UserDAO =>
+trait SlickTokenDAO extends TokenDAO with SlickDAO { self: SlickUserDAO =>
 
   import api._
 

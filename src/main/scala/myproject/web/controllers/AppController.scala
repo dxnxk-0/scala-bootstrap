@@ -6,6 +6,7 @@ import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsReject
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{AuthenticationFailedRejection, MissingCookieRejection, RejectionHandler}
 import myproject.common.serialization.AkkaHttpMarshalling
+import myproject.database.DB
 import myproject.iam.Users.CRUD.loginPassword
 import myproject.web.server.WebAuth._
 import myproject.web.views.AppView._
@@ -17,6 +18,7 @@ object AppController extends HtmlController {
   private val authCookieName = "tapas-auth"
 
   private implicit val htmlMarshaller = AkkaHttpMarshalling.getHtmlMarshaller
+  private implicit val db = DB
 
   private val appName = "app"
   private val loginRouteName = "login"

@@ -5,6 +5,7 @@ import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
 import myproject.Config
+import myproject.database.DB
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
@@ -16,11 +17,12 @@ object WebServer extends App {
   private implicit val materializer = ActorMaterializer()
 
   private implicit val logger = Logger(LoggerFactory.getLogger("web-server"))
+  implicit val db = DB
 
   val iface = Config.server.interface
   val port = Config.server.port
 
-  EnvInit.initEnv()
+  EnvInit.initEnv
 
   Http().bindAndHandle(Routes.httpRoutes, iface, port)
 

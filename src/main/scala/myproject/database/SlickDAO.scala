@@ -5,7 +5,7 @@ import java.time.{LocalDate, LocalDateTime}
 
 import slick.jdbc.JdbcProfile
 
-trait DAO extends JdbcProfile {
+trait SlickDAO extends JdbcProfile {
 
   import api._
 

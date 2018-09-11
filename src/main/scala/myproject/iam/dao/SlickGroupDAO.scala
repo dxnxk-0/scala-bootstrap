@@ -4,14 +4,15 @@ import java.sql.JDBCType
 import java.time.LocalDateTime
 import java.util.UUID
 
-import myproject.common.Done
+import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
-import myproject.database.DAO
+import myproject.common.{Done, ObjectNotFoundException}
+import myproject.database.SlickDAO
 import myproject.iam.Groups.GroupStatus.GroupStatus
-import myproject.iam.Groups.{Group, GroupStatus}
+import myproject.iam.Groups.{Group, GroupDAO, GroupStatus}
 import slick.jdbc.{GetResult, PositionedParameters, SetParameter}
 
-trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
+trait SlickGroupDAO extends GroupDAO with SlickDAO { self: SlickChannelDAO with SlickUserDAO =>
 
   import api._
 
@@ -43,6 +44,7 @@ trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
   protected lazy val groups = TableQuery[GroupsTable]
 
   def getGroup(id: UUID) = db.run(groups.filter(_.id===id).result) map (_.headOption)
+  def getGroupF(id: UUID) = getGroup(id).getOrFail(ObjectNotFoundException(s"group with id $id was not found"))
   def insert(group: Group) = {
     val action = for {
       _ <- groups += group
@@ -52,7 +54,7 @@ trait GroupDAO extends DAO { self: ChannelDAO with UserDAO =>
   }
   def update(group: Group) = db.run(groups.filter(_.id===group.id).update(group)) map (_ => group)
   def deleteGroup(id: UUID) = db.run(groups.filter(_.id===id).delete) map (_ => Done)
-  def getGroupUsers(groupId: UUID) = db.run(users.filter(_.groupId===groupId).result)
+  def getGroupUsers(groupId: UUID) = db.run(users.filter(_.groupId===groupId).result) map (_.toList)
 
   def getGroupChildren(groupId: UUID) = { // CTE not supported by Slick
     val cte = sql"""

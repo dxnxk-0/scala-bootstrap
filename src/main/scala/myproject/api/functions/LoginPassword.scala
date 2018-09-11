@@ -5,9 +5,11 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Users.CRUD
+import myproject.iam.Channels.ChannelDAO
+import myproject.iam.Groups.GroupDAO
+import myproject.iam.Users.{CRUD, UserDAO}
 
-class LoginPassword extends ApiFunction {
+class LoginPassword(implicit db: UserDAO with GroupDAO with ChannelDAO)  extends ApiFunction {
   override val name = "login"
   override val doc = ApiSummaryDoc(
     description = "get a JWT login token using a login and a password",

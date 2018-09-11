@@ -3,16 +3,18 @@ package myproject.iam
 import java.time.LocalDateTime
 import java.util.UUID
 
+import myproject.common.Authorization.{AccessChecker, AuthorizationCheck}
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.TimeManagement.getCurrentDateTime
 import myproject.common.Validation.{ValidationError, Validator}
-import myproject.common.{Done, IllegalOperationException, ObjectNotFoundException}
-import myproject.database.DB
-import myproject.iam.Authorization.{IAMAccessChecker, VoidIAMAccessChecker}
+import myproject.common.{Done, IllegalOperationException}
+import myproject.iam.Channels.{Channel, ChannelDAO}
 import myproject.iam.Groups.GroupStatus.GroupStatus
+import myproject.iam.Users.User
 
 import scala.concurrent.Future
+import scala.language.reflectiveCalls
 import scala.util.Try
 
 object Groups {
@@ -43,77 +45,118 @@ object Groups {
 
   type GroupUpdate = Group => Group
 
-  object CRUD {
-    private def retrieveGroupOrFail(id: UUID): Future[Group] = DB.getGroup(id).getOrFail(ObjectNotFoundException(s"group with id $id was not found"))
+  trait GroupAccessChecker extends AccessChecker {
+    def canCreateGroup(implicit channel: Channel, target: Group): AuthorizationCheck
+    def canReadGroup(implicit channel: Channel, target: Group, parents: List[Group]): AuthorizationCheck
+    def canListGroupUsers(implicit channel: Channel, target: Group, parents: List[Group]): AuthorizationCheck
+    def canUpdateGroup(implicit channel: Channel, target: Group, parents: List[Group]): AuthorizationCheck
+    def canGetGroupHierarchy(implicit channel: Channel, target: Group, parents: List[Group]): AuthorizationCheck
+    def canAdminGroup(implicit channel: Channel, target: Group) : AuthorizationCheck
+    def canDeleteGroup(implicit channel: Channel, target: Group): AuthorizationCheck
+  }
 
-    private def checkParentGroup(group: Group) = group.parentId match {
+  trait VoidGroupAccessChecker extends GroupAccessChecker {
+    override val requester = None
+    def canCreateGroup(implicit channel: Channel, target: Group) = grant
+    def canReadGroup(implicit channel: Channel, target: Group, parents: List[Group]) = grant
+    def canListGroupUsers(implicit channel: Channel, target: Group, parents: List[Group]) = grant
+    def canUpdateGroup(implicit channel: Channel, target: Group, parents: List[Group]) = grant
+    def canGetGroupHierarchy(implicit channel: Channel, target: Group, parents: List[Group]) = grant
+    def canAdminGroup(implicit channel: Channel, target: Group)  = grant
+    def canDeleteGroup(implicit channel: Channel, target: Group) = grant
+  }
+
+  trait DefaultGroupAccessChecker extends GroupAccessChecker {
+    def canCreateGroup(implicit channel: Channel, target: Group) = isPlatformAdmin orElse isChannelAdmin
+    def canReadGroup(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse belongToTheGroup
+    def canListGroupUsers(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isAdminOfOneGroup(parents)
+    def canUpdateGroup(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isAdminOfOneGroup(parents)
+    def canGetGroupHierarchy(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isAdminOfOneGroup(parents)
+    def canAdminGroup(implicit channel: Channel, target: Group) = isPlatformAdmin orElse isChannelAdmin
+    def canDeleteGroup(implicit channel: Channel, target: Group) = isPlatformAdmin
+  }
+
+  trait GroupDAO {
+    def getGroup(id: UUID): Future[Option[Group]]
+    def getGroupF(id: UUID): Future[Group]
+    def insert(group: Group): Future[Group]
+    def update(group: Group): Future[Group]
+    def deleteGroup(id: UUID): Future[Done]
+    def getGroupUsers(groupId: UUID): Future[List[User]]
+    def getGroupChildren(groupId: UUID): Future[List[Group]]
+    def getGroupParents(groupId: UUID): Future[List[Group]]
+  }
+  
+  object CRUD {
+
+    private def checkParentGroup(group: Group)(implicit db: GroupDAO) = group.parentId match {
       case None => Future.successful(Done)
-      case Some(id) => retrieveGroupOrFail(id) map { parent =>
+      case Some(id) => db.getGroupF(id) map { parent =>
         if(parent.channelId==group.channelId) Done
         else throw IllegalOperationException(s"parent group has to be in the same channel")
       }
     }
 
-    def createGroup(group: Group)(implicit authz: IAMAccessChecker) = for {
-      _       <- checkParentGroup(group)
-      channel <- Channels.CRUD.getChannel(group.channelId)(VoidIAMAccessChecker)
+    def createGroup(group: Group)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = for {
+      channel <- db.getChannelF(group.channelId)
       _       <- authz.canCreateGroup(channel, group).toFuture
       _       <- GroupValidator.validate(group).toFuture
-      saved   <- DB.insert(group.copy(created = Some(getCurrentDateTime)))
+      _       <- checkParentGroup(group)
+      saved   <- db.insert(group.copy(created = Some(getCurrentDateTime)))
     } yield saved
 
-    def getGroup(id: UUID)(implicit authz: IAMAccessChecker) = for {
-      group   <- retrieveGroupOrFail(id)
-      parents <- group.parentId.map(_ => DB.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
-      channel <- Channels.CRUD.getChannel(group.channelId)(VoidIAMAccessChecker)
+    def getGroup(id: UUID)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = for {
+      group   <- db.getGroupF(id)
+      parents <- group.parentId.map(_ => db.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
+      channel <- db.getChannelF(group.channelId)
       _       <- authz.canReadGroup(channel, group, parents).toFuture
     } yield group
 
-    def updateGroup(id: UUID, upd: GroupUpdate)(implicit authz: IAMAccessChecker) = {
+    def updateGroup(id: UUID, upd: GroupUpdate)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = {
       def filter(existing: Group, candidate: Group) = existing.copy(
         name = candidate.name,
         parentId = candidate.parentId,
         status = candidate.status)
 
       for {
-        existing  <- retrieveGroupOrFail(id)
-        channel   <- Channels.CRUD.getChannel(existing.channelId)(VoidIAMAccessChecker)
-        parents   <- existing.parentId.map(_ => DB.getGroupParents(existing.id)).getOrElse(Future.successful(Nil))
+        existing  <- db.getGroupF(id)
+        channel   <- db.getChannelF(existing.channelId)
+        parents   <- existing.parentId.map(_ => db.getGroupParents(existing.id)).getOrElse(Future.successful(Nil))
         _         <- authz.canUpdateGroup(channel, existing, parents).toFuture
         updated   <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
         _         <- checkParentGroup(updated)
         _         <- GroupValidator.validate(updated).toFuture
-        saved     <- DB.update(updated)
+        saved     <- db.update(updated)
       } yield saved
     }
 
-    def deleteGroup(id: UUID)(implicit authz: IAMAccessChecker) = for {
-      group   <- retrieveGroupOrFail(id)
-      channel <- Channels.CRUD.getChannel(group.channelId)(VoidIAMAccessChecker)
+    def deleteGroup(id: UUID)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = for {
+      group   <- db.getGroupF(id)
+      channel <- db.getChannelF(group.channelId)
       _       <- authz.canDeleteGroup(channel, group).toFuture
-      result  <- DB.deleteGroup(id)
+      result  <- db.deleteGroup(id)
     } yield result
 
-    def getGroupUsers(groupId: UUID)(implicit authz: IAMAccessChecker) = for {
-      group   <- retrieveGroupOrFail(groupId)
-      channel <- Channels.CRUD.getChannel(group.channelId)(VoidIAMAccessChecker)
-      parents <- group.parentId.map(_ => DB.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
+    def getGroupUsers(groupId: UUID)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = for {
+      group   <- db.getGroupF(groupId)
+      channel <- db.getChannelF(group.channelId)
+      parents <- group.parentId.map(_ => db.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
       _       <- authz.canListGroupUsers(channel, group, parents).toFuture
-      users   <- DB.getGroupUsers(groupId)
+      users   <- db.getGroupUsers(groupId)
     } yield users
 
-    def getGroupChildren(groupId: UUID)(implicit authz: IAMAccessChecker) = for {
-      group    <- retrieveGroupOrFail(groupId)
-      channel  <- Channels.CRUD.getChannel(group.channelId)(VoidIAMAccessChecker)
-      parents  <- group.parentId.map(_ => DB.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
+    def getGroupChildren(groupId: UUID)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = for {
+      group    <- db.getGroupF(groupId)
+      channel  <- db.getChannelF(group.channelId)
+      parents  <- group.parentId.map(_ => db.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
       _        <- authz.canGetGroupHierarchy(channel, group, parents).toFuture
-      children <- DB.getGroupChildren(groupId)
+      children <- db.getGroupChildren(groupId)
     } yield children
 
-    def getGroupParents(groupId: UUID)(implicit authz: IAMAccessChecker) = for {
-      group   <- retrieveGroupOrFail(groupId)
-      channel <- Channels.CRUD.getChannel(group.channelId)(VoidIAMAccessChecker)
-      parents <- group.parentId.map(_ => DB.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
+    def getGroupParents(groupId: UUID)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = for {
+      group   <- db.getGroupF(groupId)
+      channel <- db.getChannelF(group.channelId)
+      parents <- group.parentId.map(_ => db.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
       _       <- authz.canGetGroupHierarchy(channel, group, parents).toFuture
     } yield parents
   }

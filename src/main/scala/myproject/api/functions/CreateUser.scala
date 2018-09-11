@@ -7,8 +7,9 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Authorization.DefaultIAMAccessChecker
-import myproject.iam.Users.{CRUD, GroupRole, User, UserLevel}
+import myproject.iam.Channels.ChannelDAO
+import myproject.iam.Groups.GroupDAO
+import myproject.iam.Users._
 
 trait CreateUserParameters {
   def getCommonParameters(implicit p: ReifiedDataWrapper) = (
@@ -20,7 +21,7 @@ trait CreateUserParameters {
   )
 }
 
-class CreatePlatformUser extends ApiFunction with CreateUserParameters {
+class CreatePlatformUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) extends ApiFunction with CreateUserParameters {
   override val name = "create_platform_user"
   override val doc = ApiSummaryDoc(
     description = "create a new platform user (platform users are defined at the highest possible level which is the platform) - "
@@ -30,7 +31,7 @@ class CreatePlatformUser extends ApiFunction with CreateUserParameters {
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val (login, password, email, fn, ln) = getCommonParameters
 
-    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+    implicit val checker = authz(user)
 
     checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.Platform, login.get, fn.get, ln.get, email.get, password.get)
@@ -39,7 +40,7 @@ class CreatePlatformUser extends ApiFunction with CreateUserParameters {
   }
 }
 
-class CreateChannelUser extends ApiFunction with CreateUserParameters {
+class CreateChannelUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) extends ApiFunction with CreateUserParameters {
   override val name = "create_channel_user"
   override val doc = ApiSummaryDoc(
     description = "create a new channel user (channel users are users defined at the channel level (platform>channels>groups>users)) ; "
@@ -50,7 +51,7 @@ class CreateChannelUser extends ApiFunction with CreateUserParameters {
     val (login, password, email, fn, ln) = getCommonParameters
     val channelId = required(p.uuid("channel_id"))
 
-    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+    implicit val checker = authz(user)
 
     checkParamAndProcess(login, password, email, channelId, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.Channel, login.get, fn.get, ln.get, email.get, password.get, Some(channelId.get))
@@ -59,7 +60,7 @@ class CreateChannelUser extends ApiFunction with CreateUserParameters {
   }
 }
 
-class CreateGroupUser extends ApiFunction with CreateUserParameters {
+class CreateGroupUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) extends ApiFunction with CreateUserParameters {
   override val name = "create_group_user"
   override val doc = ApiSummaryDoc(
     description = "create a new group user (group users are users defined at the group level (platform>channels>groups>users)) ; "
@@ -70,7 +71,7 @@ class CreateGroupUser extends ApiFunction with CreateUserParameters {
     val (login, password, email, fn, ln) = getCommonParameters
     val (groupId, groupRole) = (required(p.uuid("group_id")), nullable(p.enumString("group_role", GroupRole)))
 
-    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+    implicit val checker = authz(user)
 
     checkParamAndProcess(login, email, password, groupId, groupRole, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.Group, login.get, fn.get, ln.get, email.get, password.get, None, Some(groupId.get), groupRole.get)
@@ -79,7 +80,7 @@ class CreateGroupUser extends ApiFunction with CreateUserParameters {
   }
 }
 
-class CreateSimpleUser extends ApiFunction with CreateUserParameters {
+class CreateSimpleUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) extends ApiFunction with CreateUserParameters {
   override val name = "create_simple_user"
   override val doc = ApiSummaryDoc(
     description = "create a new simple user (TBD)",
@@ -88,7 +89,7 @@ class CreateSimpleUser extends ApiFunction with CreateUserParameters {
   override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
     val (login, password, email, fn, ln) = getCommonParameters
 
-    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+    implicit val checker = authz(user)
 
     checkParamAndProcess(login, password, email, fn, ln) flatMap { _ =>
       val user = User(UUID.randomUUID, UserLevel.NoLevel, login.get, fn.get, ln.get, email.get, password.get)

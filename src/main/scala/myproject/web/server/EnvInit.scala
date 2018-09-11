@@ -7,16 +7,16 @@ import myproject.common.Runtime.ec
 import myproject.database.DB
 import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.CRUD._
-import myproject.iam.Channels.Channel
+import myproject.iam.Channels.{Channel, ChannelDAO}
 import myproject.iam.Groups.CRUD._
-import myproject.iam.Groups.Group
+import myproject.iam.Groups.{Group, GroupDAO}
 import myproject.iam.Users.CRUD._
-import myproject.iam.Users.{GroupRole, User, UserLevel}
+import myproject.iam.Users._
 import uk.gov.hmrc.emailaddress.EmailAddress
 
 object EnvInit {
 
-  def initEnv() = {
+  def initEnv(implicit db: UserDAO with GroupDAO with ChannelDAO) = {
     val root = User(UUID.fromString("00000000-0000-0000-0000-000000000000"), UserLevel.Platform, "root", "", "", EmailAddress("root@nowhere"), "Kondor_123")
     val channel = Channel(UUID.fromString("14526b8d-050a-4b7b-a70b-903a1eb025cc"), "demo channel")
     val channelAdmin = User(UUID.randomUUID, UserLevel.Channel, "channel-admin", "bob", "the admin", EmailAddress("admin@channel.com"), "Kondor_123", Some(channel.id))

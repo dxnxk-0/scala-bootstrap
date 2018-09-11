@@ -5,11 +5,11 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Authorization.DefaultIAMAccessChecker
-import myproject.iam.Channels.CRUD
+import myproject.iam.Channels.{CRUD, ChannelAccessChecker, ChannelDAO}
 import myproject.iam.Users
+import myproject.iam.Users.User
 
-class GetGroups extends ApiFunction{
+class GetGroups(implicit authz: User => ChannelAccessChecker, db: ChannelDAO) extends ApiFunction{
   override val name = "get_groups"
   override val doc = ApiSummaryDoc(
     description = "get all groups in a given channel (requires at least channel admin rights)",
@@ -18,7 +18,7 @@ class GetGroups extends ApiFunction{
   override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
     val channelId = required(p.uuid("channel_id"))
 
-    implicit val authz = new DefaultIAMAccessChecker(Some(user))
+    implicit val checker = authz(user)
 
     checkParamAndProcess(channelId) flatMap { _ =>
       CRUD.getChannelGroups(channelId.get) map { groups =>
