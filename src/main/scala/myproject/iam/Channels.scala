@@ -5,7 +5,6 @@ import java.util.UUID
 
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
-import myproject.common.Updater.Updater
 import myproject.common.Validation.Validator
 import myproject.common.{ObjectNotFoundException, TimeManagement}
 import myproject.database.DB
@@ -21,13 +20,6 @@ object Channels {
     override val validators = Nil
   }
 
-  private class ChannelUpdater(source: Channel, target: Channel) extends Updater(source, target) {
-    override val updaters = List(
-      (c: Channel) => OK(c.copy(name = target.name))
-    )
-    override val validator = ChannelValidator
-  }
-
   type ChannelUpdate = Channel => Channel
 
   object CRUD {
@@ -37,6 +29,7 @@ object Channels {
 
     def createChannel(channel: Channel)(implicit authz: IAMAccessChecker) = for {
       _     <- authz.canCreateChannel(channel).toFuture
+      _     <- ChannelValidator.validate(channel).toFuture
       saved <- DB.insert(channel.copy(created = Some(TimeManagement.getCurrentDateTime)))
     } yield saved
 
@@ -45,13 +38,17 @@ object Channels {
       _       <- authz.canReadChannel(channel).toFuture
     } yield channel
 
-    def updateChannel(id: UUID, upd: ChannelUpdate)(implicit authz: IAMAccessChecker) = for {
-      existing  <- retrieveChannelOrFail(id)
-      _         <- authz.canUpdateChannel(existing).toFuture
-      candidate <- Try(upd(existing)).toFuture
-      updated   <- new ChannelUpdater(existing, candidate).update.toFuture
-      saved     <- DB.update(updated)
-    } yield saved
+    def updateChannel(id: UUID, upd: ChannelUpdate)(implicit authz: IAMAccessChecker) = {
+      def filter(existing: Channel, candidate: Channel) = existing.copy(name = candidate.name)
+
+      for {
+        existing <- retrieveChannelOrFail(id)
+        _        <- authz.canUpdateChannel(existing).toFuture
+        updated  <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
+        _        <- ChannelValidator.validate(updated).toFuture
+        saved    <- DB.update(updated)
+      } yield saved
+    }
 
     def deleteChannel(id: UUID)(implicit authz: IAMAccessChecker) = for {
       channel <- retrieveChannelOrFail(id)

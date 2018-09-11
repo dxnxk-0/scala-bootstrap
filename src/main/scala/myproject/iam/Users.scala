@@ -8,7 +8,6 @@ import myproject.common.Authorization.AuthorizationCheck
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.TimeManagement._
-import myproject.common.Updater.{FieldUpdater, Updater}
 import myproject.common.Validation._
 import myproject.common._
 import myproject.common.security.{BCrypt, JWT}
@@ -23,6 +22,7 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Try
 
 object Users {
 
@@ -113,19 +113,6 @@ object Users {
     )
   }
 
-  private class UserUpdater(source: User, target: User) extends Updater(source, target) {
-    override val updaters: List[FieldUpdater[User]] = List(
-      (u: User) => OK(
-        u.copy(
-          login = target.login.toLowerCase,
-          password = if(source.password!=u.password) BCrypt.hashPassword(target.password) else u.password,
-          email = EmailAddress(target.email.value.toLowerCase),
-          groupRole = target.groupRole,
-          status = target.status))
-    )
-    override val validator = UserValidator
-  }
-
   object CRUD {
     private def readUserOrFail(id: UUID): Future[User] = DB.getUserById(id).getOrFail(ObjectNotFoundException(s"user with id $id was not found"))
     private def checkUniqueUserProperty(user: User, get: => Future[Option[User]], msg: String) = get map {
@@ -175,9 +162,16 @@ object Users {
     }
 
     def updateUser(id: UUID, upd: UserUpdate)(implicit authz: IAMAccessChecker) = {
+      def filter(existing: User, candidate: User) = existing.copy(
+        login = candidate.login.toLowerCase,
+        password = if(existing.password!=candidate.password) BCrypt.hashPassword(candidate.password) else existing.password,
+        email = EmailAddress(candidate.email.value.toLowerCase),
+        groupRole = candidate.groupRole,
+        status = candidate.status)
+
       for {
         existing <- readUserOrFail(id)
-        updated  <- new UserUpdater(existing, upd(existing)).update.toFuture
+        updated  <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
         _        <- checkEmailOwnership(updated)
         _        <- checkLoginOwnership(updated)
         _        <- updated.level match {
@@ -186,6 +180,7 @@ object Users {
           case UserLevel.Group => checkGroupUserAuthz3(updated, authz.canUpdateGroupUser(_, _, _, _))
           case _ => ???
         }
+        _        <- UserValidator.validate(updated).toFuture
         saved    <- DB.update(updated)
       } yield saved
     }

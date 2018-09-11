@@ -6,7 +6,6 @@ import java.util.UUID
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.TimeManagement.getCurrentDateTime
-import myproject.common.Updater.Updater
 import myproject.common.Validation.{ValidationError, Validator}
 import myproject.common.{Done, IllegalOperationException, ObjectNotFoundException}
 import myproject.database.DB
@@ -42,16 +41,6 @@ object Groups {
     )
   }
 
-  private class GroupUpdater(source: Group, target: Group) extends Updater(source, target) {
-    override val updaters = List(
-      (g: Group) => OK(g.copy(
-        name = target.name,
-        parentId = target.parentId,
-        status = target.status))
-    )
-    override val validator = GroupValidator
-  }
-
   type GroupUpdate = Group => Group
 
   object CRUD {
@@ -66,10 +55,10 @@ object Groups {
     }
 
     def createGroup(group: Group)(implicit authz: IAMAccessChecker) = for {
-      _       <- GroupValidator.validate(group).toFuture
       _       <- checkParentGroup(group)
       channel <- Channels.CRUD.getChannel(group.channelId)(VoidIAMAccessChecker)
       _       <- authz.canCreateGroup(channel, group).toFuture
+      _       <- GroupValidator.validate(group).toFuture
       saved   <- DB.insert(group.copy(created = Some(getCurrentDateTime)))
     } yield saved
 
@@ -80,16 +69,23 @@ object Groups {
       _       <- authz.canReadGroup(channel, group, parents).toFuture
     } yield group
 
-    def updateGroup(id: UUID, upd: GroupUpdate)(implicit authz: IAMAccessChecker) = for {
-      existing  <- retrieveGroupOrFail(id)
-      channel   <- Channels.CRUD.getChannel(existing.channelId)(VoidIAMAccessChecker)
-      parents   <- existing.parentId.map(_ => DB.getGroupParents(existing.id)).getOrElse(Future.successful(Nil))
-      _         <- authz.canUpdateGroup(channel, existing, parents).toFuture
-      candidate <- Try(upd(existing)).toFuture
-      updated   <- new GroupUpdater(existing, candidate).update.toFuture
-      _         <- checkParentGroup(updated)
-      saved     <- DB.update(updated)
-    } yield saved
+    def updateGroup(id: UUID, upd: GroupUpdate)(implicit authz: IAMAccessChecker) = {
+      def filter(existing: Group, candidate: Group) = existing.copy(
+        name = candidate.name,
+        parentId = candidate.parentId,
+        status = candidate.status)
+
+      for {
+        existing  <- retrieveGroupOrFail(id)
+        channel   <- Channels.CRUD.getChannel(existing.channelId)(VoidIAMAccessChecker)
+        parents   <- existing.parentId.map(_ => DB.getGroupParents(existing.id)).getOrElse(Future.successful(Nil))
+        _         <- authz.canUpdateGroup(channel, existing, parents).toFuture
+        updated   <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
+        _         <- checkParentGroup(updated)
+        _         <- GroupValidator.validate(updated).toFuture
+        saved     <- DB.update(updated)
+      } yield saved
+    }
 
     def deleteGroup(id: UUID)(implicit authz: IAMAccessChecker) = for {
       group   <- retrieveGroupOrFail(id)
@@ -112,7 +108,7 @@ object Groups {
       parents  <- group.parentId.map(_ => DB.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
       _        <- authz.canGetGroupHierarchy(channel, group, parents).toFuture
       children <- DB.getGroupChildren(groupId)
-    } yield children.toList
+    } yield children
 
     def getGroupParents(groupId: UUID)(implicit authz: IAMAccessChecker) = for {
       group   <- retrieveGroupOrFail(groupId)
