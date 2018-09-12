@@ -8,6 +8,11 @@ object Config {
 
   private val config = ConfigFactory.load()
 
+  object database {
+    private val databaseConfig = config.getConfig("database")
+    val implClassName = databaseConfig.getString("class")
+  }
+
   object server {
     private val serverConfig = config.getConfig("server")
     val interface = serverConfig.getString("interface")

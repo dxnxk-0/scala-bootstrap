@@ -4,7 +4,7 @@ import myproject.api.functions._
 import myproject.audit.Audit.AuditData
 import myproject.common.UnexpectedErrorException
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
-import myproject.database.DB
+import myproject.database.ApplicationDatabase
 import myproject.iam.Authorization.DefaultIAMAccessChecker
 import myproject.iam.Users.User
 
@@ -12,7 +12,7 @@ import scala.concurrent.Future
 
 object ApiFunctionsRegistry {
 
-  implicit val db = DB
+  implicit val db = ApplicationDatabase.productionDatabaseImpl
   implicit val iamAuthz = (u: User) => new DefaultIAMAccessChecker(Some(u))
 
   class ApiHelp extends ApiFunction {

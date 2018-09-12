@@ -1,12 +1,12 @@
 package test
 
 import myproject.common.FutureImplicits._
-import myproject.database.DB
+import myproject.database.ApplicationDatabase.productionDatabaseImpl
 import org.scalatest.BeforeAndAfter
 
 trait DatabaseSpec extends UnitSpec with BeforeAndAfter {
 
-  implicit val db = DB
+  implicit val db = productionDatabaseImpl
 
   before {
     InitTestData.init
@@ -14,5 +14,5 @@ trait DatabaseSpec extends UnitSpec with BeforeAndAfter {
 }
 
 private object InitTestData {
-  lazy val init = DB.reset.futureValue
+  lazy val init = productionDatabaseImpl.reset.futureValue
 }

@@ -4,7 +4,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{RejectionHandler, Route}
 import com.typesafe.scalalogging.Logger
 import myproject.common.serialization.AkkaHttpMarshalling._
-import myproject.database.DB
+import myproject.database.ApplicationDatabase
 import myproject.web.jsonrpc.JsonRPC._
 import myproject.web.server.WebAuth
 import org.slf4j.LoggerFactory
@@ -15,7 +15,7 @@ object JsonRPCApiController extends Controller {
   private implicit val rpcBatchSerializer = getJsonUnmarshaller[Seq[RPCRequest]]
   private implicit val uuidUnmarshaller = getUUIDFromStringUnmarshaller
 
-  private implicit val db = DB
+  private implicit val db = ApplicationDatabase.productionDatabaseImpl
 
   implicit private val logger = Logger(LoggerFactory.getLogger("jsonrpc-api"))
 
