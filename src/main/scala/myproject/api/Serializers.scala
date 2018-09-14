@@ -21,6 +21,7 @@ object Serializers {
         "login" -> user.login,
         "level" -> user.level.toString,
         "email" -> user.email.toString,
+        "status" -> user.status.toString,
         "created" -> user.created.map(_.toString),
         "last_update" -> user.lastUpdate.map(_.toString))
 
@@ -46,6 +47,7 @@ object Serializers {
     def toMap(group: Group) = Map(
       "group_id" -> group.id,
       "name" -> group.name,
+      "status" -> group.status.toString,
       "parent_id" -> group.parentId,
       "channel_id" -> group.channelId,
       "created" -> group.created.map(_.toString),
