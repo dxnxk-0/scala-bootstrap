@@ -7,11 +7,11 @@ import myproject.iam.Users.{DefaultUserAccessChecker, User, VoidUserAccessChecke
 
 object Authorization {
 
-  class DefaultIAMAccessChecker(requestor: Option[User])
+  class DefaultIAMAccessChecker(requestor: User)
     extends AccessChecker
       with DefaultChannelAccessChecker
       with DefaultGroupAccessChecker
-      with DefaultUserAccessChecker { implicit val requester = requestor }
+      with DefaultUserAccessChecker { implicit val requester = Some(requestor) }
 
   object VoidIAMAccessChecker
     extends AccessChecker
