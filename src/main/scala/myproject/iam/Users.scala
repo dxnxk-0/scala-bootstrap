@@ -90,23 +90,23 @@ object Users {
   
   trait VoidUserAccessChecker extends UserAccessChecker {
     implicit val requester = None
-    def canReadGroupUser(implicit channel: Channel, group: Group, parents: List[Group], children: List[Group], target: User) = grant
-    def canCreateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = grant
-    def canUpdateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = grant
-    def canAdminGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = grant
-    def canDeleteGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = grant
-    def canOperateChannelUser(implicit channel: Channel, target: User) = grant
-    def canOperatePlatformUser(implicit target: User) = grant
+    override def canReadGroupUser(implicit channel: Channel, group: Group, parents: List[Group], children: List[Group], target: User) = grant
+    override def canCreateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = grant
+    override def canUpdateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = grant
+    override def canAdminGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = grant
+    override def canDeleteGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = grant
+    override def canOperateChannelUser(implicit channel: Channel, target: User) = grant
+    override def canOperatePlatformUser(implicit target: User) = grant
   }
   
   trait DefaultUserAccessChecker extends UserAccessChecker {
-    def canReadGroupUser(implicit channel: Channel, group: Group, parents: List[Group], children: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin orElse isInTheSameGroup orElse belongToOneGroup(group :: children++parents)
-    def canCreateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isAdminOfOneGroup(parents)
-    def canUpdateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isUserHimself orElse isAdminOfOneGroup(parents)
-    def canAdminGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin
-    def canDeleteGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin
-    def canOperateChannelUser(implicit channel: Channel, target: User) = isPlatformAdmin orElse isChannelAdmin
-    def canOperatePlatformUser(implicit target: User) = isPlatformAdmin
+    override def canReadGroupUser(implicit channel: Channel, group: Group, parents: List[Group], children: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin orElse isInTheSameGroup orElse belongToOneGroup(group :: children++parents)
+    override def canCreateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isAdminOfOneGroup(parents)
+    override def canUpdateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isUserHimself orElse isAdminOfOneGroup(parents)
+    override def canAdminGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin
+    override def canDeleteGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin
+    override def canOperateChannelUser(implicit channel: Channel, target: User) = isPlatformAdmin orElse isChannelAdmin
+    override def canOperatePlatformUser(implicit target: User) = isPlatformAdmin
   }
 
   trait UserDAO {

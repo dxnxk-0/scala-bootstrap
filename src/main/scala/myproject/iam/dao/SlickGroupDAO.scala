@@ -43,20 +43,20 @@ trait SlickGroupDAO extends GroupDAO with SlickDAO { self: SlickChannelDAO with 
 
   protected lazy val groups = TableQuery[GroupsTable]
 
-  def getGroup(id: UUID) = db.run(groups.filter(_.id===id).result) map (_.headOption)
-  def getGroupF(id: UUID) = getGroup(id).getOrFail(ObjectNotFoundException(s"group with id $id was not found"))
-  def insert(group: Group) = {
+  override def getGroup(id: UUID) = db.run(groups.filter(_.id===id).result) map (_.headOption)
+  override def getGroupF(id: UUID) = getGroup(id).getOrFail(ObjectNotFoundException(s"group with id $id was not found"))
+  override def insert(group: Group) = {
     val action = for {
       _ <- groups += group
     } yield group
 
     db.run(action.transactionally)
   }
-  def update(group: Group) = db.run(groups.filter(_.id===group.id).update(group)) map (_ => group)
-  def deleteGroup(id: UUID) = db.run(groups.filter(_.id===id).delete) map (_ => Done)
-  def getGroupUsers(groupId: UUID) = db.run(users.filter(_.groupId===groupId).result) map (_.toList)
+  override def update(group: Group) = db.run(groups.filter(_.id===group.id).update(group)) map (_ => group)
+  override def deleteGroup(id: UUID) = db.run(groups.filter(_.id===id).delete) map (_ => Done)
+  override def getGroupUsers(groupId: UUID) = db.run(users.filter(_.groupId===groupId).result) map (_.toList)
 
-  def getGroupChildren(groupId: UUID) = { // CTE not supported by Slick
+  override def getGroupChildren(groupId: UUID) = { // CTE not supported by Slick
     val cte = sql"""
             |WITH RECURSIVE CTE (GROUP_ID, PARENT_ID) AS (
             |   SELECT GROUP_ID
@@ -77,7 +77,7 @@ trait SlickGroupDAO extends GroupDAO with SlickDAO { self: SlickChannelDAO with 
     db.run(action).map(_.toList)
   }
 
-  def getGroupParents(groupId: UUID) = { // CTE not supported by Slick
+  override def getGroupParents(groupId: UUID) = { // CTE not supported by Slick
     val cte = sql"""
            |WITH RECURSIVE CTE (GROUP_ID, PARENT_ID) AS (
            |   SELECT GROUP_ID, PARENT_ID

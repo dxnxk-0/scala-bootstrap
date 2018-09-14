@@ -58,14 +58,14 @@ trait SlickUserDAO extends UserDAO with SlickDAO { self: SlickGroupDAO with Slic
 
   protected lazy val users = TableQuery[UsersTable]
 
-  def getUserById(id: UUID) = db.run(users.filter(_.id===id).result) map (_.headOption)
-  def getUserByIdF(id: UUID) = getUserById(id).getOrFail(ObjectNotFoundException(s"user with id $id was not found"))
-  def getUserByLoginName(login: String) = db.run(users.filter(_.login===login).result) map (_.headOption)
-  def getUserByLoginNameF(login: String) = getUserByLoginName(login).getOrFail(ObjectNotFoundException(s"user with login $login was not found"))
-  def getUserByEmail(email: EmailAddress) = db.run(users.filter(_.email===email).result) map (_.headOption)
-  def getUserByEmailF(email: EmailAddress) = getUserByEmail(email).getOrFail(ObjectNotFoundException(s"user with email $email was not found"))
-  def update(user: User) = db.run(users.filter(_.id===user.id).update(user)) map (_ => user)
-  def insert(user: User) = db.run(users += user) map (_ => user)
-  def insert(batch: Seq[User]) = db.run(users ++= batch) map (_ => Done)
-  def deleteUser(id: UUID) = db.run(users.filter(_.id===id).delete) map (_ => Done)
+  override def getUserById(id: UUID) = db.run(users.filter(_.id===id).result) map (_.headOption)
+  override def getUserByIdF(id: UUID) = getUserById(id).getOrFail(ObjectNotFoundException(s"user with id $id was not found"))
+  override def getUserByLoginName(login: String) = db.run(users.filter(_.login===login).result) map (_.headOption)
+  override def getUserByLoginNameF(login: String) = getUserByLoginName(login).getOrFail(ObjectNotFoundException(s"user with login $login was not found"))
+  override def getUserByEmail(email: EmailAddress) = db.run(users.filter(_.email===email).result) map (_.headOption)
+  override def getUserByEmailF(email: EmailAddress) = getUserByEmail(email).getOrFail(ObjectNotFoundException(s"user with email $email was not found"))
+  override def update(user: User) = db.run(users.filter(_.id===user.id).update(user)) map (_ => user)
+  override def insert(user: User) = db.run(users += user) map (_ => user)
+  override def insert(batch: Seq[User]) = db.run(users ++= batch) map (_ => Done)
+  override def deleteUser(id: UUID) = db.run(users.filter(_.id===id).delete) map (_ => Done)
 }

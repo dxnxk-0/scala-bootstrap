@@ -36,23 +36,23 @@ object Channels {
 
   trait VoidChannelAccessChecker extends ChannelAccessChecker {
     override implicit val requester = None
-    def canCreateChannel(implicit target: Channel) = grant
-    def canListChannels = grant
-    def canReadChannel(implicit target: Channel) = grant
-    def canListChannelGroups(implicit target: Channel) = grant
-    def canUpdateChannel(implicit target: Channel) = grant
-    def canAdminChannel(implicit target: Channel) = grant
-    def canDeleteChannel(implicit target: Channel) = grant
+    override def canCreateChannel(implicit target: Channel) = grant
+    override def canListChannels = grant
+    override def canReadChannel(implicit target: Channel) = grant
+    override def canListChannelGroups(implicit target: Channel) = grant
+    override def canUpdateChannel(implicit target: Channel) = grant
+    override def canAdminChannel(implicit target: Channel) = grant
+    override def canDeleteChannel(implicit target: Channel) = grant
   }
 
   trait DefaultChannelAccessChecker extends ChannelAccessChecker {
-    def canCreateChannel(implicit target: Channel) = isPlatformAdmin
-    def canListChannels = isPlatformAdmin
-    def canReadChannel(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
-    def canListChannelGroups(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
-    def canUpdateChannel(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
-    def canAdminChannel(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
-    def canDeleteChannel(implicit target: Channel) = isPlatformAdmin
+    override def canCreateChannel(implicit target: Channel) = isPlatformAdmin
+    override def canListChannels = isPlatformAdmin
+    override def canReadChannel(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
+    override def canListChannelGroups(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
+    override def canUpdateChannel(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
+    override def canAdminChannel(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
+    override def canDeleteChannel(implicit target: Channel) = isPlatformAdmin
   }
 
   trait ChannelDAO {
