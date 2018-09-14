@@ -81,7 +81,7 @@ object Channels {
     } yield channel
 
     def updateChannel(id: UUID, upd: ChannelUpdate)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = {
-      def filter(existing: Channel, candidate: Channel) = existing.copy(name = candidate.name)
+      def filter(existing: Channel, candidate: Channel) = existing.copy(name = candidate.name, lastUpdate = Some(TimeManagement.getCurrentDateTime))
 
       for {
         existing  <- db.getChannelF(id)

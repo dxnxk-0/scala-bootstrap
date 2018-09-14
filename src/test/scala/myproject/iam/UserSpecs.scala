@@ -75,7 +75,9 @@ class UserSpecs extends DatabaseSpec {
 
   it should "update the user" in {
     updateUser(groupUser.id, u => u.copy(login = "SMITH")).futureValue
-    getUser(groupUser.id).futureValue.login shouldBe "smith"
+    val updated = getUser(groupUser.id).futureValue
+    updated.login shouldBe "smith"
+    updated.lastUpdate.isDefined shouldBe true
   }
 
   it should "update the password" in {

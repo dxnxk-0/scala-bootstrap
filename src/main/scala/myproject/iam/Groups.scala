@@ -8,7 +8,7 @@ import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.TimeManagement.getCurrentDateTime
 import myproject.common.Validation.{ValidationError, Validator}
-import myproject.common.{Done, IllegalOperationException}
+import myproject.common.{Done, IllegalOperationException, TimeManagement}
 import myproject.iam.Channels.{Channel, ChannelDAO}
 import myproject.iam.Groups.GroupStatus.GroupStatus
 import myproject.iam.Users.User
@@ -116,7 +116,8 @@ object Groups {
       def filter(existing: Group, candidate: Group) = existing.copy(
         name = candidate.name,
         parentId = candidate.parentId,
-        status = candidate.status)
+        status = candidate.status,
+        lastUpdate = Some(TimeManagement.getCurrentDateTime))
 
       for {
         existing  <- db.getGroupF(id)

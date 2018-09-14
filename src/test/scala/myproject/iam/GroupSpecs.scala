@@ -26,7 +26,9 @@ class GroupSpecs extends DatabaseSpec {
 
   it should "update a group" in {
     updateGroup(group.id, g => g.copy(name = "Death Star")).futureValue
-    getGroup(group.id).futureValue.name shouldBe "Death Star"
+    val updated = getGroup(group.id).futureValue
+    updated.name shouldBe "Death Star"
+    updated.lastUpdate.isDefined shouldBe true
   }
 
   it should "delete a group" in {

@@ -29,7 +29,9 @@ class ChannelSpecs extends DatabaseSpec {
 
   it should "update a channel" in {
     updateChannel(channel.id, c => c.copy(name = "SPECS")).futureValue
-    getChannel(channel.id).futureValue.name shouldBe "SPECS"
+    val updated = getChannel(channel.id).futureValue
+    updated.name shouldBe "SPECS"
+    updated.lastUpdate.isDefined shouldBe true
   }
 
   it should "delete a channel" in {

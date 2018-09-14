@@ -208,7 +208,8 @@ object Users {
         password = if(existing.password!=candidate.password) BCrypt.hashPassword(candidate.password) else existing.password,
         email = EmailAddress(candidate.email.value.toLowerCase),
         groupRole = candidate.groupRole,
-        status = candidate.status)
+        status = candidate.status,
+        lastUpdate = Some(TimeManagement.getCurrentDateTime))
 
       for {
         existing  <- db.getUserByIdF(id)
