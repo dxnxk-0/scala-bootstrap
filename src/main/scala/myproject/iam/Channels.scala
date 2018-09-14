@@ -70,9 +70,9 @@ object Channels {
     def getAllChannels(implicit authz: ChannelAccessChecker, db: ChannelDAO) = authz.canListChannels.toFuture flatMap (_ => db.getAllChannels)
 
     def createChannel(channel: Channel)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = for {
-      _     <- authz.canCreateChannel(channel).toFuture
-      _     <- ChannelValidator.validate(channel).toFuture
-      saved <- db.insert(channel.copy(created = Some(TimeManagement.getCurrentDateTime)))
+      _         <- authz.canCreateChannel(channel).toFuture
+      validated <- ChannelValidator.validate(channel.copy(created = Some(TimeManagement.getCurrentDateTime))).toFuture
+      saved     <- db.insert(validated)
     } yield saved
 
     def getChannel(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = for {
@@ -84,11 +84,11 @@ object Channels {
       def filter(existing: Channel, candidate: Channel) = existing.copy(name = candidate.name)
 
       for {
-        existing <- db.getChannelF(id)
-        _        <- authz.canUpdateChannel(existing).toFuture
-        updated  <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
-        _        <- ChannelValidator.validate(updated).toFuture
-        saved    <- db.update(updated)
+        existing  <- db.getChannelF(id)
+        _         <- authz.canUpdateChannel(existing).toFuture
+        updated   <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
+        validated <- ChannelValidator.validate(updated).toFuture
+        saved     <- db.update(validated)
       } yield saved
     }
 

@@ -98,11 +98,11 @@ object Groups {
     }
 
     def createGroup(group: Group)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = for {
-      channel <- db.getChannelF(group.channelId)
-      _       <- authz.canCreateGroup(channel, group).toFuture
-      _       <- GroupValidator.validate(group).toFuture
-      _       <- checkParentGroup(group)
-      saved   <- db.insert(group.copy(created = Some(getCurrentDateTime)))
+      channel   <- db.getChannelF(group.channelId)
+      _         <- authz.canCreateGroup(channel, group).toFuture
+      validated <- GroupValidator.validate(group.copy(created = Some(getCurrentDateTime))).toFuture
+      _         <- checkParentGroup(validated)
+      saved     <- db.insert(validated)
     } yield saved
 
     def getGroup(id: UUID)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = for {
@@ -125,8 +125,8 @@ object Groups {
         _         <- authz.canUpdateGroup(channel, existing, parents).toFuture
         updated   <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
         _         <- checkParentGroup(updated)
-        _         <- GroupValidator.validate(updated).toFuture
-        saved     <- db.update(updated)
+        validated <- GroupValidator.validate(updated).toFuture
+        saved     <- db.update(validated)
       } yield saved
     }
 

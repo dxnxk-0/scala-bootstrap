@@ -182,14 +182,14 @@ object Users {
     } yield u
 
     def createUser(user: User)(implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) = {
-      val validatedFuture = UserValidator.validate(user.copy(
+      val validateUser = UserValidator.validate(user.copy(
         password = BCrypt.hashPassword(user.password),
         created = Some(getCurrentDateTime),
         login = user.login.toLowerCase,
-        email = EmailAddress(user.email.value.toLowerCase))).toFuture
+        email = EmailAddress(user.email.value.toLowerCase)))
 
       for {
-        validated <- validatedFuture
+        validated <- validateUser.toFuture
         _         <- checkEmailOwnership(validated)
         _         <- checkLoginOwnership(validated)
         checked   <- user.level match {
@@ -211,18 +211,18 @@ object Users {
         status = candidate.status)
 
       for {
-        existing <- db.getUserByIdF(id)
-        updated  <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
-        _        <- checkEmailOwnership(updated)
-        _        <- checkLoginOwnership(updated)
-        _        <- updated.level match {
+        existing  <- db.getUserByIdF(id)
+        updated   <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
+        _         <- checkEmailOwnership(updated)
+        _         <- checkLoginOwnership(updated)
+        _         <- updated.level match {
           case UserLevel.Platform => checkPlatformUserAuthz(updated, authz.canOperatePlatformUser(_))
           case UserLevel.Channel => checkChannelUserAuthz(updated, authz.canOperateChannelUser(_, _))
           case UserLevel.Group => checkGroupUserAuthz3(updated, authz.canUpdateGroupUser(_, _, _, _))
           case _ => ???
         }
-        _        <- UserValidator.validate(updated).toFuture
-        saved    <- db.update(updated)
+        validated <- UserValidator.validate(updated).toFuture
+        saved     <- db.update(validated)
       } yield saved
     }
 
