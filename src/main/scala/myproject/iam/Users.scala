@@ -211,6 +211,9 @@ object Users {
         status = candidate.status,
         lastUpdate = Some(TimeManagement.getCurrentDateTime))
 
+      def requireAdminPrivileges(existing: User, target: User) =
+        if(existing.status!=target.status || existing.groupRole!=target.groupRole) true else false
+
       for {
         existing  <- db.getUserByIdF(id)
         updated   <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
@@ -219,6 +222,7 @@ object Users {
         _         <- updated.level match {
           case UserLevel.Platform => checkPlatformUserAuthz(updated, authz.canOperatePlatformUser(_))
           case UserLevel.Channel => checkChannelUserAuthz(updated, authz.canOperateChannelUser(_, _))
+          case UserLevel.Group if requireAdminPrivileges(existing, updated) => checkGroupUserAuthz3(updated, authz.canAdminGroupUser(_, _, _, _))
           case UserLevel.Group => checkGroupUserAuthz3(updated, authz.canUpdateGroupUser(_, _, _, _))
           case _ => ???
         }

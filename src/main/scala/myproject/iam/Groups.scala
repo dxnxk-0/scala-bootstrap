@@ -3,7 +3,7 @@ package myproject.iam
 import java.time.LocalDateTime
 import java.util.UUID
 
-import myproject.common.Authorization.{AccessChecker, AuthorizationCheck}
+import myproject.common.Authorization._
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.TimeManagement.getCurrentDateTime
@@ -119,12 +119,16 @@ object Groups {
         status = candidate.status,
         lastUpdate = Some(TimeManagement.getCurrentDateTime))
 
+      def processAuthz(existing: Group, target: Group, channel: Channel, parents: List[Group]) =
+        if(existing.status != target.status || existing.parentId != target.parentId) authz.canAdminGroup(channel, target)
+        else authz.canUpdateGroup(channel, existing, parents)
+
       for {
         existing  <- db.getGroupF(id)
         channel   <- db.getChannelF(existing.channelId)
         parents   <- existing.parentId.map(_ => db.getGroupParents(existing.id)).getOrElse(Future.successful(Nil))
-        _         <- authz.canUpdateGroup(channel, existing, parents).toFuture
         updated   <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
+        _         <- processAuthz(existing, updated, channel, parents).toFuture
         _         <- checkParentGroup(updated)
         validated <- GroupValidator.validate(updated).toFuture
         saved     <- db.update(validated)
