@@ -20,7 +20,6 @@ class CreateGroup(implicit authz: User => GroupAccessChecker, db: GroupDAO with 
     `return` = "an object containing the newly created group data")
 
   override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
-    val now = TimeManagement.getCurrentDateTime
     val groupName = required(p.nonEmptyString("name"))
     val channelId = required(p.uuid("channel_id"), "the channel id the new group will belong to")
     val parentId = optional(p.uuid("parent_id"), "an optional parent group id can be provided in case the created group belongs to an organization")
