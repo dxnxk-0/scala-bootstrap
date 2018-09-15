@@ -10,6 +10,9 @@ object Validation {
 
   trait Validator[A] {
 
+    private val alphaNumericSequence = (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')).toSet
+    def isAlphaNumericString(s:String) = s.forall(alphaNumericSequence.contains)
+
     val validators: List[FieldValidator[A]]
 
     final def NOK(error: ValidationError): ValidatorPartialResult = Left(error)

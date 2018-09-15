@@ -150,7 +150,8 @@ object Users {
 
     override val validators = List(
       platformUserValidator, channelUserValidator, groupUserValidator, simpleUserValidator,
-      (u: User) => if(Option(u.login).isEmpty || u.login=="" || u.login!=u.login.trim || u.login!=u.login.toLowerCase) NOK(InvalidLogin) else OK,
+      (u: User) =>
+        if(Option(u.login).isEmpty || !isAlphaNumericString(u.login) || u.login=="" || u.login!=u.login.trim || u.login!=u.login.toLowerCase) NOK(InvalidLogin) else OK,
       (u: User) => if(u.email.value.toLowerCase!=u.email.value) NOK(InvalidEmail) else OK
     )
   }

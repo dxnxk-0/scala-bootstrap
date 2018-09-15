@@ -2,7 +2,7 @@ package myproject.iam
 
 import myproject.common.FutureImplicits._
 import myproject.common.security.JWT
-import myproject.common.{AccessRefusedException, AuthenticationFailedException, ObjectNotFoundException}
+import myproject.common.{AccessRefusedException, AuthenticationFailedException, ObjectNotFoundException, ValidationErrorException}
 import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Groups.CRUD.{createGroup, _}
@@ -23,9 +23,20 @@ class UserSpecs extends DatabaseSpec {
 
   implicit val authz = VoidIAMAccessChecker
 
-  it should "create a user and silently put the email and login in lower case" in {
+  it should "create the organization" in {
     createChannel(channel)
     createGroup(group)
+  }
+
+  it should "not create a user with an invalid login" in {
+    a [ValidationErrorException] shouldBe thrownBy(createUser(channelUser.copy(login = "")).futureValue)
+    a [ValidationErrorException] shouldBe thrownBy(createUser(channelUser.copy(login = "foo bar")).futureValue)
+    a [ValidationErrorException] shouldBe thrownBy(createUser(channelUser.copy(login = "foo\tbar")).futureValue)
+    a [ValidationErrorException] shouldBe thrownBy(createUser(channelUser.copy(login = "foo\rbar")).futureValue)
+    a [ValidationErrorException] shouldBe thrownBy(createUser(channelUser.copy(login = "foo\nbar")).futureValue)
+  }
+
+  it should "create a user and silently put the email and login in lower case" in {
     createUser(groupUser.copy(email = EmailAddress(groupUser.email.value.toUpperCase), login = groupUser.login.toUpperCase)).futureValue.login shouldBe groupUser.login
     createUser(channelUser).futureValue.id shouldBe channelUser.id
     createUser(platformUser).futureValue.id shouldBe platformUser.id
