@@ -48,10 +48,10 @@ object Channels {
   trait DefaultChannelAccessChecker extends ChannelAccessChecker {
     override def canCreateChannel(implicit target: Channel) = isPlatformAdmin
     override def canListChannels = isPlatformAdmin
-    override def canReadChannel(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
-    override def canListChannelGroups(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
-    override def canUpdateChannel(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
-    override def canAdminChannel(implicit target: Channel) = isPlatformAdmin orElse isChannelAdmin
+    override def canReadChannel(implicit target: Channel) = isPlatformAdmin or isChannelAdmin
+    override def canListChannelGroups(implicit target: Channel) = isPlatformAdmin or isChannelAdmin
+    override def canUpdateChannel(implicit target: Channel) = isPlatformAdmin or isChannelAdmin
+    override def canAdminChannel(implicit target: Channel) = isPlatformAdmin or isChannelAdmin
     override def canDeleteChannel(implicit target: Channel) = isPlatformAdmin
   }
 

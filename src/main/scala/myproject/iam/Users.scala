@@ -100,12 +100,12 @@ object Users {
   }
   
   trait DefaultUserAccessChecker extends UserAccessChecker {
-    override def canReadGroupUser(implicit channel: Channel, group: Group, parents: List[Group], children: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin orElse isInTheSameGroup orElse belongToOneGroup(group :: children++parents)
-    override def canCreateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isAdminOfOneGroup(parents)
-    override def canUpdateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isUserHimself orElse isAdminOfOneGroup(parents)
-    override def canAdminGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin orElse isChannelAdmin
+    override def canReadGroupUser(implicit channel: Channel, group: Group, parents: List[Group], children: List[Group], target: User) = isPlatformAdmin or isChannelAdmin or isInTheSameGroup or belongToOneGroup(group :: children++parents)
+    override def canCreateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin or isChannelAdmin or isGroupAdmin or isAdminOfOneGroup(parents)
+    override def canUpdateGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin or isChannelAdmin or isGroupAdmin or isUserHimself or isAdminOfOneGroup(parents)
+    override def canAdminGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin or isChannelAdmin
     override def canDeleteGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin
-    override def canOperateChannelUser(implicit channel: Channel, target: User) = isPlatformAdmin orElse isChannelAdmin
+    override def canOperateChannelUser(implicit channel: Channel, target: User) = isPlatformAdmin or isChannelAdmin
     override def canOperatePlatformUser(implicit target: User) = isPlatformAdmin
   }
 

@@ -67,12 +67,12 @@ object Groups {
   }
 
   trait DefaultGroupAccessChecker extends GroupAccessChecker {
-    override def canCreateGroup(implicit channel: Channel, target: Group) = isPlatformAdmin orElse isChannelAdmin
-    override def canReadGroup(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse belongToTheGroup
-    override def canListGroupUsers(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isAdminOfOneGroup(parents)
-    override def canUpdateGroup(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isAdminOfOneGroup(parents)
-    override def canGetGroupHierarchy(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin orElse isChannelAdmin orElse isGroupAdmin orElse isAdminOfOneGroup(parents)
-    override def canAdminGroup(implicit channel: Channel, target: Group) = isPlatformAdmin orElse isChannelAdmin
+    override def canCreateGroup(implicit channel: Channel, target: Group) = isPlatformAdmin or isChannelAdmin
+    override def canReadGroup(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin or isChannelAdmin or isGroupAdmin or belongToTheGroup
+    override def canListGroupUsers(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin or isChannelAdmin or isGroupAdmin or isAdminOfOneGroup(parents)
+    override def canUpdateGroup(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin or isChannelAdmin or isGroupAdmin or isAdminOfOneGroup(parents)
+    override def canGetGroupHierarchy(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin or isChannelAdmin or isGroupAdmin or isAdminOfOneGroup(parents)
+    override def canAdminGroup(implicit channel: Channel, target: Group) = isPlatformAdmin or isChannelAdmin
     override def canDeleteGroup(implicit channel: Channel, target: Group) = isPlatformAdmin
   }
 
