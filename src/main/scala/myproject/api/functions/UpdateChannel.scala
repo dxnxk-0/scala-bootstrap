@@ -21,7 +21,7 @@ class UpdateChannel(implicit authz: User => ChannelAccessChecker, db: ChannelDAO
 
     implicit val checker = authz(user)
 
-    checkParamAndProcess(channelId, name) flatMap { _ =>
+    checkParamAndProcess(channelId, name) {
       CRUD.updateChannel(channelId.get, c => c.copy(name = name.get.getOrElse(c.name)))
         .map(_.toMap)
     }

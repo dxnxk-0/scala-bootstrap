@@ -27,7 +27,7 @@ class CreateGroup(implicit authz: User => GroupAccessChecker, db: GroupDAO with 
 
     implicit val checker = authz(user)
 
-    checkParamAndProcess(groupName, channelId, parentId) flatMap { _ =>
+    checkParamAndProcess(groupName, channelId, parentId) {
       val group = Group(UUID.randomUUID, groupName.get, channelId.get, parentId = parentId.get)
       CRUD.createGroup(group) map (_.toMap)
     }

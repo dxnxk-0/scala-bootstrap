@@ -24,7 +24,7 @@ class UpdateGroup(implicit authz: User => GroupAccessChecker, db: GroupDAO with 
 
     implicit val checker = authz(user)
 
-    checkParamAndProcess(groupId, name, parentId, status) flatMap { _ =>
+    checkParamAndProcess(groupId, name, parentId, status) {
       CRUD.updateGroup(groupId.get, g => g.copy(
         parentId = parentId.get.getOrElse(g.parentId),
         name = name.get.getOrElse(g.name),

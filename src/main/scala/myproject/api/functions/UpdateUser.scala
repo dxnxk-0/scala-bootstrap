@@ -25,7 +25,7 @@ class UpdateUser(implicit authz: User => UserAccessChecker, db: UserDAO with Gro
 
     implicit val checker = authz(user)
 
-    checkParamAndProcess(userId, email, password, login, groupRole, status) flatMap { _ =>
+    checkParamAndProcess(userId, email, password, login, groupRole, status) {
       CRUD.updateUser(userId.get, u =>
         u.copy(
           login = login.get.getOrElse(u.login),

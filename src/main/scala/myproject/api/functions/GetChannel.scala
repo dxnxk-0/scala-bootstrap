@@ -19,7 +19,7 @@ class GetChannel(implicit authz: User => ChannelAccessChecker, db: ChannelDAO) e
 
     implicit val checker = authz(user)
 
-    checkParamAndProcess(channelId) flatMap { _ =>
+    checkParamAndProcess(channelId) {
       CRUD.getChannel(channelId.get) map (_.toMap)
     }
   }

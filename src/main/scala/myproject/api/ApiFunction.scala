@@ -17,7 +17,7 @@ trait ApiFunction {
 
   protected implicit val ec = Runtime.ec
 
-  protected def checkParamAndProcess(extractors: Try[Any]*): Future[Any] = {
+  protected def checkParamAndProcess(extractors: Try[Any]*)(op: => Future[Any]): Future[Any] = {
     val failedParams =
       extractors.foldLeft(Nil: List[String]){ case (errors, attempt) =>
         attempt match {
@@ -26,7 +26,7 @@ trait ApiFunction {
         }
       }
 
-    if(failedParams.isEmpty) Future.unit
+    if(failedParams.isEmpty) op
     else Future.failed(InvalidParametersException("invalid parameters", errors = failedParams))
   }
 

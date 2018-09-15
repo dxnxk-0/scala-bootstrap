@@ -21,7 +21,7 @@ class GetGroupChildren(implicit authz: User => GroupAccessChecker, db: GroupDAO 
 
     implicit val checker = authz(user)
 
-    checkParamAndProcess(groupId) flatMap { _ =>
+    checkParamAndProcess(groupId) {
       CRUD.getGroupChildren(groupId.get) map(_.map(_.toMap))
     }
   }
