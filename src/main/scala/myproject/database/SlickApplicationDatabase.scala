@@ -2,11 +2,18 @@ package myproject.database
 
 import myproject.common.Done
 import myproject.common.Runtime.ec
+import myproject.iam.dao.{SlickChannelDAO, SlickGroupDAO, SlickTokenDAO, SlickUserDAO}
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 
-class SlickDatabase() extends ApplicationDatabase with JdbcProfile {
+class SlickApplicationDatabase()
+  extends ApplicationDatabase
+    with JdbcProfile
+    with SlickChannelDAO
+    with SlickGroupDAO
+    with SlickUserDAO
+    with SlickTokenDAO {
 
   import api._
 

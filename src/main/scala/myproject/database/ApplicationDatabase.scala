@@ -5,14 +5,14 @@ import myproject.iam.Channels.ChannelDAO
 import myproject.iam.Groups.GroupDAO
 import myproject.iam.Tokens.TokenDAO
 import myproject.iam.Users.UserDAO
-import myproject.iam.dao.{SlickChannelDAO, SlickGroupDAO, SlickTokenDAO, SlickUserDAO}
 
-trait ApplicationDatabase extends DatabaseInterface
-  with SlickUserDAO
-  with SlickTokenDAO
-  with SlickGroupDAO
-  with SlickChannelDAO
+trait ApplicationDatabase
+  extends DatabaseInterface
+    with UserDAO
+    with TokenDAO
+    with GroupDAO
+    with ChannelDAO
 
 object ApplicationDatabase {
-  val productionDatabaseImpl = Class.forName(Config.database.implClassName).newInstance.asInstanceOf[DatabaseInterface with ChannelDAO with GroupDAO with UserDAO with TokenDAO]
+  val productionDatabaseImpl = Class.forName(Config.database.implClassName).newInstance.asInstanceOf[ApplicationDatabase]
 }
