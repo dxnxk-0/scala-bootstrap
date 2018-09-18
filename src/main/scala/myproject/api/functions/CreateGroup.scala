@@ -4,8 +4,6 @@ import java.util.UUID
 
 import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
-import myproject.audit.Audit
-import myproject.common.TimeManagement
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.iam.Channels.ChannelDAO
@@ -19,7 +17,7 @@ class CreateGroup(implicit authz: User => GroupAccessChecker, db: GroupDAO with 
     description = "create a new users group (requires admin privileges on the target channel)",
     `return` = "an object containing the newly created group data")
 
-  override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
+  override def process(implicit p: ReifiedDataWrapper, user: Users.User) = {
     val groupName = required(p.nonEmptyString("name"))
     val channelId = required(p.uuid("channel_id"), "the channel id the new group will belong to")
     val parentId = optional(p.uuid("parent_id"), "an optional parent group id can be provided in case the created group belongs to an organization")

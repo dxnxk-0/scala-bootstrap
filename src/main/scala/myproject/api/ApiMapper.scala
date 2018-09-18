@@ -1,10 +1,9 @@
 package myproject.api
 
-import myproject.audit.Audit.{AuditData, AuditUserInfo}
+import myproject.common.Runtime.ec
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.{AuthenticationNeededException, ObjectNotFoundException}
 import myproject.iam.Users.{Guest, User, UserGeneric}
-import myproject.common.Runtime.ec
 
 import scala.concurrent.Future
 
@@ -17,7 +16,7 @@ object ApiMapper {
     functionName: String,
     clientIp: Option[String])(implicit params: ReifiedDataWrapper): Future[Any] = {
 
-    def processInsecure(function: ApiFunction): Future[Any] = function.process(params, AuditData(clientIp, None))
+    def processInsecure(function: ApiFunction): Future[Any] = function.process(params)
 
     def processSecure(function: ApiFunction): Future[Any] = user match {
 
@@ -25,7 +24,7 @@ object ApiMapper {
         Future.failed(AuthenticationNeededException(s"Access to function `${function.name}` requires valid authentication"))
 
       case u: User =>
-        function.process(params, u, AuditData(clientIp, Some(AuditUserInfo(u))))
+        function.process(params, u)
     }
 
     /* We search a function with the corresponding name and execute it */

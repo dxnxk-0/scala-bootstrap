@@ -4,7 +4,6 @@ import java.util.UUID
 
 import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
-import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.iam.Channels.ChannelDAO
@@ -28,7 +27,7 @@ class CreatePlatformUser(implicit authz: User => UserAccessChecker, db: UserDAO 
       + "a platform represents the whole application instance - it contains channels, which in turn contain groups",
     `return` = "an object containing the newly created user's data")
 
-  override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
+  override def process(implicit p: ReifiedDataWrapper, user: User) = {
     val (login, password, email, fn, ln) = getCommonParameters
 
     implicit val checker = authz(user)
@@ -47,7 +46,7 @@ class CreateChannelUser(implicit authz: User => UserAccessChecker, db: UserDAO w
                 + "they generally represents administrators of groups of users, as a channel contains groups",
     `return` = "an object containing the newly created user's data")
 
-  override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
+  override def process(implicit p: ReifiedDataWrapper, user: User) = {
     val (login, password, email, fn, ln) = getCommonParameters
     val channelId = required(p.uuid("channel_id"))
 
@@ -67,7 +66,7 @@ class CreateGroupUser(implicit authz: User => UserAccessChecker, db: UserDAO wit
       + "they generally represents end users of the application",
     `return` = "an object containing the newly created user's data")
 
-  override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
+  override def process(implicit p: ReifiedDataWrapper, user: User) = {
     val (login, password, email, fn, ln) = getCommonParameters
     val (groupId, groupRole) = (required(p.uuid("group_id")), nullable(p.enumString("group_role", GroupRole)))
 
@@ -86,7 +85,7 @@ class CreateSimpleUser(implicit authz: User => UserAccessChecker, db: UserDAO wi
     description = "create a new simple user (TBD)",
     `return` = "an object containing the newly created user's data")
 
-  override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
+  override def process(implicit p: ReifiedDataWrapper, user: User) = {
     val (login, password, email, fn, ln) = getCommonParameters
 
     implicit val checker = authz(user)

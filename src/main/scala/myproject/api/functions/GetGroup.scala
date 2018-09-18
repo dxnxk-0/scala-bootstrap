@@ -2,7 +2,6 @@ package myproject.api.functions
 
 import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
-import myproject.audit.Audit
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.iam.Channels.ChannelDAO
@@ -16,7 +15,7 @@ class GetGroup(implicit authz: User => GroupAccessChecker, db: GroupDAO with Cha
     description = "get an existing user's group (requires either group's membership or high privileges)",
     `return` = "an object containing the requested group data")
 
-  override def process(implicit p: ReifiedDataWrapper, user: Users.User, auditData: Audit.AuditData) = {
+  override def process(implicit p: ReifiedDataWrapper, user: Users.User) = {
     val groupId = required(p.uuid("group_id"))
 
     implicit val checker = authz(user)

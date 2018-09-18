@@ -1,6 +1,5 @@
 package myproject.api
 
-import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.{InvalidContextException, InvalidParametersException, NotImplementedException, Runtime}
 import myproject.iam.Users.User
@@ -30,14 +29,14 @@ trait ApiFunction {
     else Future.failed(InvalidParametersException("invalid parameters", errors = failedParams))
   }
 
-  def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData): Future[Any] = {
+  def process(implicit p: ReifiedDataWrapper, user: User): Future[Any] = {
     if(!secured)
       Future.failed(InvalidContextException("This function does not need a valid authentication and should probably be called using the simple signature"))
 
     Future.failed(NotImplementedException("This function is not implemented"))
   }
 
-  def process(implicit p: ReifiedDataWrapper, auditData: AuditData): Future[Any] = {
+  def process(implicit p: ReifiedDataWrapper): Future[Any] = {
 
     if(secured)
       Future.failed(InvalidContextException("This function needs a valid authentication and should probably be called using the secured signature"))

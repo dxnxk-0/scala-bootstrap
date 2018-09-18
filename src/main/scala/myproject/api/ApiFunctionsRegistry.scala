@@ -1,7 +1,6 @@
 package myproject.api
 
 import myproject.api.functions._
-import myproject.audit.Audit.AuditData
 import myproject.common.UnexpectedErrorException
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.database.ApplicationDatabase
@@ -23,7 +22,7 @@ object ApiFunctionsRegistry {
       description = "An overview of the functions available in API",
       `return` = "a list of objects containing function description data")
 
-    override def process(implicit p: ReifiedDataWrapper, auditData: AuditData) = {
+    override def process(implicit p: ReifiedDataWrapper) = {
 
       def buildDoc(fn: ApiFunction) = {
         Map(

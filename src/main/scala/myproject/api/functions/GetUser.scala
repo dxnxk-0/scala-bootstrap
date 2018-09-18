@@ -2,7 +2,6 @@ package myproject.api.functions
 
 import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
-import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.iam.Channels.ChannelDAO
@@ -15,7 +14,7 @@ class GetUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupD
     description = "get an existing user's data (requires to be the user himself or to have higher privileges",
     `return` = "an object containing the requested user's data")
 
-  override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = {
+  override def process(implicit p: ReifiedDataWrapper, user: User) = {
     val userId = required(p.uuid("user_id"))
 
     implicit val checker = authz(user)

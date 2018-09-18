@@ -1,7 +1,6 @@
 package myproject.api.functions
 
 import myproject.api.{ApiFunction, ApiSummaryDoc}
-import myproject.audit.Audit.AuditData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.iam.Users.User
 
@@ -13,7 +12,7 @@ class Welcome extends ApiFunction {
     description = "A bit of kindness in this cold world",
     `return` = "a string saying a welcome message")
 
-  override def process(implicit p: ReifiedDataWrapper, user: User, auditData: AuditData) = Future {
+  override def process(implicit p: ReifiedDataWrapper, user: User) = Future {
     s"Welcome ${user.login} !"
   }
 }
