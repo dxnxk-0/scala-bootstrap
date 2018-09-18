@@ -8,6 +8,6 @@ import test.UnitSpec
 
 class ApiInfoSpecs extends UnitSpec {
   it should "return the api info" in {
-    new ApiInfo().process(new ReifiedDataWrapper(null)).futureValue.get("api_version") shouldBe Some(BuildInfo.version)
+    new ApiInfo().process(new ReifiedDataWrapper(null)).futureValue.get("version") shouldBe Some(BuildInfo.version)
   }
 }

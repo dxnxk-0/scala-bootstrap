@@ -1,5 +1,7 @@
 package myproject.api.functions
 
+import java.time.{Instant, LocalDateTime, ZoneId}
+
 import buildmeta.BuildInfo
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData
@@ -14,9 +16,9 @@ class ApiInfo extends ApiFunction {
   override def process(implicit p: OpaqueData.ReifiedDataWrapper) = {
     Future.successful(Map(
       "name" -> BuildInfo.name,
-      "api_version" -> BuildInfo.version,
+      "version" -> BuildInfo.version,
       "build_number" -> BuildInfo.buildInfoBuildNumber,
-      "build_time" -> BuildInfo.builtAtString)
+      "build_at" -> (LocalDateTime.ofInstant(Instant.ofEpochMilli(BuildInfo.builtAtMillis), ZoneId.of("GMT")).toString + "Z"))
     )
   }
 }
