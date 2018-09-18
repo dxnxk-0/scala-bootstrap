@@ -54,6 +54,7 @@ object ApiFunctionsRegistry {
   def find(functionName: String): Option[ApiFunction] = Functions.find(_.name.trim == functionName)
 
   ////////////// Register API functions below
+  register(new ApiInfo)
   register(new Welcome)
   register(new ApiHelp)
   register(new CreateChannel)
