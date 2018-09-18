@@ -9,7 +9,8 @@ class TestSuite extends Suites(
   new GroupSpecs,
   new UserSpecs,
   new TokenSpecs,
-  new OrganizationSpecs) with BeforeAndAfter {
+  new OrganizationSpecs,
+  new AuthorizationSpecs) with BeforeAndAfter {
 
   after(ApplicationDatabase.productionDatabaseImpl.close)
 }
