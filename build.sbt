@@ -1,3 +1,11 @@
+enablePlugins(BuildInfoPlugin)
+
+buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion, buildInfoBuildNumber)
+
+buildInfoPackage := "buildmeta"
+
+buildInfoOptions += BuildInfoOption.BuildTime
+
 name := "scala-bootstrap"
 
 version := "0.1"
@@ -10,6 +18,8 @@ scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8", "-featur
 resolvers ++= Seq(
   Resolver.typesafeIvyRepo("releases"),
   Resolver.bintrayRepo("hmrc", "releases"))
+
+TaskKey[Unit]("server") := (Compile / runMain).toTask(" myproject.web.server.WebServer").value
 
 libraryDependencies ++= Seq(
   // Application configuration

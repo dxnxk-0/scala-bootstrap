@@ -1,6 +1,6 @@
 package myproject.api.functions
 
-import myproject.api
+import buildmeta.BuildInfo
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData
 
@@ -12,6 +12,11 @@ class ApiInfo extends ApiFunction {
   override val secured = false
 
   override def process(implicit p: OpaqueData.ReifiedDataWrapper) = {
-    Future.successful(Map("api_version" -> api.ApiVersion))
+    Future.successful(Map(
+      "name" -> BuildInfo.name,
+      "api_version" -> BuildInfo.version,
+      "build_number" -> BuildInfo.buildInfoBuildNumber,
+      "build_time" -> BuildInfo.builtAtString)
+    )
   }
 }
