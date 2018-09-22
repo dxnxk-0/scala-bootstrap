@@ -12,10 +12,6 @@ object Authorization {
   case object AccessGranted extends AccessGranted
   type AuthorizationCheck = Try[AccessGranted]
 
-  trait AuthzData
-  type AuthzChecker = AuthzData => AuthorizationCheck
-  type AuthzCheckerFactory = User => AuthzData => AuthorizationCheck
-
   implicit class AuthorizationCheckOperators(authz: AuthorizationCheck) {
     def and(other: AuthorizationCheck) = authz.flatMap(_ => other)
     def or(other: AuthorizationCheck) = authz.orElse(other)
