@@ -11,7 +11,7 @@ import scala.concurrent.Future
 
 object ApiFunctionsRegistry {
 
-  implicit val db = ApplicationDatabase.productionDatabaseImpl
+  implicit val db = ApplicationDatabase.currentDatabaseImpl
   implicit val iamAuthz = (u: User) => new DefaultIAMAccessChecker(u)
 
   class ApiHelp extends ApiFunction {

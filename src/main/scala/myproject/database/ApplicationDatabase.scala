@@ -14,5 +14,5 @@ trait ApplicationDatabase
     with ChannelDAO
 
 object ApplicationDatabase {
-  val productionDatabaseImpl = Class.forName(Config.database.implClassName).newInstance.asInstanceOf[ApplicationDatabase]
+  val currentDatabaseImpl = Class.forName(Config.database.implClassName).newInstance.asInstanceOf[ApplicationDatabase]
 }

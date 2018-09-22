@@ -17,7 +17,7 @@ object WebServer extends App {
   private implicit val materializer = ActorMaterializer()
 
   private implicit val logger = Logger(LoggerFactory.getLogger("web-server"))
-  implicit val db = ApplicationDatabase.productionDatabaseImpl
+  implicit val db = ApplicationDatabase.currentDatabaseImpl
 
   val iface = Config.server.interface
   val port = Config.server.port

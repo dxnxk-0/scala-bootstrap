@@ -18,7 +18,7 @@ object AppController extends HtmlController {
   private val authCookieName = "tapas-auth"
 
   private implicit val htmlMarshaller = AkkaHttpMarshalling.getHtmlMarshaller
-  private implicit val db = ApplicationDatabase.productionDatabaseImpl
+  private implicit val db = ApplicationDatabase.currentDatabaseImpl
 
   private val appName = "app"
   private val loginRouteName = "login"

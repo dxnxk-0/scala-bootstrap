@@ -12,5 +12,5 @@ class TestSuite extends Suites(
   new OrganizationSpecs,
   new AuthorizationSpecs) with BeforeAndAfter {
 
-  after(ApplicationDatabase.productionDatabaseImpl.close)
+  after(ApplicationDatabase.currentDatabaseImpl.close)
 }

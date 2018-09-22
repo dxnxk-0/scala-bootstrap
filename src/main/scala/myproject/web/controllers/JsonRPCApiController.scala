@@ -15,7 +15,7 @@ object JsonRPCApiController extends Controller {
   private implicit val rpcBatchSerializer = getJsonUnmarshaller[Seq[RPCRequest]]
   private implicit val uuidUnmarshaller = getUUIDFromStringUnmarshaller
 
-  private implicit val db = ApplicationDatabase.productionDatabaseImpl
+  private implicit val db = ApplicationDatabase.currentDatabaseImpl
 
   implicit private val logger = Logger(LoggerFactory.getLogger("jsonrpc-api"))
 
