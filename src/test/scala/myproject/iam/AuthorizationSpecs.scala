@@ -48,7 +48,7 @@ class AuthorizationSpecs extends DatabaseSpec {
   val adminGroup1Channel2 = IAMTestDataFactory.getGroupAdmin(group1Channel2.id)
 
   // Group 2
-  val group2Channel2 = IAMTestDataFactory.getGroup(channel2.id)
+  val group2Channel2 = IAMTestDataFactory.getGroup(channel2.id, Some(group1Channel2.id))
   val user1group2Channel2 = IAMTestDataFactory.getGroupUser(group2Channel2.id)
   val user2group2Channel2 = IAMTestDataFactory.getGroupUser(group2Channel2.id)
   val adminGroup2Channel2 = IAMTestDataFactory.getGroupAdmin(group2Channel2.id)
@@ -114,7 +114,7 @@ class AuthorizationSpecs extends DatabaseSpec {
     accessShouldBeGranted(Users.CRUD.createUser(user1group1Channel2)(using(platformUser), db))
     accessShouldBeGranted(Users.CRUD.createUser(user2group1Channel2)(using(user1Channel2), db))
 
-    accessShouldBeGranted(Users.CRUD.createUser(adminGroup2Channel2)(using(user2Channel2), db))
+    accessShouldBeGranted(Users.CRUD.createUser(adminGroup2Channel2)(using(adminGroup1Channel2), db))
     accessShouldBeGranted(Users.CRUD.createUser(user1group2Channel2)(using(platformUser), db))
     accessShouldBeGranted(Users.CRUD.createUser(user2group2Channel2)(using(adminGroup2Channel2), db))
   }
