@@ -1,5 +1,6 @@
 package myproject.web.controllers
 
+import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{RejectionHandler, Route}
 import com.typesafe.scalalogging.Logger
@@ -25,14 +26,16 @@ object JsonRPCApiController extends Controller {
         optionalHeaderValueByName("Remote-Address") { ip =>
           authenticateOAuth2Async(realm = "rpc-api", authenticator = WebAuth.jwtAuthenticator) { user =>
             post {
-              entity(as[RPCRequest]) { req =>
-                onComplete(processRpcRequest(user, req, ip)) { res =>
-                  completeOpRpc(res)
-                }
-              } ~
-              entity(as[Seq[RPCRequest]]) { batch =>
-                onComplete(processBatchRpcRequest(user, batch, ip)) { res =>
-                  completeOpRpcBatch(res)
+              respondWithHeaders(`Access-Control-Allow-Origin`(HttpOriginRange.*)) {
+                entity(as[RPCRequest]) { req =>
+                  onComplete(processRpcRequest(user, req, ip)) { res =>
+                    completeOpRpc(res)
+                  }
+                } ~
+                entity(as[Seq[RPCRequest]]) { batch =>
+                  onComplete(processBatchRpcRequest(user, batch, ip)) { res =>
+                    completeOpRpcBatch(res)
+                  }
                 }
               }
             }
