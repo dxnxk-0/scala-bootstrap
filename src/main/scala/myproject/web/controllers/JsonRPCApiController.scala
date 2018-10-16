@@ -1,5 +1,6 @@
 package myproject.web.controllers
 
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{RejectionHandler, Route}
@@ -25,8 +26,11 @@ object JsonRPCApiController extends Controller {
       handleRejections(RejectionHandler.default) { // As soon as the URL match we don't want to evaluate other URLs
         optionalHeaderValueByName("Remote-Address") { ip =>
           authenticateOAuth2Async(realm = "rpc-api", authenticator = WebAuth.jwtAuthenticator) { user =>
-            post {
-              respondWithHeaders(`Access-Control-Allow-Origin`(HttpOriginRange.*)) {
+            respondWithHeaders(`Access-Control-Allow-Origin`(HttpOriginRange.*)) {
+              options {
+                complete(StatusCodes.OK)
+              } ~
+              post {
                 entity(as[RPCRequest]) { req =>
                   onComplete(processRpcRequest(user, req, ip)) { res =>
                     completeOpRpc(res)
