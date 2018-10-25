@@ -86,7 +86,11 @@ object JsonRPC {
     }
   }
 
-  def processBatchRpcRequest(user: UserGeneric, batch: Seq[RPCRequest], clientIp: Option[String]): Future[Seq[RPCResponse]] = ???
+  def processBatchRpcRequest(user: UserGeneric, batch: Seq[RPCRequest], clientIp: Option[String])(implicit logger: Logger): Future[Seq[RPCResponse]] = {
+    Future.sequence {
+      batch.map(req => processRpcRequest(user, req, clientIp))
+    }
+  }
 
   private def callRpcMethod(req: RPCRequest, methodName: String, user: UserGeneric, clientIp: Option[String]): Future[RPCResponse] = {
     ApiMapper.dispatchRequest(user, methodName, clientIp)(new ReifiedDataWrapper(req.params)) map { result =>
