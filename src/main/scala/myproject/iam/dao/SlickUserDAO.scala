@@ -25,14 +25,9 @@ trait SlickUserDAO extends UserDAO with SlickDAO { self: SlickGroupDAO with Slic
     e => e.id,
     i => UserLevel(i))
 
-  implicit def emailAddressMapper = MappedColumnType.base[EmailAddress, String](
-    address => address.toString,
-    str => EmailAddress(str))
-
   implicit def userStatusMapper = MappedColumnType.base[UserStatus, Int](
     e => e.id,
     i => UserStatus(i))
-
 
   protected class UsersTable(tag: Tag) extends Table[User](tag, "USERS") {
     def id = column[UUID]("USER_ID", O.PrimaryKey, O.SqlType("UUID"))
