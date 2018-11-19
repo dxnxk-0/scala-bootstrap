@@ -11,7 +11,6 @@ import myproject.common.Validation.{ValidationError, Validator}
 import myproject.common.{Done, IllegalOperationException, TimeManagement}
 import myproject.iam.Channels.{Channel, ChannelDAO}
 import myproject.iam.Groups.GroupStatus.GroupStatus
-import myproject.iam.Users.User
 
 import scala.concurrent.Future
 import scala.language.reflectiveCalls
@@ -48,7 +47,6 @@ object Groups {
   trait GroupAccessChecker extends AccessChecker {
     def canCreateGroup(implicit channel: Channel, target: Group): AuthorizationCheck
     def canReadGroup(implicit channel: Channel, target: Group, parents: List[Group]): AuthorizationCheck
-    def canListGroupUsers(implicit channel: Channel, target: Group, parents: List[Group]): AuthorizationCheck
     def canUpdateGroup(implicit channel: Channel, target: Group, parents: List[Group]): AuthorizationCheck
     def canGetGroupHierarchy(implicit channel: Channel, target: Group, parents: List[Group]): AuthorizationCheck
     def canAdminGroup(implicit channel: Channel, target: Group) : AuthorizationCheck
@@ -59,7 +57,6 @@ object Groups {
     override val requester = None
     override def canCreateGroup(implicit channel: Channel, target: Group) = grant
     override def canReadGroup(implicit channel: Channel, target: Group, parents: List[Group]) = grant
-    override def canListGroupUsers(implicit channel: Channel, target: Group, parents: List[Group]) = grant
     override def canUpdateGroup(implicit channel: Channel, target: Group, parents: List[Group]) = grant
     override def canGetGroupHierarchy(implicit channel: Channel, target: Group, parents: List[Group]) = grant
     override def canAdminGroup(implicit channel: Channel, target: Group)  = grant
@@ -69,7 +66,6 @@ object Groups {
   trait DefaultGroupAccessChecker extends GroupAccessChecker {
     override def canCreateGroup(implicit channel: Channel, target: Group) = isPlatformAdmin or isChannelAdmin
     override def canReadGroup(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin or isChannelAdmin or isGroupAdmin or belongToTheGroup or isAdminOfOneGroup(parents)
-    override def canListGroupUsers(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin or isChannelAdmin or isAdminOfOneGroup(target :: parents)
     override def canUpdateGroup(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin or isChannelAdmin or isAdminOfOneGroup(target :: parents)
     override def canGetGroupHierarchy(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin or isChannelAdmin or isGroupAdmin or isAdminOfOneGroup(parents)
     override def canAdminGroup(implicit channel: Channel, target: Group) = isPlatformAdmin or isChannelAdmin
@@ -82,7 +78,6 @@ object Groups {
     def insert(group: Group): Future[Group]
     def update(group: Group): Future[Group]
     def deleteGroup(id: UUID): Future[Done]
-    def getGroupUsers(groupId: UUID): Future[List[User]]
     def getGroupChildren(groupId: UUID): Future[List[Group]]
     def getGroupParents(groupId: UUID): Future[List[Group]]
   }
@@ -141,14 +136,6 @@ object Groups {
       _       <- authz.canDeleteGroup(channel, group).toFuture
       result  <- db.deleteGroup(id)
     } yield result
-
-    def getGroupUsers(groupId: UUID)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = for {
-      group   <- db.getGroupF(groupId)
-      channel <- db.getChannelF(group.channelId)
-      parents <- group.parentId.map(_ => db.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
-      _       <- authz.canListGroupUsers(channel, group, parents).toFuture
-      users   <- db.getGroupUsers(groupId)
-    } yield users
 
     def getGroupChildren(groupId: UUID)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = for {
       group    <- db.getGroupF(groupId)

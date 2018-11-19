@@ -54,7 +54,6 @@ trait SlickGroupDAO extends GroupDAO with SlickDAO { self: SlickChannelDAO with 
   }
   override def update(group: Group) = db.run(groups.filter(_.id===group.id).update(group)) map (_ => group)
   override def deleteGroup(id: UUID) = db.run(groups.filter(_.id===id).delete) map (_ => Done)
-  override def getGroupUsers(groupId: UUID) = db.run(users.filter(_.groupId===groupId).result) map (_.toList)
 
   override def getGroupChildren(groupId: UUID) = { // CTE not supported by Slick
     val cte = sql"""

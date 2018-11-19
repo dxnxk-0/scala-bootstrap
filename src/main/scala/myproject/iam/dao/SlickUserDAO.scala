@@ -63,4 +63,7 @@ trait SlickUserDAO extends UserDAO with SlickDAO { self: SlickGroupDAO with Slic
   override def insert(user: User) = db.run(users += user) map (_ => user)
   override def insert(batch: Seq[User]) = db.run(users ++= batch) map (_ => Done)
   override def deleteUser(id: UUID) = db.run(users.filter(_.id===id).delete) map (_ => Done)
+  override def getPlatformUsers = db.run(users.filter(_.level===UserLevel.Platform).result) map (_.toList)
+  override def getChannelUsers(channelId: UUID) = db.run(users.filter(u => u.channelId===channelId && u.level===UserLevel.Channel).result) map (_.toList)
+  override def getGroupUsers(groupId: UUID) = db.run(users.filter(u => u.groupId===groupId && u.level===UserLevel.Group).result) map (_.toList)
 }

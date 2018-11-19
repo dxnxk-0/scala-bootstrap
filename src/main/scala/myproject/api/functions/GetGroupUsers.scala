@@ -5,11 +5,11 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.iam.Channels.ChannelDAO
-import myproject.iam.Groups.{CRUD, GroupAccessChecker, GroupDAO}
+import myproject.iam.Groups.GroupDAO
 import myproject.iam.Users
-import myproject.iam.Users.User
+import myproject.iam.Users.{CRUD, User, UserAccessChecker, UserDAO}
 
-class GetGroupUsers(implicit authz: User => GroupAccessChecker, db: GroupDAO with ChannelDAO) extends ApiFunction {
+class GetGroupUsers(implicit authz: User => UserAccessChecker, db: ChannelDAO with GroupDAO with UserDAO) extends ApiFunction {
   override val name = "get_group_users"
   override val doc = ApiSummaryDoc(
     description = "get all users in a given group (requires at least group administration capability or higher privileges)",

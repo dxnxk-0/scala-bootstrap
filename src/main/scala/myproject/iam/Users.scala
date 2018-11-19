@@ -86,6 +86,9 @@ object Users {
     def canDeleteGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User): AuthorizationCheck
     def canOperateChannelUser(implicit channel: Channel, target: User): AuthorizationCheck
     def canOperatePlatformUser(implicit target: User): AuthorizationCheck
+    def canListPlatformUsers: AuthorizationCheck
+    def canListChannelUsers(implicit channel: Channel): AuthorizationCheck
+    def canListGroupUsers(implicit channel: Channel, target: Group, parents: List[Group]): AuthorizationCheck
   }
   
   trait VoidUserAccessChecker extends UserAccessChecker {
@@ -97,6 +100,9 @@ object Users {
     override def canDeleteGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = grant
     override def canOperateChannelUser(implicit channel: Channel, target: User) = grant
     override def canOperatePlatformUser(implicit target: User) = grant
+    override def canListPlatformUsers = grant
+    override def canListChannelUsers(implicit channel: Channel) = grant
+    override def canListGroupUsers(implicit channel: Channel, target: Group, parents: List[Group]) = grant
   }
   
   trait DefaultUserAccessChecker extends UserAccessChecker {
@@ -107,6 +113,9 @@ object Users {
     override def canDeleteGroupUser(implicit channel: Channel, group: Group, parents: List[Group], target: User) = isPlatformAdmin or isChannelAdmin or isAdminOfOneGroup(group :: parents)
     override def canOperateChannelUser(implicit channel: Channel, target: User) = isPlatformAdmin or isChannelAdmin
     override def canOperatePlatformUser(implicit target: User) = isPlatformAdmin
+    override def canListPlatformUsers = isPlatformAdmin
+    override def canListChannelUsers(implicit channel: Channel) = isPlatformAdmin or isChannelAdmin
+    override def canListGroupUsers(implicit channel: Channel, target: Group, parents: List[Group]) = isPlatformAdmin or isChannelAdmin or isAdminOfOneGroup(target :: parents)
   }
 
   trait UserDAO {
@@ -120,6 +129,9 @@ object Users {
     def insert(user: User): Future[User]
     def insert(batch: Seq[User]): Future[Done]
     def deleteUser(id: UUID): Future[Done]
+    def getPlatformUsers: Future[List[User]]
+    def getChannelUsers(id: UUID): Future[List[User]]
+    def getGroupUsers(groupId: UUID): Future[List[User]]
   }
 
   private object UserValidator extends Validator[User] {
@@ -259,5 +271,24 @@ object Users {
       _        <- if(user.status==UserStatus.Active && !groupOpt.exists(_.status!=GroupStatus.Active)) Future.successful(Done) else Future.failed(AccessRefusedException(s"user is not authorized to log in"))
       _        <- Authentication.loginPassword(user, candidate).toFuture
     } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive.seconds)))
+
+    def getPlatformUsers(implicit authz: UserAccessChecker, db: UserDAO) = for {
+      _     <- authz.canListPlatformUsers.toFuture
+      users <- db.getPlatformUsers
+    } yield users
+
+    def getChannelUsers(id: UUID)(implicit authz: UserAccessChecker, db: ChannelDAO with UserDAO) = for {
+      channel <- db.getChannelF(id)
+      _       <- authz.canListChannelUsers(channel).toFuture
+      users   <- db.getChannelUsers(id)
+    } yield users
+
+    def getGroupUsers(groupId: UUID)(implicit authz: UserAccessChecker, db: ChannelDAO with GroupDAO with UserDAO) = for {
+      group   <- db.getGroupF(groupId)
+      channel <- db.getChannelF(group.channelId)
+      parents <- group.parentId.map(_ => db.getGroupParents(group.id)).getOrElse(Future.successful(Nil))
+      _       <- authz.canListGroupUsers(channel, group, parents).toFuture
+      users   <- db.getGroupUsers(groupId)
+    } yield users
   }
 }
