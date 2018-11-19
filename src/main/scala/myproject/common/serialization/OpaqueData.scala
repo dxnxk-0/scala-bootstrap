@@ -4,7 +4,8 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, YearMonth}
 import java.util.{Currency, Locale, UUID}
 
-import myproject.common.{InvalidTypeException, MissingKeyException, NullValueException}
+import myproject.common.Geography.Country
+import myproject.common.{Geography, InvalidTypeException, MissingKeyException, NullValueException}
 import uk.gov.hmrc.emailaddress.EmailAddress
 
 import scala.util.Try
@@ -14,7 +15,7 @@ object OpaqueData {
   object Type extends Enumeration {
     type Type = Value
     val Int, String, NonEmptyString, UUID, StringEnumeration, IntEnumeration, IntList, StringList, Boolean, Long,
-        Double, Date, Datetime, BigDecimal, Email, List, Object, Locale, Currency = Value
+        Double, Date, Datetime, BigDecimal, Email, List, Object, Locale, Currency, Country = Value
   }
 
   class ReifiedDataWrapper(private val underlying: Any) {
@@ -173,6 +174,11 @@ object OpaqueData {
 
     def subData(key: String, value: Option[Any] = None, tpe: Type = Type.Object): ReifiedDataWrapper = {
       new ReifiedDataWrapper(value.getOrElse(get(key, tpe)))
+    }
+
+    def country(key: String, value: Option[Any] = None, tpe: Type = Type.Country): Country = value.getOrElse(get(key, tpe)) match {
+      case code: String => Try(Geography.getCountry(code)).getOrElse(throw InvalidTypeException(s"value `$code` of key `$key` is not a valid country code"))
+      case _ => throw InvalidTypeException(s"value of key `$key` is not a valid country code")
     }
 
     override def toString: String = {
