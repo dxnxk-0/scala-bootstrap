@@ -2,11 +2,16 @@ package myproject
 
 import com.typesafe.config.ConfigFactory
 
+import scala.concurrent.duration.Duration
 import scala.util.Try
 
 object Config {
 
   private val config = ConfigFactory.load()
+
+  implicit class DurationExtension(d: java.time.Duration) {
+    def toScala = Duration.fromNanos(d.toNanos)
+  }
 
   object database {
     private val databaseConfig = config.getConfig("database")
@@ -17,14 +22,14 @@ object Config {
     private val serverConfig = config.getConfig("server")
     val interface = serverConfig.getString("interface")
     val port = serverConfig.getInt("port")
-    val sessionDuration = serverConfig.getDuration("session-duration")
+    val sessionDuration = serverConfig.getDuration("session-duration").toScala
   }
 
   object security {
     private val securityConfig = config.getConfig("security")
     val secret = securityConfig.getString("secret")
     val bcryptWork = securityConfig.getInt("bcrypt-work")
-    val jwtTimeToLive = securityConfig.getInt("jwt-ttl")
+    val jwtTimeToLive = securityConfig.getDuration("jwt-ttl").toScala
   }
 
   object email {

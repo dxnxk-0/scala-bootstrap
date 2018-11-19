@@ -270,7 +270,7 @@ object Users {
       groupOpt <- user.groupId.map(gid => db.getGroupF(gid).map(Some(_))) getOrElse Future.successful(None)
       _        <- if(user.status==UserStatus.Active && !groupOpt.exists(_.status!=GroupStatus.Active)) Future.successful(Done) else Future.failed(AccessRefusedException(s"user is not authorized to log in"))
       _        <- Authentication.loginPassword(user, candidate).toFuture
-    } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive.seconds)))
+    } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive)))
 
     def getPlatformUsers(implicit authz: UserAccessChecker, db: UserDAO) = for {
       _     <- authz.canListPlatformUsers.toFuture
