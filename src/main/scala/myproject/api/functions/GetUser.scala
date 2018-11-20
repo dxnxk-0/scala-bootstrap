@@ -20,7 +20,7 @@ class GetUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupD
     implicit val checker = authz(user)
 
     checkParamAndProcess(userId) {
-      CRUD.getUser(userId.get) map (_.toMap)
+      CRUD.getUser(userId.get) map (_.serialize)
     }
   }
 }

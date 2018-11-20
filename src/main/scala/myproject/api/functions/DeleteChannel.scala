@@ -1,6 +1,7 @@
 package myproject.api.functions
 
 import myproject.api.{ApiFunction, ApiSummaryDoc}
+import myproject.common.Done
 import myproject.common.serialization.OpaqueData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.iam.Channels.{CRUD, ChannelAccessChecker, ChannelDAO}
@@ -17,7 +18,7 @@ class DeleteChannel(implicit authz: User => ChannelAccessChecker, db: ChannelDAO
     implicit val checker = authz(user)
 
     checkParamAndProcess(channelId) {
-      CRUD.deleteChannel(channelId.get)
+      CRUD.deleteChannel(channelId.get) map (_ => Done)
     }
   }
 }

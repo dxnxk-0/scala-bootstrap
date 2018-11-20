@@ -21,9 +21,7 @@ class GetGroupUsers(implicit authz: User => UserAccessChecker, db: ChannelDAO wi
     implicit val checker = authz(user)
 
     checkParamAndProcess(groupId) {
-      CRUD.getGroupUsers(groupId.get) map { users =>
-        users.map(_.toMap)
-      }
+      CRUD.getGroupUsers(groupId.get) map (_.serialize)
     }
   }
 }

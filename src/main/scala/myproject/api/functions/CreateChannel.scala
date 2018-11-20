@@ -23,7 +23,7 @@ class CreateChannel(implicit authz: User => ChannelAccessChecker, db: ChannelDAO
 
     checkParamAndProcess(channelName) {
       val channel = Channel(UUID.randomUUID, channelName.get)
-      CRUD.createChannel(channel) map (_.toMap)
+      CRUD.createChannel(channel) map (_.serialize)
     }
   }
 }

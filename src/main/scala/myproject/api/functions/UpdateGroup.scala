@@ -27,7 +27,7 @@ class UpdateGroup(implicit authz: User => GroupAccessChecker, db: GroupDAO with 
       CRUD.updateGroup(groupId.get, g => g.copy(
         parentId = parentId.get.getOrElse(g.parentId),
         name = name.get.getOrElse(g.name),
-        status = status.get.getOrElse(g.status))).map(_.toMap)
+        status = status.get.getOrElse(g.status))) map (_.serialize)
     }
   }
 }

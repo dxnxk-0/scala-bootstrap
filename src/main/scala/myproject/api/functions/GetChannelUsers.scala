@@ -19,7 +19,7 @@ class GetChannelUsers(implicit authz: User => UserAccessChecker, db: ChannelDAO 
     implicit val checker =authz(user)
 
     checkParamAndProcess(channelId) {
-      CRUD.getChannelUsers(channelId.get).map(_.map(_.toMap))
+      CRUD.getChannelUsers(channelId.get) map (_.serialize)
     }
   }
 }

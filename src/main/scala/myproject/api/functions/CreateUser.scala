@@ -34,7 +34,7 @@ class CreatePlatformUser(implicit authz: User => UserAccessChecker, db: UserDAO 
 
     checkParamAndProcess(login, password, email, fn, ln) {
       val user = User(UUID.randomUUID, UserLevel.Platform, login.get, fn.get, ln.get, email.get, password.get)
-      CRUD.createUser(user) map (_.toMap)
+      CRUD.createUser(user) map (_.serialize)
     }
   }
 }
@@ -54,7 +54,7 @@ class CreateChannelUser(implicit authz: User => UserAccessChecker, db: UserDAO w
 
     checkParamAndProcess(login, password, email, channelId, fn, ln) {
       val user = User(UUID.randomUUID, UserLevel.Channel, login.get, fn.get, ln.get, email.get, password.get, Some(channelId.get))
-      CRUD.createUser(user) map (_.toMap)
+      CRUD.createUser(user) map (_.serialize)
     }
   }
 }
@@ -74,7 +74,7 @@ class CreateGroupUser(implicit authz: User => UserAccessChecker, db: UserDAO wit
 
     checkParamAndProcess(login, email, password, groupId, groupRole, fn, ln) {
       val user = User(UUID.randomUUID, UserLevel.Group, login.get, fn.get, ln.get, email.get, password.get, None, Some(groupId.get), groupRole.get)
-      CRUD.createUser(user) map (_.toMap)
+      CRUD.createUser(user) map (_.serialize)
     }
   }
 }
@@ -92,7 +92,7 @@ class CreateSimpleUser(implicit authz: User => UserAccessChecker, db: UserDAO wi
 
     checkParamAndProcess(login, password, email, fn, ln) {
       val user = User(UUID.randomUUID, UserLevel.NoLevel, login.get, fn.get, ln.get, email.get, password.get)
-      CRUD.createUser(user) map (_.toMap)
+      CRUD.createUser(user) map (_.serialize)
     }
   }
 }

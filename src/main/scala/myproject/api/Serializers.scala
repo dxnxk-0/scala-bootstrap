@@ -1,56 +1,149 @@
 package myproject.api
 
+import java.time.{LocalDate, LocalDateTime}
+import java.util.{Currency, Locale, UUID}
+
+import myproject.common.Geography.Country
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.Group
 import myproject.iam.Users.{User, UserLevel}
+import uk.gov.hmrc.emailaddress.EmailAddress
 
 object Serializers {
 
-  trait MapSerializer[A] {
-    def toMap(value: A): Map[String, Any]
+  trait Serializer[A] {
+    def serialize(value: A): Any
   }
 
-  implicit class MapSerializationExtension[A](value: A) {
-    def toMap(implicit serializer: MapSerializer[A]): Map[String, Any] = serializer.toMap(value)
+  object Serializer {
+    def serialize[A](value: A)(implicit serializer: Serializer[A]) = serializer.serialize(value)
   }
 
-  implicit val userMapSerializer = new MapSerializer[User] {
-    def toMap(user: User) = {
+  implicit class SerializerExtension[A](v: A) {
+    def serialize(implicit serializer: Serializer[A]) = Serializer.serialize(v)
+  }
+
+  implicit def optionSerializer[A](implicit serializer: Serializer[A]) = new Serializer[Option[A]] {
+    def serialize(value: Option[A]) = value match {
+      case None => None
+      case Some(v) => Some(serializer.serialize(v))
+    }
+  }
+
+  implicit def seqSerializer[A](implicit serializer: Serializer[A]) = new Serializer[Seq[A]] {
+    def serialize(value: Seq[A]) = value.map(_.serialize)
+  }
+
+  implicit def listSerializer[A](implicit serializer: Serializer[A]) = new Serializer[List[A]] {
+    def serialize(value: List[A]) = value.map(_.serialize)
+  }
+
+  implicit val intSerializer = new Serializer[Int] {
+    def serialize(value: Int) = value
+  }
+
+  implicit val booleanSerializer = new Serializer[Boolean] {
+    def serialize(value: Boolean) = value
+  }
+
+  implicit val floatSerializer = new Serializer[Float] {
+    def serialize(value: Float) = value
+  }
+
+  implicit val charSerializer = new Serializer[Char] {
+    def serialize(value: Char) = value
+  }
+
+  implicit val shortSerializer = new Serializer[Short] {
+    def serialize(value: Short) = value
+  }
+
+  implicit val doubleSerializer = new Serializer[Double] {
+    def serialize(value: Double) = value
+  }
+
+  implicit val longSerializer = new Serializer[Long] {
+    def serialize(value: Long) = value
+  }
+
+  implicit val uuidSerializer = new Serializer[UUID] {
+    def serialize(uuid: UUID) = uuid.toString
+  }
+
+  implicit val emailSerializer = new Serializer[EmailAddress] {
+    def serialize(email: EmailAddress) = email.toString
+  }
+
+  implicit val dateTimeSerializer = new Serializer[LocalDateTime] {
+    def serialize(dateTime: LocalDateTime) = dateTime.toString + "Z"
+  }
+
+  implicit val dateSerializer = new Serializer[LocalDate] {
+    def serialize(date: LocalDate) = date.toString
+  }
+
+  implicit val countrySerializer = new Serializer[Country] {
+    def serialize(country: Country) = country.iso3
+  }
+
+  implicit val bigDecimalSerializer = new Serializer[BigDecimal] {
+    def serialize(value: BigDecimal) = value
+  }
+
+  implicit val localeSerializer = new Serializer[Locale] {
+    def serialize(locale: Locale) = locale.toLanguageTag
+  }
+
+  implicit val currencySerializer = new Serializer[Currency] {
+    def serialize(currency: Currency) = currency.getCurrencyCode
+  }
+
+  implicit val stringSerializer = new Serializer[String] {
+    def serialize(value: String) = value
+  }
+
+  implicit def enumSerializer[A <: Enumeration] = new Serializer[A#Value] {
+    def serialize(value: A#Value) = value.toString
+  }
+
+  implicit val userSerializer = new Serializer[User] {
+    def serialize(user: User) = {
+
       val common = Map(
-        "user_id" -> user.id,
-        "login" -> user.login,
-        "level" -> user.level.toString,
-        "email" -> user.email.toString,
-        "status" -> user.status.toString,
-        "created" -> user.created.map(_.toString),
-        "last_update" -> user.lastUpdate.map(_.toString))
+        "user_id" -> user.id.serialize,
+        "login" -> user.login.serialize,
+        "level" -> user.level.serialize,
+        "email" -> user.email.serialize,
+        "status" -> user.status.serialize,
+        "created" -> user.created.serialize,
+        "last_update" -> user.lastUpdate.serialize)
 
       user.level match {
         case UserLevel.Platform | UserLevel.NoLevel => common
         case UserLevel.Channel =>
-          common ++ Map("channel_id" -> user.channelId)
+          common ++ Map("channel_id" -> user.channelId.serialize)
         case UserLevel.Group =>
-          common ++ Map("group_id" -> user.groupId, "group_role" -> user.groupRole.map(_.toString))
+          common ++ Map("group_id" -> user.groupId.serialize, "group_role" -> user.groupRole.serialize)
       }
     }
   }
 
-  implicit val channelMapSerializer = new MapSerializer[Channel] {
-    def toMap(channel: Channel) = Map(
-      "channel_id" -> channel.id,
-      "name" -> channel.name,
-      "created" -> channel.created.map(_.toString),
-      "last_update" -> channel.lastUpdate.map(_.toString))
+  implicit val channelSerializer = new Serializer[Channel] {
+    def serialize(channel: Channel) = Map(
+      "channel_id" -> channel.id.serialize,
+      "name" -> channel.name.serialize,
+      "created" -> channel.created.serialize,
+      "last_update" -> channel.lastUpdate.serialize)
   }
 
-  implicit val groupMapSerializer = new MapSerializer[Group] {
-    def toMap(group: Group) = Map(
-      "group_id" -> group.id,
-      "name" -> group.name,
-      "status" -> group.status.toString,
-      "parent_id" -> group.parentId,
-      "channel_id" -> group.channelId,
-      "created" -> group.created.map(_.toString),
-      "last_update" -> group.lastUpdate.map(_.toString))
+  implicit val groupSerializer = new Serializer[Group] {
+    def serialize(group: Group) = Map(
+      "group_id" -> group.id.serialize,
+      "name" -> group.name.serialize,
+      "status" -> group.status.serialize,
+      "parent_id" -> group.parentId.serialize,
+      "channel_id" -> group.channelId.serialize,
+      "created" -> group.created.serialize,
+      "last_update" -> group.lastUpdate.serialize)
   }
 }

@@ -21,7 +21,7 @@ class LoginPassword(implicit db: UserDAO with GroupDAO with ChannelDAO)  extends
 
     checkParamAndProcess(login, password) {
       CRUD.loginPassword(login.get, password.get) map { authData =>
-        Map("whoami" -> authData._1.toMap, "token" -> authData._2.toString)
+        Map("whoami" -> authData._1.serialize, "token" -> authData._2.serialize)
       }
     }
   }

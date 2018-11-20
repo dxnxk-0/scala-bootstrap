@@ -30,7 +30,7 @@ class UpdateUser(implicit authz: User => UserAccessChecker, db: UserDAO with Gro
           login = login.get.getOrElse(u.login),
           email = email.get.getOrElse(u.email),
           password = password.get.getOrElse(u.password),
-          status = status.get.getOrElse(u.status))).map(_.toMap)
+          status = status.get.getOrElse(u.status))) map (_.serialize)
     }
   }
 }

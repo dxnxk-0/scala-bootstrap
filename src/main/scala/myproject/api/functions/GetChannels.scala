@@ -16,8 +16,6 @@ class GetChannels(implicit authz: User => ChannelAccessChecker, db: ChannelDAO) 
   override def process(implicit p: ReifiedDataWrapper, user: Users.User) = {
     implicit val checker = authz(user)
 
-    CRUD.getAllChannels map { channels =>
-      channels.map(_.toMap)
-    }
+    CRUD.getAllChannels map (_.serialize)
   }
 }

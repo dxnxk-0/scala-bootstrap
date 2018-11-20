@@ -20,9 +20,7 @@ class GetGroups(implicit authz: User => ChannelAccessChecker, db: ChannelDAO) ex
     implicit val checker = authz(user)
 
     checkParamAndProcess(channelId) {
-      CRUD.getChannelGroups(channelId.get) map { groups =>
-        groups.map(_.toMap)
-      }
+      CRUD.getChannelGroups(channelId.get) map (_.serialize)
     }
   }
 }

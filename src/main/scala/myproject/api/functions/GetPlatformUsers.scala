@@ -3,7 +3,6 @@ package myproject.api.functions
 import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData
-import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.iam.Users
 import myproject.iam.Users.{CRUD, User, UserAccessChecker, UserDAO}
 
@@ -15,6 +14,6 @@ class GetPlatformUsers(implicit authz: User => UserAccessChecker, db: UserDAO) e
 
     implicit val checker = authz(user)
 
-    CRUD.getPlatformUsers.map(_.map(_.toMap))
+    CRUD.getPlatformUsers map (_.serialize)
   }
 }
