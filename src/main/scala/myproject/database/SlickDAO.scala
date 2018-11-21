@@ -24,7 +24,7 @@ trait SlickDAO extends JdbcProfile {
 
   implicit val countryMapper = MappedColumnType.base[Country, String](
     country => country.iso3,
-    code => Geography.getCountry(code))
+    code => Geography.getCountryF(code))
 
   implicit val emailAddressMapper = MappedColumnType.base[EmailAddress, String](
     email => email.toString,

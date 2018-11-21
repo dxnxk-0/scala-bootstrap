@@ -177,7 +177,7 @@ object OpaqueData {
     }
 
     def country(key: String, value: Option[Any] = None, tpe: Type = Type.Country): Country = value.getOrElse(get(key, tpe)) match {
-      case code: String => Try(Geography.getCountry(code)).getOrElse(throw InvalidTypeException(s"value `$code` of key `$key` is not a valid country code"))
+      case code: String => Try(Geography.getCountryF(code)).getOrElse(throw InvalidTypeException(s"value `$code` of key `$key` is not a valid country code"))
       case _ => throw InvalidTypeException(s"value of key `$key` is not a valid country code")
     }
 
