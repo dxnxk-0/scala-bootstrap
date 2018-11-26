@@ -14,8 +14,8 @@ object OpaqueData {
 
   object Type extends Enumeration {
     type Type = Value
-    val Int, String, NonEmptyString, UUID, StringEnumeration, IntEnumeration, IntList, StringList, Boolean, Long,
-        Double, Date, Datetime, BigDecimal, Email, List, Object, Locale, Currency, Country = Value
+    val Int, String, NonEmptyString, UUID, StringEnumeration, IntEnumeration, IntList, StringList, StringListEnumeration,
+    Boolean, Long, Double, Date, Datetime, BigDecimal, Email, List, Object, Locale, Currency, Country = Value
   }
 
   class ReifiedDataWrapper(private val underlying: Any) {
@@ -95,31 +95,28 @@ object OpaqueData {
       case v => throw InvalidTypeException(s"key `$key` (`$v`) is not of type [$tpe]")
     }
 
-    def stringList(key: String, tpe: Type = Type.StringList): List[String] = {
-      Try(get(key, tpe).asInstanceOf[List[Any]])
+    def stringList(key: String, value: Option[Any] = None, tpe: Type = Type.StringList): List[String] = value.getOrElse(get(key, tpe)) match {
+      case l => Try(l.asInstanceOf[List[Any]].zipWithIndex.map { case (v, i) => nonEmptyString(s"$key-$i", Some(v)) })
         .getOrElse(throw InvalidTypeException(s"key $key is not a list of type [$tpe]"))
-        .zipWithIndex.map { case (v, i) => nonEmptyString(s"$key-$i", Some(v)) }
     }
 
     def enumString(key: String, enum: Enumeration, value: Option[Any] = None, tpe: Type = Type.StringEnumeration): enum.Value = value.getOrElse(get(key, tpe)) match {
-      case e => Try(enum.withName(e.toString))
-        .getOrElse(throw InvalidTypeException(s"value `$e` for key `$key` is invalid. Possible values: ${enum.values.mkString(",")}"))
+      case e =>
+        Try(enum.withName(e.toString))
+          .getOrElse(throw InvalidTypeException(s"value `$e` for key `$key` is invalid. Possible values: ${enum.values.mkString(",")}"))
     }
 
-    def enumStringList(key: String, enum: Enumeration, tpe: Type = Type.StringList): List[enum.Value] = {
-      Try(get(key, tpe).asInstanceOf[List[String]])
-        .getOrElse(throw InvalidTypeException(s"key $key is not a list of [$tpe]"))
-        .map(v => enumString(key, enum, Some(v)))
+    def enumStringList(key: String, enum: Enumeration, value: Option[Any] = None, tpe: Type = Type.StringListEnumeration): List[enum.Value] = value.getOrElse(get(key, tpe)) match {
+      case l =>
+        val list = Try(l.asInstanceOf[List[String]]).getOrElse(throw InvalidTypeException(s"key $key is not a list of [${Type.StringList}]"))
+        list.map(v => enumString(key, enum, Some(v)))
     }
 
-    def enumId(key: String, enum: Enumeration, tpe: Type = Type.IntEnumeration): enum.Value = {
-
-      def fail(e: Any) =
-        throw InvalidTypeException(s"value `$e` for key `$key` is invalid. Possible integer values: ${enum.values.map(_.id).mkString(",")}")
-
-      val value = int(key, tpe = tpe)
-      Try(enum(value)).getOrElse(fail(value))
-
+    def enumId(key: String, enum: Enumeration, value: Option[Any] = None, tpe: Type = Type.IntEnumeration): enum.Value = int(key, value, tpe = tpe) match {
+      case i =>
+        Try(enum(i))
+          .getOrElse(throw InvalidTypeException(
+            s"value `$i` for key `$key` is invalid. Possible integer values: ${enum.values.map(_.id).mkString(",")}"))
     }
 
     def currency(key: String, value: Option[Any] = None, tpe: Type = Type.Currency): Currency = value.getOrElse(get(key, tpe)) match {
@@ -242,4 +239,5 @@ object OpaqueData {
       }
     }
   }
+
 }
