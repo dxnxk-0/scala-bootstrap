@@ -5,6 +5,7 @@ import java.time.{Instant, LocalDateTime, ZoneId}
 import buildmeta.BuildInfo
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData
+import myproject.api.Serializers._
 
 import scala.concurrent.Future
 
@@ -16,10 +17,10 @@ class ApiInfo extends ApiFunction {
   override def process(implicit p: OpaqueData.ReifiedDataWrapper) = {
     Future.successful(
       Map(
-      "name" -> BuildInfo.name,
-      "version" -> BuildInfo.version,
-      "build_number" -> BuildInfo.buildInfoBuildNumber,
-      "build_at" -> (LocalDateTime.ofInstant(Instant.ofEpochMilli(BuildInfo.builtAtMillis), ZoneId.of("GMT")).toString + "Z"))
+      "name" -> BuildInfo.name.serialize,
+      "version" -> BuildInfo.version.serialize,
+      "build_number" -> BuildInfo.buildInfoBuildNumber.serialize,
+      "build_at" -> LocalDateTime.ofInstant(Instant.ofEpochMilli(BuildInfo.builtAtMillis), ZoneId.of("GMT")).serialize)
     )
   }
 }
