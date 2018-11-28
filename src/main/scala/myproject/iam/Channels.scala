@@ -69,11 +69,13 @@ object Channels {
 
     def getAllChannels(implicit authz: ChannelAccessChecker, db: ChannelDAO) = authz.canListChannels.toFuture flatMap (_ => db.getAllChannels)
 
-    def createChannel(channel: Channel)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = for {
-      _         <- authz.canCreateChannel(channel).toFuture
-      validated <- ChannelValidator.validate(channel.copy(created = Some(TimeManagement.getCurrentDateTime))).toFuture
-      saved     <- db.insert(validated)
-    } yield saved
+    def createChannel(channel: Channel)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = {
+      for {
+        _         <- authz.canCreateChannel(channel).toFuture
+        validated <- ChannelValidator.validate(channel.copy(created = Some(TimeManagement.getCurrentDateTime))).toFuture
+        saved     <- db.insert(validated)
+      } yield saved
+    }
 
     def getChannel(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = for {
       channel <- db.getChannelF(id)
@@ -81,7 +83,10 @@ object Channels {
     } yield channel
 
     def updateChannel(id: UUID, upd: ChannelUpdate)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = {
-      def filter(existing: Channel, candidate: Channel) = existing.copy(name = candidate.name, lastUpdate = Some(TimeManagement.getCurrentDateTime))
+      def filter(existing: Channel, candidate: Channel) =
+        existing.copy(
+          name = candidate.name,
+          lastUpdate = Some(TimeManagement.getCurrentDateTime))
 
       for {
         existing  <- db.getChannelF(id)
@@ -92,16 +97,20 @@ object Channels {
       } yield saved
     }
 
-    def deleteChannel(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = for {
-      channel <- db.getChannelF(id)
-      _       <- authz.canDeleteChannel(channel).toFuture
-      result  <- db.deleteChannel(id)
-    } yield result
+    def deleteChannel(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = {
+      for {
+        channel <- db.getChannelF(id)
+        _       <- authz.canDeleteChannel(channel).toFuture
+        _       <- db.deleteChannel(id)
+      } yield Done
+    }
 
-    def getChannelGroups(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = for {
-      channel <- db.getChannelF(id)
-      _       <- authz.canListChannelGroups(channel).toFuture
-      groups  <- db.getChannelGroups(id)
-    } yield groups
+    def getChannelGroups(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = {
+      for {
+        channel <- db.getChannelF(id)
+        _       <- authz.canListChannelGroups(channel).toFuture
+        groups  <- db.getChannelGroups(id)
+      } yield groups
+    }
   }
 }

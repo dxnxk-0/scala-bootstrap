@@ -8,11 +8,11 @@ import scala.concurrent.Future
 
 class Welcome extends ApiFunction {
   override val name = "welcome"
-  override val doc = ApiSummaryDoc(
-    description = "A bit of kindness in this cold world",
-    `return` = "a string saying a welcome message")
+  override val doc = ApiSummaryDoc("A bit of kindness in this cold world", "a string saying a welcome message")
 
-  override def process(implicit p: ReifiedDataWrapper, user: User) = Future {
-    s"Welcome ${user.login} !"
+  override def process(implicit p: ReifiedDataWrapper, user: User) = {
+    Future {
+      s"Welcome ${user.login} !"
+    }
   }
 }

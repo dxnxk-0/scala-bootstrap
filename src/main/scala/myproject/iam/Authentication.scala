@@ -8,9 +8,12 @@ import scala.util.{Failure, Success}
 
 object Authentication {
 
-  def loginPassword(user: User, candidate: String) =
-    if(checkPassword(candidate, user.password)) Success(Done) else Failure(AuthenticationFailedException("Bad user or password"))
+  def loginPassword(user: User, candidate: String) = {
+    if(checkPassword(candidate, user.password))
+      Success(Done)
+    else
+      Failure(AuthenticationFailedException("Bad user or password"))
+  }
 
-  private def checkPassword(candidate: String, hashedPassword: String) =
-    OpenBSDBCrypt.checkPassword(hashedPassword, candidate.toCharArray)
+  private def checkPassword(candidate: String, hashedPassword: String) = OpenBSDBCrypt.checkPassword(hashedPassword, candidate.toCharArray)
 }

@@ -21,7 +21,7 @@ class GetGroupChildren(implicit authz: User => GroupAccessChecker, db: GroupDAO 
     implicit val checker = authz(user)
 
     checkParamAndProcess(groupId) {
-      CRUD.getGroupChildren(groupId.get) map(_.serialize)
+      CRUD.getGroupChildren(groupId.get) map (_.serialize)
     }
   }
 }

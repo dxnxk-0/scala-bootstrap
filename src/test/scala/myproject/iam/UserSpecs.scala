@@ -37,7 +37,9 @@ class UserSpecs extends DatabaseSpec {
   }
 
   it should "create a user and silently put the email and login in lower case" in {
-    createUser(groupUser.copy(email = EmailAddress(groupUser.email.value.toUpperCase), login = groupUser.login.toUpperCase)).futureValue.login shouldBe groupUser.login
+    createUser(
+      groupUser.copy(email = EmailAddress(groupUser.email.value.toUpperCase), login = groupUser.login.toUpperCase)
+    ).futureValue.login shouldBe groupUser.login
     createUser(channelUser).futureValue.id shouldBe channelUser.id
     createUser(platformUser).futureValue.id shouldBe platformUser.id
   }

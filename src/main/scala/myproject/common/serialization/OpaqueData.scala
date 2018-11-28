@@ -39,15 +39,18 @@ object OpaqueData {
 
       value match {
         case Some(null) => throw NullValueException(s"null value for key `$key` of type [$tpe] is not allowed")
-        case None => throw MissingKeyException(if (underlyingMap.isSuccess) s"key `$key` of type [$tpe] was not found" else s"parameter at position $key was not found")
+        case None =>
+          throw MissingKeyException(if (underlyingMap.isSuccess) s"key `$key` of type [$tpe] was not found" else s"parameter at position $key was not found")
         case Some(v) => v
       }
     }
 
-    def int(key: String, value: Option[Any] = None, tpe: Type = Type.Int): Int = value.getOrElse(get(key, tpe)) match {
-      case e: Int => e
-      case e: String => Try(e.toInt).getOrElse(throw InvalidTypeException(s"key `$key` is not of type [$tpe]"))
-      case _ => throw InvalidTypeException(s"key `$key` is not of type Int")
+    def int(key: String, value: Option[Any] = None, tpe: Type = Type.Int): Int = {
+      value.getOrElse(get(key, tpe)) match {
+        case e: Int => e
+        case e: String => Try(e.toInt).getOrElse(throw InvalidTypeException(s"key `$key` is not of type [$tpe]"))
+        case _ => throw InvalidTypeException(s"key `$key` is not of type Int")
+      }
     }
 
     def intList(key: String, tpe: Type = Type.IntList): List[Int] = {
@@ -56,83 +59,108 @@ object OpaqueData {
         .zipWithIndex.map { case (v, i) => int(s"$key-$i", Some(v)) }
     }
 
-    def boolean(key: String, value: Option[Any] = None, tpe: Type = Type.Boolean): Boolean = value.getOrElse(get(key, tpe)) match {
-      case b: Boolean => b
-      case e: String => Try(e.toBoolean).getOrElse(throw InvalidTypeException(s"key `$key` is not of type [$tpe]"))
-      case _ => throw InvalidTypeException(s"key `$key` is not of type [$tpe]")
+    def boolean(key: String, value: Option[Any] = None, tpe: Type = Type.Boolean): Boolean = {
+      value.getOrElse(get(key, tpe)) match {
+        case b: Boolean => b
+        case e: String => Try(e.toBoolean).getOrElse(throw InvalidTypeException(s"key `$key` is not of type [$tpe]"))
+        case _ => throw InvalidTypeException(s"key `$key` is not of type [$tpe]")
+      }
     }
 
-    def long(key: String, value: Option[Any] = None, tpe: Type = Type.Long): Long = value.getOrElse(get(key, tpe)) match {
-      case e: Int => e.toLong
-      case e: Long => e.toLong
-      case e: String => Try(e.toLong).getOrElse(throw InvalidTypeException(s"key `$key` is not of type [$tpe]"))
-      case _ => throw InvalidTypeException(s"key `$key` is not of type [$tpe]")
+    def long(key: String, value: Option[Any] = None, tpe: Type = Type.Long): Long = {
+      value.getOrElse(get(key, tpe)) match {
+        case e: Int => e.toLong
+        case e: Long => e.toLong
+        case e: String => Try(e.toLong).getOrElse(throw InvalidTypeException(s"key `$key` is not of type [$tpe]"))
+        case _ => throw InvalidTypeException(s"key `$key` is not of type [$tpe]")
+      }
     }
 
-    def double(key: String, value: Option[Any] = None, tpe: Type = Type.Double): Double = value.getOrElse(get(key, tpe)) match {
-      case e: Int => e.toDouble
-      case e: Long => e.toDouble
-      case e: Double => e
-      case e: Float => e.toDouble
-      case e: String => Try(e.toDouble).getOrElse(throw InvalidTypeException(s"key `$key` is not of type [$tpe]"))
-      case _ => throw InvalidTypeException(s"key `$key` is not of type [$tpe]")
+    def double(key: String, value: Option[Any] = None, tpe: Type = Type.Double): Double = {
+      value.getOrElse(get(key, tpe)) match {
+        case e: Int => e.toDouble
+        case e: Long => e.toDouble
+        case e: Double => e
+        case e: Float => e.toDouble
+        case e: String => Try(e.toDouble).getOrElse(throw InvalidTypeException(s"key `$key` is not of type [$tpe]"))
+        case _ => throw InvalidTypeException(s"key `$key` is not of type [$tpe]")
+      }
     }
 
-    def bigDecimal(key: String, value: Option[Any] = None, tpe: Type = Type.BigDecimal): BigDecimal = value.getOrElse(get(key, tpe)) match {
-      case e: Int => BigDecimal(e)
-      case e: Long => BigDecimal(e)
-      case e: Double => BigDecimal(e)
-      case _ => throw InvalidTypeException(s"key `$key` is not of type [$tpe]")
+    def bigDecimal(key: String, value: Option[Any] = None, tpe: Type = Type.BigDecimal): BigDecimal = {
+      value.getOrElse(get(key, tpe)) match {
+        case e: Int => BigDecimal(e)
+        case e: Long => BigDecimal(e)
+        case e: Double => BigDecimal(e)
+        case _ => throw InvalidTypeException(s"key `$key` is not of type [$tpe]")
+      }
     }
 
-    def nonEmptyString(key: String, value: Option[Any] = None, tpe: Type = Type.NonEmptyString): String = string(key, value, tpe) match {
-      case e: String if e.trim.isEmpty => throw InvalidTypeException(s"key `$key` cannot be an empty string")
-      case e => e
+    def nonEmptyString(key: String, value: Option[Any] = None, tpe: Type = Type.NonEmptyString): String = {
+      string(key, value, tpe) match {
+        case e: String if e.trim.isEmpty => throw InvalidTypeException(s"key `$key` cannot be an empty string")
+        case e => e
+      }
     }
 
-    def string(key: String, value: Option[Any] = None, tpe: Type = Type.String): String = value.getOrElse(get(key, tpe)) match {
-      case e: String => e.trim
-      case v => throw InvalidTypeException(s"key `$key` (`$v`) is not of type [$tpe]")
+    def string(key: String, value: Option[Any] = None, tpe: Type = Type.String): String = {
+      value.getOrElse(get(key, tpe)) match {
+        case e: String => e.trim
+        case v => throw InvalidTypeException(s"key `$key` (`$v`) is not of type [$tpe]")
+      }
     }
 
-    def stringList(key: String, value: Option[Any] = None, tpe: Type = Type.StringList): List[String] = value.getOrElse(get(key, tpe)) match {
-      case l => Try(l.asInstanceOf[List[Any]].zipWithIndex.map { case (v, i) => nonEmptyString(s"$key-$i", Some(v)) })
-        .getOrElse(throw InvalidTypeException(s"key $key is not a list of type [$tpe]"))
+    def stringList(key: String, value: Option[Any] = None, tpe: Type = Type.StringList): List[String] = {
+      value.getOrElse(get(key, tpe)) match {
+        case l => Try(l.asInstanceOf[List[Any]].zipWithIndex.map { case (v, i) => nonEmptyString(s"$key-$i", Some(v)) })
+          .getOrElse(throw InvalidTypeException(s"key $key is not a list of type [$tpe]"))
+      }
     }
 
-    def enumString(key: String, enum: Enumeration, value: Option[Any] = None, tpe: Type = Type.StringEnumeration): enum.Value = value.getOrElse(get(key, tpe)) match {
-      case e =>
-        Try(enum.withName(e.toString))
-          .getOrElse(throw InvalidTypeException(s"value `$e` for key `$key` is invalid. Possible values: ${enum.values.mkString(",")}"))
+    def enumString(key: String, enum: Enumeration, value: Option[Any] = None, tpe: Type = Type.StringEnumeration): enum.Value = {
+      value.getOrElse(get(key, tpe)) match {
+        case e =>
+          Try(enum.withName(e.toString))
+            .getOrElse(throw InvalidTypeException(s"value `$e` for key `$key` is invalid. Possible values: ${enum.values.mkString(",")}"))
+      }
     }
 
-    def enumStringList(key: String, enum: Enumeration, value: Option[Any] = None, tpe: Type = Type.StringListEnumeration): List[enum.Value] = value.getOrElse(get(key, tpe)) match {
-      case l =>
-        val list = Try(l.asInstanceOf[List[String]]).getOrElse(throw InvalidTypeException(s"key $key is not a list of [${Type.StringList}]"))
-        list.map(v => enumString(key, enum, Some(v)))
+    def enumStringList(key: String, enum: Enumeration, value: Option[Any] = None, tpe: Type = Type.StringListEnumeration): List[enum.Value] = {
+      value.getOrElse(get(key, tpe)) match {
+        case l =>
+          val list = Try(l.asInstanceOf[List[String]]).getOrElse(throw InvalidTypeException(s"key $key is not a list of [${Type.StringList}]"))
+          list.map(v => enumString(key, enum, Some(v)))
+      }
     }
 
-    def enumId(key: String, enum: Enumeration, value: Option[Any] = None, tpe: Type = Type.IntEnumeration): enum.Value = int(key, value, tpe = tpe) match {
-      case i =>
-        Try(enum(i))
-          .getOrElse(throw InvalidTypeException(
-            s"value `$i` for key `$key` is invalid. Possible integer values: ${enum.values.map(_.id).mkString(",")}"))
+    def enumId(key: String, enum: Enumeration, value: Option[Any] = None, tpe: Type = Type.IntEnumeration): enum.Value = {
+      int(key, value, tpe = tpe) match {
+        case i =>
+          Try(enum(i))
+            .getOrElse(throw InvalidTypeException(
+              s"value `$i` for key `$key` is invalid. Possible integer values: ${enum.values.map(_.id).mkString(",")}"))
+      }
     }
 
-    def currency(key: String, value: Option[Any] = None, tpe: Type = Type.Currency): Currency = value.getOrElse(get(key, tpe)) match {
-      case cur =>
-        Try(Currency.getInstance(cur.toString))
-          .getOrElse(throw InvalidTypeException(s"Currency `$cur` for key `$key` is invalid"))
+    def currency(key: String, value: Option[Any] = None, tpe: Type = Type.Currency): Currency = {
+      value.getOrElse(get(key, tpe)) match {
+        case cur =>
+          Try(Currency.getInstance(cur.toString))
+            .getOrElse(throw InvalidTypeException(s"Currency `$cur` for key `$key` is invalid"))
+      }
     }
 
-    def locale(key: String, value: Option[Any] = None, tpe: Type = Type.Locale): Locale = value.getOrElse(get(key, tpe)) match {
-      case str: String =>
-        val locale = Locale.forLanguageTag(str)
-        if (locale != Locale.UK && locale != Locale.US && locale != Locale.FRANCE)
-          throw InvalidTypeException(s"locale `$locale` is not supported. Valid locales are: ${Locale.UK.toLanguageTag}, ${Locale.US.toLanguageTag}, ${Locale.FRANCE.toLanguageTag}")
-        else locale
+    def locale(key: String, value: Option[Any] = None, tpe: Type = Type.Locale): Locale = {
+      value.getOrElse(get(key, tpe)) match {
+        case str: String =>
+          val locale = Locale.forLanguageTag(str)
+          if (locale != Locale.UK && locale != Locale.US && locale != Locale.FRANCE)
+            throw InvalidTypeException(
+              s"locale `$locale` is not supported. Valid locales are: ${Locale.UK.toLanguageTag}, ${Locale.US.toLanguageTag}, ${Locale.FRANCE.toLanguageTag}")
+          else locale
 
-      case _ => throw InvalidTypeException(s"key `$key` is not of type [$tpe]")
+        case _ => throw InvalidTypeException(s"key `$key` is not of type [$tpe]")
+      }
     }
 
     def email(key: String, value: Option[String] = None, tpe: Type = Type.Email): EmailAddress = {
@@ -144,38 +172,48 @@ object OpaqueData {
       }
     }
 
-    def dateTime(key: String, value: Option[Any] = None, tpe: Type = Type.Datetime): LocalDateTime = value.getOrElse(get(key, tpe)) match {
-      case date: String =>
-        Try(LocalDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME))
-          .getOrElse(throw InvalidTypeException(s"LocalDateTime `$date` for key `$key` is invalid"))
+    def dateTime(key: String, value: Option[Any] = None, tpe: Type = Type.Datetime): LocalDateTime = {
+      value.getOrElse(get(key, tpe)) match {
+        case date: String =>
+          Try(LocalDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME))
+            .getOrElse(throw InvalidTypeException(s"LocalDateTime `$date` for key `$key` is invalid"))
+      }
     }
 
-    def date(key: String, value: Option[Any] = None, tpe: Type = Type.Date): LocalDate = value.getOrElse(get(key, tpe)) match {
-      case date: String =>
-        Try(LocalDate.parse(date))
-          .getOrElse(Try(YearMonth.parse(date, DateTimeFormatter.ofPattern("yyyy-M")).atDay(1))
-            .getOrElse(throw InvalidTypeException(s"Date (without time) `$date` for key `$key` is invalid")))
+    def date(key: String, value: Option[Any] = None, tpe: Type = Type.Date): LocalDate = {
+      value.getOrElse(get(key, tpe)) match {
+        case date: String =>
+          Try(LocalDate.parse(date))
+            .getOrElse(Try(YearMonth.parse(date, DateTimeFormatter.ofPattern("yyyy-M")).atDay(1))
+              .getOrElse(throw InvalidTypeException(s"Date (without time) `$date` for key `$key` is invalid")))
+      }
     }
 
-    def uuid(key: String, value: Option[Any] = None, tpe: Type = Type.UUID): UUID = value.getOrElse(get(key, tpe)) match {
-      case uuid: String => Try(UUID.fromString(uuid.trim)).getOrElse(throw InvalidTypeException(s"key $key is not a valid UUID"))
-      case uuid: UUID => uuid
-      case _ => throw InvalidTypeException(s"key $key is not of type [$tpe]")
+    def uuid(key: String, value: Option[Any] = None, tpe: Type = Type.UUID): UUID = {
+      value.getOrElse(get(key, tpe)) match {
+        case uuid: String => Try(UUID.fromString(uuid.trim)).getOrElse(throw InvalidTypeException(s"key $key is not a valid UUID"))
+        case uuid: UUID => uuid
+        case _ => throw InvalidTypeException(s"key $key is not of type [$tpe]")
+      }
     }
 
-    def subList(key: String, value: Option[Any] = None, tpe: Type = Type.List): List[ReifiedDataWrapper] = value.getOrElse(get(key, tpe)) match {
-      case list => Try(list.asInstanceOf[List[Any]])
-        .getOrElse(throw InvalidTypeException(s"key `$key` is not a sequence"))
-        .map(item => new ReifiedDataWrapper(item))
+    def subList(key: String, value: Option[Any] = None, tpe: Type = Type.List): List[ReifiedDataWrapper] = {
+      value.getOrElse(get(key, tpe)) match {
+        case list => Try(list.asInstanceOf[List[Any]])
+          .getOrElse(throw InvalidTypeException(s"key `$key` is not a sequence"))
+          .map(item => new ReifiedDataWrapper(item))
+      }
     }
 
     def subData(key: String, value: Option[Any] = None, tpe: Type = Type.Object): ReifiedDataWrapper = {
       new ReifiedDataWrapper(value.getOrElse(get(key, tpe)))
     }
 
-    def country(key: String, value: Option[Any] = None, tpe: Type = Type.Country): Country = value.getOrElse(get(key, tpe)) match {
-      case code: String => Try(Geography.getCountryF(code)).getOrElse(throw InvalidTypeException(s"value `$code` of key `$key` is not a valid country code"))
-      case _ => throw InvalidTypeException(s"value of key `$key` is not a valid country code")
+    def country(key: String, value: Option[Any] = None, tpe: Type = Type.Country): Country = {
+      value.getOrElse(get(key, tpe)) match {
+        case code: String => Try(Geography.getCountryF(code)).getOrElse(throw InvalidTypeException(s"value `$code` of key `$key` is not a valid country code"))
+        case _ => throw InvalidTypeException(s"value of key `$key` is not a valid country code")
+      }
     }
 
     override def toString: String = {
@@ -191,51 +229,59 @@ object OpaqueData {
 
   object ReifiedDataWrapper {
 
-    def optional[A](v: => A, help: String = ""): Try[Option[A]] = Try {
-      val msg = "key is optional, cannot be null"
+    def optional[A](v: => A, help: String = ""): Try[Option[A]] = {
+      Try {
+        val msg = "key is optional, cannot be null"
 
-      try {
-        Some(v)
-      } catch {
-        case _: MissingKeyException => None
-        case e: NullValueException => throw e.copy(msg = e.msg + s" ($msg)")
-        case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
+        try {
+          Some(v)
+        } catch {
+          case _: MissingKeyException => None
+          case e: NullValueException => throw e.copy(msg = e.msg + s" ($msg)")
+          case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
+        }
       }
     }
 
-    def optionalAndNullable[A](v: => A, help: String = ""): Try[Option[Option[A]]] = Try {
-      val msg = "key is optional, can be null"
+    def optionalAndNullable[A](v: => A, help: String = ""): Try[Option[Option[A]]] = {
+      Try {
+        val msg = "key is optional, can be null"
 
-      try {
-        Some(Some(v))
-      } catch {
-        case e: MissingKeyException => None
-        case e: NullValueException => None
-        case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
+        try {
+          Some(Some(v))
+        } catch {
+          case e: MissingKeyException => None
+          case e: NullValueException => None
+          case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
+        }
       }
     }
 
-    def nullable[A](v: => A, help: String = ""): Try[Option[A]] = Try {
-      val msg = "key is required, can be null"
+    def nullable[A](v: => A, help: String = ""): Try[Option[A]] = {
+      Try {
+        val msg = "key is required, can be null"
 
-      try {
-        Some(v)
-      } catch {
-        case _: NullValueException => None
-        case e: MissingKeyException => throw e.copy(msg = e.msg + s" ($msg)")
-        case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
+        try {
+          Some(v)
+        } catch {
+          case _: NullValueException => None
+          case e: MissingKeyException => throw e.copy(msg = e.msg + s" ($msg)")
+          case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
+        }
       }
     }
 
-    def required[A](v: => A, help: String = ""): Try[A] = Try {
-      val msg = "key is required, cannot be null"
+    def required[A](v: => A, help: String = ""): Try[A] = {
+      Try {
+        val msg = "key is required, cannot be null"
 
-      try {
-        v
-      } catch {
-        case e: MissingKeyException => throw e.copy(msg = e.msg + s" ($msg)")
-        case e: NullValueException => throw e.copy(msg = e.msg + s" ($msg)")
-        case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
+        try {
+          v
+        } catch {
+          case e: MissingKeyException => throw e.copy(msg = e.msg + s" ($msg)")
+          case e: NullValueException => throw e.copy(msg = e.msg + s" ($msg)")
+          case e: InvalidTypeException => throw e.copy(msg = e.msg + s" ($msg)")
+        }
       }
     }
   }

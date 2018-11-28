@@ -3,6 +3,7 @@ package myproject.api
 import java.time.{LocalDate, LocalDateTime}
 import java.util.{Currency, Locale, UUID}
 
+import myproject.common.Done
 import myproject.common.Geography.Country
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.Group
@@ -145,5 +146,9 @@ object Serializers {
       "channel_id" -> group.channelId.serialize,
       "created" -> group.created.serialize,
       "last_update" -> group.lastUpdate.serialize)
+  }
+
+  implicit val doneTypeSerializer = new Serializer[Done.type] {
+    def serialize(done: Done.type) = Unit
   }
 }

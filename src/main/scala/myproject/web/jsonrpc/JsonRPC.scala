@@ -71,16 +71,15 @@ object JsonRPC {
         Future.successful(RPCResponseError(id = None, error = RPCErrorInfo(RPCCode.InvalidRequest.id, s"null or empty request method")))
 
       /* Parameters undefined or invalid */
-      case _ if Option(req.params).isEmpty /* null */ || !(Try(req.params.asInstanceOf[List[Any]]).isSuccess || Try(req.params.asInstanceOf[Map[String, Any]]).isSuccess) =>
+      case _ if Option(req.params).isEmpty || !(Try(req.params.asInstanceOf[List[Any]]).isSuccess || Try(req.params.asInstanceOf[Map[String, Any]]).isSuccess) =>
         logger.info(s"[${execTime}ms] invalid RPC call with malformed parameters (method:${Option(req.method).getOrElse("undefined")})")
         Future.successful(RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.InvalidRequest.id, s"parameters missing or malformed")))
 
       /* Calling method */
-      case method => callRpcMethod(req, method, user, clientIp).recover(throwableToRPCResponse(req)).andThen { //TODO: Implement effective user
+      case method => callRpcMethod(req, method, user, clientIp).recover(throwableToRPCResponse(req)).andThen {
         case Success(res: RPCResponseError) =>
           logger.error(s"[${clientIp.getOrElse("-")}] [${user.login}] [${execTime}ms] [failed] [${req.method}] error:${res.error.message}")
         case Success(_: RPCResponseSuccess) =>
-          //logger.info(s"[${clientIp.getOrElse("-")}] [${user.login}${effectiveUser.map(eu => s" as ${eu.login}").getOrElse("")}] [${execTime}ms] [success] [${req.method}]")
           logger.info(s"[${clientIp.getOrElse("-")}] [${user.login})] [${execTime}ms] [success] [${req.method}]")
       }
     }

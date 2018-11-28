@@ -48,7 +48,8 @@ trait SlickUserDAO extends UserDAO with SlickDAO { self: SlickGroupDAO with Slic
     def idxLogin = index("IDX_USERS_LOGIN", login)
     def idxEmail = index("IDX_USERS_EMAIL", email)
     def idxGroupId = index("IDX_USERS_GROUP_ID", groupId)
-    def * = (id, level, login, firstName, lastName, email, password, channelId, groupId, groupRole, status, created.?, lastUpdate) <> (User.tupled, User.unapply)
+    def * =
+      (id, level, login, firstName, lastName, email, password, channelId, groupId, groupRole, status, created.?, lastUpdate) <> (User.tupled, User.unapply)
   }
 
   protected lazy val users = TableQuery[UsersTable]

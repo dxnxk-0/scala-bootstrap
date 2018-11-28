@@ -27,13 +27,31 @@ object Authorization {
     }
     def grant = Success(AccessGranted)
 
-    protected def isPlatformAdmin = requester.map(r => if(r.level==UserLevel.Platform) grant else refuse) getOrElse refuse
-    protected def isChannelAdmin(implicit channel: Channel) = requester.map(r => if(r.level==UserLevel.Channel && r.channelId.contains(channel.id)) grant else refuse) getOrElse refuse
-    protected def isGroupAdmin(implicit group: Group) = requester.map(r => if(r.level==UserLevel.Group && r.groupRole.contains(GroupRole.Admin) && r.groupId.contains(group.id)) grant else refuse) getOrElse refuse
-    protected def isUserHimself(implicit user: User) = requester.map(r => if(user.id==r.id) grant else refuse) getOrElse refuse
-    protected def isInTheSameGroup(implicit user: User) = requester.map(r => if(user.level==UserLevel.Group && user.groupId.isDefined && user.groupId==r.groupId) grant else refuse) getOrElse refuse
-    protected def belongToTheGroup(implicit group: Group) = requester.map(r => if(r.groupId.contains(group.id)) grant else refuse) getOrElse refuse
-    protected def isAdminOfOneGroup(groups: List[Group]) = requester.map(r => if(groups.exists(g => r.groupId.contains(g.id)) && r.groupRole.contains(GroupRole.Admin)) grant else refuse) getOrElse refuse
-    protected def belongToOneGroup(groups: List[Group]) = requester.map(r => if(groups.exists(g => r.groupId.contains(g.id))) grant else refuse) getOrElse refuse
+    protected def isPlatformAdmin = {
+      requester.map(r => if(r.level==UserLevel.Platform) grant else refuse) getOrElse refuse
+    }
+    protected def isChannelAdmin(implicit channel: Channel) = {
+      requester.map(r => if(r.level==UserLevel.Channel && r.channelId.contains(channel.id)) grant else refuse) getOrElse refuse
+    }
+    protected def isGroupAdmin(implicit group: Group) = {
+      requester.map { r =>
+        if (r.level == UserLevel.Group && r.groupRole.contains(GroupRole.Admin) && r.groupId.contains(group.id)) grant else refuse
+      } getOrElse refuse
+    }
+    protected def isUserHimself(implicit user: User) = {
+      requester.map(r => if(user.id==r.id) grant else refuse) getOrElse refuse
+    }
+    protected def isInTheSameGroup(implicit user: User) = {
+      requester.map(r => if(user.level==UserLevel.Group && user.groupId.isDefined && user.groupId==r.groupId) grant else refuse) getOrElse refuse
+    }
+    protected def belongToTheGroup(implicit group: Group) = {
+      requester.map(r => if(r.groupId.contains(group.id)) grant else refuse) getOrElse refuse
+    }
+    protected def isAdminOfOneGroup(groups: List[Group]) = {
+      requester.map(r => if(groups.exists(g => r.groupId.contains(g.id)) && r.groupRole.contains(GroupRole.Admin)) grant else refuse) getOrElse refuse
+    }
+    protected def belongToOneGroup(groups: List[Group]) = {
+      requester.map(r => if(groups.exists(g => r.groupId.contains(g.id))) grant else refuse) getOrElse refuse
+    }
   }
 }

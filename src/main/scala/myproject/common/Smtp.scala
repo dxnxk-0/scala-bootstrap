@@ -44,13 +44,16 @@ trait Smtp {
         mailService.setSubject(data.subject)
         mailService.setMsg(data.message)
 
+        val recipientsLog = data.recipients.mkString(",")
+
         Try(mailService.send()) match {
           case Success(res) =>
             val timeElapsed = System.currentTimeMillis - start
-            logger.info(s"Successfully sent email [to:${data.recipients.mkString(",")}, subject:${data.subject}] ($res) [${timeElapsed}ms]")
+            logger.info(s"Successfully sent email [to:$recipientsLog, subject:${data.subject}] ($res) [${timeElapsed}ms]")
             SmtpSendResult(Some(res))
           case Failure(e) =>
-            logger.error(s"Error while sending following email [to:${data.recipients.mkString(",")}, subject:${data.subject}]. Error:${e.getMessage} caused by ${e.getCause}")
+            logger.error(
+              s"""Error while sending following email [to:$recipientsLog, subject:${data.subject}]. Error:${e.getMessage} caused by ${e.getCause}""")
             throw e
         }
       }
@@ -67,10 +70,11 @@ trait Smtp {
     mail
   }
 
-  def send(data: MultipartEmailData): Future[SmtpSendResult] =
-    if (disableEmail)
+  def send(data: MultipartEmailData): Future[SmtpSendResult] = {
+    if (disableEmail) {
       Future.successful(SmtpSendResult(None, Some("Email disabled. No email was sent.")))
-    else
+    }
+    else {
       Future {
         val start = System.currentTimeMillis
         val mailService = initMsg[HtmlEmail](new HtmlEmail())
@@ -82,14 +86,18 @@ trait Smtp {
         mailService.setHtmlMsg(data.html)
         mailService.setTextMsg(data.txt)
 
+        val recipientsLog = data.recipients.mkString(",")
+
         Try(mailService.send()) match {
           case Success(res) =>
             val timeElapsed = System.currentTimeMillis - start
-            logger.info(s"Successfully sent email [to:${data.recipients.mkString(",")}, subject:${data.subject}] ($res) [${timeElapsed}ms]")
+            logger.info(s"Successfully sent email [to:$recipientsLog, subject:${data.subject}] ($res) [${timeElapsed}ms]")
             SmtpSendResult(Some(res))
           case Failure(e) =>
-            logger.error(s"Error while sending following email [to:${data.recipients.mkString(",")}, subject:${data.subject}]. Error:${e.getMessage} caused by ${e.getCause}")
+            logger.error(s"Error while sending following email [to:$recipientsLog, subject:${data.subject}]. Error:${e.getMessage} caused by ${e.getCause}")
             throw e
         }
       }
+    }
+  }
 }

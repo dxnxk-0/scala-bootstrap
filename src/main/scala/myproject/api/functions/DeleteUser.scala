@@ -1,7 +1,7 @@
 package myproject.api.functions
 
+import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
-import myproject.common.Done
 import myproject.common.serialization.OpaqueData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.iam.Channels.ChannelDAO
@@ -19,7 +19,7 @@ class DeleteUser(implicit authz: User => UserAccessChecker, db: UserDAO with Gro
     implicit val checker = authz(user)
 
     checkParamAndProcess(userId) {
-      CRUD.deleteUser(userId.get) map (_ => Done)
+      CRUD.deleteUser(userId.get) map (_.serialize)
     }
   }
 }

@@ -14,7 +14,8 @@ class ApiInfo extends ApiFunction {
   override val secured = false
 
   override def process(implicit p: OpaqueData.ReifiedDataWrapper) = {
-    Future.successful(Map(
+    Future.successful(
+      Map(
       "name" -> BuildInfo.name,
       "version" -> BuildInfo.version,
       "build_number" -> BuildInfo.buildInfoBuildNumber,
