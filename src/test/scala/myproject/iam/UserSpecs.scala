@@ -1,8 +1,8 @@
 package myproject.iam
 
 import myproject.common.FutureImplicits._
+import myproject.common._
 import myproject.common.security.JWT
-import myproject.common.{AccessRefusedException, AuthenticationFailedException, ObjectNotFoundException, ValidationErrorException}
 import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Groups.CRUD.{createGroup, _}
@@ -12,6 +12,8 @@ import myproject.iam.Users.{GroupRole, UserStatus}
 import org.scalatest.DoNotDiscover
 import test.{DatabaseSpec, IAMTestDataFactory}
 import uk.gov.hmrc.emailaddress.EmailAddress
+
+import scala.concurrent.Future
 
 @DoNotDiscover
 class UserSpecs extends DatabaseSpec {
@@ -24,8 +26,8 @@ class UserSpecs extends DatabaseSpec {
   implicit val authz = VoidIAMAccessChecker
 
   it should "create the organization" in {
-    createChannel(channel)
-    createGroup(group)
+    createChannel(channel).futureValue
+    createGroup(group).futureValue
   }
 
   it should "not create a user with an invalid login" in {
@@ -96,6 +98,15 @@ class UserSpecs extends DatabaseSpec {
   it should "update the password" in {
     updateUser(groupUser.id, u => u.copy(password = "new password"))
     loginPassword(groupUser.login, "new password")
+  }
+
+  it should "provide a magic link capability" in {
+    implicit val notifier = new Notifier {
+      override def sendMagicLink(emailAddress: EmailAddress, token: Tokens.Token) = Future.successful(Done)
+    }
+    val token = sendMagicLink(groupUser.email).futureValue
+    loginToken(token.id).futureValue._1.email shouldBe groupUser.email
+    a [ObjectNotFoundException] shouldBe thrownBy(loginToken(token.id).futureValue)
   }
 
   it should "delete the user" in {

@@ -9,7 +9,7 @@ object Config {
 
   private val config = ConfigFactory.load()
 
-  implicit class DurationExtension(d: java.time.Duration) {
+  implicit private class DurationExtension(d: java.time.Duration) {
     def toScala = Duration.fromNanos(d.toNanos)
   }
 
@@ -23,6 +23,7 @@ object Config {
     val interface = serverConfig.getString("interface")
     val port = serverConfig.getInt("port")
     val sessionDuration = serverConfig.getDuration("session-duration").toScala
+    val uiBaseUrl = serverConfig.getString("ui-base-url")
   }
 
   object security {
@@ -30,6 +31,7 @@ object Config {
     val secret = securityConfig.getString("secret")
     val bcryptWork = securityConfig.getInt("bcrypt-work")
     val jwtTimeToLive = securityConfig.getDuration("jwt-ttl").toScala
+    val resetPasswordTokenValidity = securityConfig.getDuration("reset-password-token-validity").toScala
   }
 
   object email {

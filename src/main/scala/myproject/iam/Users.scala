@@ -13,6 +13,7 @@ import myproject.common._
 import myproject.common.security.{BCrypt, JWT}
 import myproject.iam.Channels.{Channel, ChannelDAO}
 import myproject.iam.Groups.{Group, GroupDAO, GroupStatus}
+import myproject.iam.Tokens.{Token, TokenDAO, TokenRole}
 import myproject.iam.Users.GroupRole.GroupRole
 import myproject.iam.Users.UserLevel.UserLevel
 import myproject.iam.Users.UserStatus.UserStatus
@@ -241,6 +242,15 @@ object Users {
       } yield u
     }
 
+    private def canLoginFuture(user: User, groupOpt: Option[Group]) = {
+      if(user.status==UserStatus.Active && !groupOpt.exists(_.status!=GroupStatus.Active))
+        Future.successful(Done)
+      else
+        Future.failed(AccessRefusedException(s"user is not authorized to log in"))
+    }
+
+    private def loginUser(user: User) = (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive)))
+
     def createUser(user: User)(implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) = {
       val validateUser = UserValidator.validate(user.copy(
         password = BCrypt.hashPassword(user.password),
@@ -315,20 +325,22 @@ object Users {
     } yield Done
 
     def loginPassword(login: String, candidate: String)(implicit db: UserDAO with GroupDAO with ChannelDAO) = {
-
-      def canLoginFuture(user: User, groupOpt: Option[Group]) = {
-        if(user.status==UserStatus.Active && !groupOpt.exists(_.status!=GroupStatus.Active))
-          Future.successful(Done)
-        else
-          Future.failed(AccessRefusedException(s"user is not authorized to log in"))
-      }
-
       for {
         user     <- db.getUserByLoginName(login).getOrFail(AuthenticationFailedException(s"Bad user or password"))
         groupOpt <- user.groupId.map(gid => db.getGroupF(gid).map(Some(_))) getOrElse Future.successful(None)
         _        <- canLoginFuture(user, groupOpt)
           _      <- Authentication.loginPassword(user, candidate).toFuture
-      } yield (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive)))
+      } yield loginUser(user)
+    }
+
+    def loginToken(tokenId: UUID)(implicit db: UserDAO with GroupDAO with TokenDAO) = {
+      for {
+        token    <- db.getTokenF(tokenId)
+        user     <- db.getUserByIdF(token.userId)
+        groupOpt <- user.groupId.map(gid => db.getGroupF(gid).map(Some(_))) getOrElse Future.successful(None)
+        _        <- canLoginFuture(user, groupOpt)
+        _        <- db.deleteToken(token.id)
+      } yield loginUser(user)
     }
 
     def getPlatformUsers(implicit authz: UserAccessChecker, db: UserDAO) = for {
@@ -349,5 +361,22 @@ object Users {
       _       <- authz.canListGroupUsers(channel, group, parents).toFuture
       users   <- db.getGroupUsers(groupId)
     } yield users
+
+    def sendMagicLink(emailAddress: EmailAddress)(implicit db: UserDAO with TokenDAO, notifier: Notifier) = {
+      db.getUserByEmailF(emailAddress) flatMap { u =>
+        val now = TimeManagement.getCurrentDateTime
+        val token = Token(
+          id = UUID.randomUUID,
+          userId = u.id,
+          role = TokenRole.Authentication,
+          created = Some(now),
+          expires = Some(now.plusHours(Config.security.resetPasswordTokenValidity.toHours)))
+
+        for {
+          _ <- db.insert(token)
+          _ <- notifier.sendMagicLink(emailAddress, token)
+        } yield token
+      }
+    }
   }
 }

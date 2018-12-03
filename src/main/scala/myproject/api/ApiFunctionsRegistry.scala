@@ -4,7 +4,7 @@ import myproject.api.functions._
 import myproject.common.UnexpectedErrorException
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.database.ApplicationDatabase
-import myproject.iam.Authorization.DefaultIAMAccessChecker
+import myproject.iam.DefaultNotifier
 import myproject.iam.Users.User
 
 import scala.concurrent.Future
@@ -12,7 +12,8 @@ import scala.concurrent.Future
 object ApiFunctionsRegistry {
 
   implicit val db = ApplicationDatabase.currentDatabaseImpl
-  implicit val iamAuthz = (u: User) => new DefaultIAMAccessChecker(u)
+  implicit val accessChecker = (u: User) => new ApiAccessChecker(u)
+  implicit val notifier = DefaultNotifier
 
   class ApiHelp extends ApiFunction {
 
@@ -79,4 +80,5 @@ object ApiFunctionsRegistry {
   register(new DeleteUser)
   register(new LoginPassword)
   register(new GetUser)
+  register(new SendMagicLink)
 }

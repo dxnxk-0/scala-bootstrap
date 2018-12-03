@@ -10,30 +10,34 @@ import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 case class SimpleEmailData(
-    from: Option[EmailAddress],
-    recipients: List[EmailAddress],
-    subject: String,
-    message: String)
+  from: Option[EmailAddress],
+  recipients: List[EmailAddress],
+  subject: String,
+  message: String)
 
 case class MultipartEmailData(
-    from: Option[EmailAddress],
-    recipients: List[EmailAddress],
-    subject: String,
-    txt: String,
-    html: String)
+  from: Option[EmailAddress],
+  recipients: List[EmailAddress],
+  subject: String,
+  txt: String,
+  html: String)
 
+case class SendMailResult(msgId: Option[String], msg: Option[String] = None)
 
-case class SmtpSendResult(msgId: Option[String], msg: Option[String] = None)
+trait Mailer {
+  def send(data: SimpleEmailData): Future[SendMailResult]
+  def send(data: MultipartEmailData): Future[SendMailResult]
+}
 
-trait Smtp {
+object DefaultMailer extends Mailer {
 
   private val logger = Logger(LoggerFactory.getLogger(this.getClass))
 
   import myproject.Config.email.smtp._
 
-  def send(data: SimpleEmailData): Future[SmtpSendResult] =
+  def send(data: SimpleEmailData): Future[SendMailResult] =
     if (disableEmail)
-      Future.successful(SmtpSendResult(None, Some("Email disabled. No email was sent.")))
+      Future.successful(SendMailResult(None, Some("Email disabled. No email was sent.")))
     else
       Future {
         val start = System.currentTimeMillis
@@ -50,7 +54,7 @@ trait Smtp {
           case Success(res) =>
             val timeElapsed = System.currentTimeMillis - start
             logger.info(s"Successfully sent email [to:$recipientsLog, subject:${data.subject}] ($res) [${timeElapsed}ms]")
-            SmtpSendResult(Some(res))
+            SendMailResult(Some(res))
           case Failure(e) =>
             logger.error(
               s"""Error while sending following email [to:$recipientsLog, subject:${data.subject}]. Error:${e.getMessage} caused by ${e.getCause}""")
@@ -70,9 +74,9 @@ trait Smtp {
     mail
   }
 
-  def send(data: MultipartEmailData): Future[SmtpSendResult] = {
+  def send(data: MultipartEmailData): Future[SendMailResult] = {
     if (disableEmail) {
-      Future.successful(SmtpSendResult(None, Some("Email disabled. No email was sent.")))
+      Future.successful(SendMailResult(None, Some("Email disabled. No email was sent.")))
     }
     else {
       Future {
@@ -92,7 +96,7 @@ trait Smtp {
           case Success(res) =>
             val timeElapsed = System.currentTimeMillis - start
             logger.info(s"Successfully sent email [to:$recipientsLog, subject:${data.subject}] ($res) [${timeElapsed}ms]")
-            SmtpSendResult(Some(res))
+            SendMailResult(Some(res))
           case Failure(e) =>
             logger.error(s"Error while sending following email [to:$recipientsLog, subject:${data.subject}]. Error:${e.getMessage} caused by ${e.getCause}")
             throw e
