@@ -15,7 +15,7 @@ class SlickApplicationDatabase()
     with SlickUserDAO
     with SlickTokenDAO {
 
-  import api._
+  import SlickConfig.driver.api._
 
   lazy val db = Database.forConfig("database.slick")
 

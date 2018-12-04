@@ -6,13 +6,13 @@ import java.util.UUID
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.{Done, ObjectNotFoundException}
-import myproject.database.SlickDAO
+import myproject.database.{SlickConfig, SlickDAO}
 import myproject.iam.Tokens.TokenRole.TokenRole
 import myproject.iam.Tokens.{Token, TokenDAO, TokenRole}
 
 trait SlickTokenDAO extends TokenDAO with SlickDAO { self: SlickUserDAO =>
 
-  import api._
+  import SlickConfig.driver.api._
 
   implicit def tokenRoleMapper = MappedColumnType.base[TokenRole, Int](
     e => e.id,

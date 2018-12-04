@@ -7,14 +7,14 @@ import java.util.UUID
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.{Done, ObjectNotFoundException}
-import myproject.database.SlickDAO
+import myproject.database.{SlickConfig, SlickDAO}
 import myproject.iam.Groups.GroupStatus.GroupStatus
 import myproject.iam.Groups.{Group, GroupDAO, GroupStatus}
 import slick.jdbc.{GetResult, PositionedParameters, SetParameter}
 
 trait SlickGroupDAO extends GroupDAO with SlickDAO { self: SlickChannelDAO with SlickUserDAO =>
 
-  import api._
+  import SlickConfig.driver.api._
 
   implicit val GetUUID: GetResult[UUID] = GetResult[UUID](_.nextObject().asInstanceOf[UUID])
 
@@ -57,16 +57,16 @@ trait SlickGroupDAO extends GroupDAO with SlickDAO { self: SlickChannelDAO with 
 
   override def getGroupChildren(groupId: UUID) = { // CTE not supported by Slick
     val cte = sql"""
-            |WITH RECURSIVE CTE (GROUP_ID, PARENT_ID) AS (
-            |   SELECT GROUP_ID
-            |   FROM GROUPS
-            |   WHERE PARENT_ID=$groupId
-            | UNION ALL
-            |   SELECT GROUPS.GROUP_ID
-            |   FROM GROUPS
-            |   JOIN CTE ON GROUPS.PARENT_ID = CTE.GROUP_ID
+            |WITH RECURSIVE "CTE" ("GROUP_ID", "PARENT_ID") AS (
+            |   SELECT "GROUP_ID", "PARENT_ID"
+            |   FROM "GROUPS"
+            |   WHERE "PARENT_ID"=$groupId
+            |   UNION ALL
+            |   SELECT "GROUPS"."GROUP_ID", "GROUPS"."PARENT_ID"
+            |   FROM "GROUPS"
+            |   JOIN "CTE" ON "GROUPS"."PARENT_ID" = "CTE"."GROUP_ID"
             |)
-            |SELECT GROUP_ID FROM CTE""".stripMargin.as[UUID]
+            |SELECT "GROUP_ID" FROM "CTE"""".stripMargin.as[UUID]
 
     val action = for {
       idList   <- cte
@@ -78,16 +78,16 @@ trait SlickGroupDAO extends GroupDAO with SlickDAO { self: SlickChannelDAO with 
 
   override def getGroupParents(groupId: UUID) = { // CTE not supported by Slick
     val cte = sql"""
-           |WITH RECURSIVE CTE (GROUP_ID, PARENT_ID) AS (
-           |   SELECT GROUP_ID, PARENT_ID
-           |   FROM   GROUPS
-           |   WHERE  GROUPS.GROUP_ID=$groupId
+           |WITH RECURSIVE "CTE" ("GROUP_ID", "PARENT_ID") AS (
+           |   SELECT "GROUP_ID", "PARENT_ID"
+           |   FROM   "GROUPS"
+           |   WHERE  "GROUPS"."GROUP_ID"=$groupId
            |   UNION ALL
-           |   SELECT GROUPS.GROUP_ID, GROUPS.PARENT_ID
-           |   FROM   CTE
-           |   JOIN   GROUPS ON GROUPS.GROUP_ID = CTE.PARENT_ID
+           |   SELECT "GROUPS"."GROUP_ID", "GROUPS"."PARENT_ID"
+           |   FROM   "CTE"
+           |   JOIN   "GROUPS" ON "GROUPS"."GROUP_ID" = "CTE"."PARENT_ID"
            |   )
-           |SELECT GROUP_ID FROM CTE WHERE GROUP_ID<>$groupId""".stripMargin.as[UUID]
+           |SELECT "GROUP_ID" FROM "CTE" WHERE "GROUP_ID"<>$groupId""".stripMargin.as[UUID]
 
     val action = for {
       idList  <- cte

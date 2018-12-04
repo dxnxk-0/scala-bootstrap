@@ -16,6 +16,12 @@ object Config {
   object database {
     private val databaseConfig = config.getConfig("database")
     val implClassName = databaseConfig.getString("class")
+
+    object slick {
+      private val slickConfig = databaseConfig.getConfig("slick")
+      val driver = slickConfig.getString("driver")
+      val url = slickConfig.getString("url")
+    }
   }
 
   object server {
