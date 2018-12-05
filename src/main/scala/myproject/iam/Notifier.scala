@@ -14,7 +14,7 @@ trait Notifier {
 object DefaultNotifier extends Notifier {
   override def sendMagicLink(emailAddress: EmailAddress, token: Token) = {
     val url = s"${Config.server.uiBaseUrl}/login/${token.id}"
-    val email = SimpleEmailData(None, List(emailAddress), s"magic login", s"Please login: $url")
+    val email = SimpleEmailData(None, List(emailAddress), s"prolicent magic login", s"Please login: $url")
     DefaultMailer.send(email)
   }
 }
