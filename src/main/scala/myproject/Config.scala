@@ -30,6 +30,7 @@ object Config {
     val port = serverConfig.getInt("port")
     val sessionDuration = serverConfig.getDuration("session-duration").toScala
     val uiBaseUrl = serverConfig.getString("ui-base-url")
+    val envInitAtStartup = serverConfig.getBoolean("env-init-at-startup")
   }
 
   object security {
