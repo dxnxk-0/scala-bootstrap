@@ -8,10 +8,10 @@ import scala.util.Try
 
 object FutureImplicits {
 
-  val timeout: Duration = Duration.Inf
+  val defaultTimeout: Duration = Duration.Inf
 
   implicit class BlockingFuture[A](f: Future[A]) {
-    def futureValue: A = Await.result(f, timeout)
+    def futureValue(implicit timeout: Duration = defaultTimeout): A = Await.result(f, timeout)
   }
 
   implicit class TryToFuture[A](monad: Try[A]) {
