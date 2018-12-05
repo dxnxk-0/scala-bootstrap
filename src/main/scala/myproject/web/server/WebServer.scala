@@ -5,7 +5,7 @@ import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
 import myproject.Config
-import myproject.common.FutureImplicits._
+import myproject.common.DataInitializer
 import myproject.database.{ApplicationDatabase, SlickConfig}
 import org.slf4j.LoggerFactory
 import slick.jdbc.H2Profile
@@ -24,8 +24,15 @@ object WebServer extends App {
   val iface = Config.server.interface
   val port = Config.server.port
 
-  if(Config.server.h2EnvInitAtStartup && SlickConfig.driver==H2Profile)
-    EnvInit.initEnv.futureValue
+  // H2 DB creation
+  if(SlickConfig.driver==H2Profile) {
+    db.reset
+
+    // Data initialization if required
+    if (Config.datainit.enabled) {
+      DataInitializer.Instance.initialize
+    }
+  }
 
   Http().bindAndHandle(Routes.httpRoutes, iface, port)
 

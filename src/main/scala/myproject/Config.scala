@@ -13,6 +13,12 @@ object Config {
     def toScala = Duration.fromNanos(d.toNanos)
   }
 
+  object datainit {
+    private val dataInitConfig = config.getConfig("data-init")
+    val clazz = dataInitConfig.getString("class")
+    val enabled = dataInitConfig.getBoolean("enabled")
+  }
+
   object database {
     private val databaseConfig = config.getConfig("database")
     val implClassName = databaseConfig.getString("class")
@@ -30,7 +36,6 @@ object Config {
     val port = serverConfig.getInt("port")
     val sessionDuration = serverConfig.getDuration("session-duration").toScala
     val uiBaseUrl = serverConfig.getString("ui-base-url")
-    val h2EnvInitAtStartup = serverConfig.getBoolean("h2-env-init-at-startup")
   }
 
   object security {

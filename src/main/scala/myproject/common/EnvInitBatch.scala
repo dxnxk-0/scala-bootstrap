@@ -1,11 +1,14 @@
-package myproject.web.server
+package myproject.common
 
+import myproject.Config
 import myproject.common.FutureImplicits._
 import myproject.database.ApplicationDatabase
-import myproject.web.server.EnvInit.initEnv
 
 object EnvInitBatch extends App {
   implicit val db = ApplicationDatabase.currentDatabaseImpl
 
-  initEnv.futureValue
+  db.reset.futureValue
+
+  if(Config.datainit.enabled)
+    DataInitializer.Instance.initialize.futureValue
 }

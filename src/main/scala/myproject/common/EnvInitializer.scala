@@ -1,21 +1,32 @@
-package myproject.web.server
+package myproject.common
 
 import java.util.UUID
 
+import myproject.Config
 import myproject.common.Runtime.ec
-import myproject.database.DatabaseInterface
+import myproject.database.ApplicationDatabase
 import myproject.iam.Authorization.VoidIAMAccessChecker
-import myproject.iam.Channels.CRUD._
-import myproject.iam.Channels.{Channel, ChannelDAO}
-import myproject.iam.Groups.CRUD._
-import myproject.iam.Groups.{Group, GroupDAO}
-import myproject.iam.Users.CRUD._
+import myproject.iam.Channels.CRUD.createChannel
+import myproject.iam.Channels.Channel
+import myproject.iam.Groups.CRUD.createGroup
+import myproject.iam.Groups.Group
+import myproject.iam.Users.CRUD.createUser
 import myproject.iam.Users._
 import uk.gov.hmrc.emailaddress.EmailAddress
 
-object EnvInit {
+import scala.concurrent.Future
 
-  def initEnv(implicit db: DatabaseInterface with UserDAO with GroupDAO with ChannelDAO) = {
+trait DataInitializer {
+  def initialize(implicit db: ApplicationDatabase): Future[Done]
+}
+
+object DataInitializer {
+  lazy val Instance = Class.forName(Config.datainit.clazz).newInstance.asInstanceOf[DataInitializer]
+}
+
+class DefaultDataInitializer extends DataInitializer {
+
+  def initialize(implicit db: ApplicationDatabase) = {
     val root =
       User(UUID.fromString("00000000-0000-0000-0000-000000000000"), UserLevel.Platform, "root", "", "", EmailAddress("root@nowhere"), "Kondor_123")
 
@@ -64,7 +75,6 @@ object EnvInit {
     implicit val authz = VoidIAMAccessChecker
 
     val initFuture = for {
-      _ <- db.reset
       _ <- createUser(root)
       _ <- createChannel(channel)
       _ <- createUser(channelAdmin)
@@ -72,7 +82,7 @@ object EnvInit {
       _ <- createUser(groupAdmin)
       _ <- createUser(groupUser1)
       _ <- createUser(groupUser2)
-    } yield Unit
+    } yield Done
 
     initFuture
   }
