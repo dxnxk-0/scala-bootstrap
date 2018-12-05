@@ -35,9 +35,13 @@ object DefaultMailer extends Mailer {
 
   import myproject.Config.email.smtp._
 
-  def send(data: SimpleEmailData): Future[SendMailResult] =
-    if (disableEmail)
+  def send(data: SimpleEmailData): Future[SendMailResult] = {
+    val recipientsLog = data.recipients.mkString(",")
+
+    if (disableEmail) {
+      logger.info(s"will not send a mail to $recipientsLog (emails sending disabled)")
       Future.successful(SendMailResult(None, Some("Email disabled. No email was sent.")))
+    }
     else
       Future {
         val start = System.currentTimeMillis
@@ -48,19 +52,18 @@ object DefaultMailer extends Mailer {
         mailService.setSubject(data.subject)
         mailService.setMsg(data.message)
 
-        val recipientsLog = data.recipients.mkString(",")
-
         Try(mailService.send()) match {
           case Success(res) =>
             val timeElapsed = System.currentTimeMillis - start
-            logger.info(s"Successfully sent email [to:$recipientsLog, subject:${data.subject}] ($res) [${timeElapsed}ms]")
+            logger.info(s"successfully sent email [to:$recipientsLog, subject:${data.subject}] ($res) [${timeElapsed}ms]")
             SendMailResult(Some(res))
           case Failure(e) =>
             logger.error(
-              s"""Error while sending following email [to:$recipientsLog, subject:${data.subject}]. Error:${e.getMessage} caused by ${e.getCause}""")
+              s"""error while sending following email [to:$recipientsLog, subject:${data.subject}]. Error:${e.getMessage} caused by ${e.getCause}""")
             throw e
         }
       }
+  }
 
   private def initMsg[A <: Email](mail: A): A = {
     mail.setHostName(mailHost)
