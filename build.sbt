@@ -20,6 +20,7 @@ resolvers ++= Seq(
   Resolver.bintrayRepo("hmrc", "releases"))
 
 TaskKey[Unit]("server") := (Compile / runMain).toTask(" myproject.web.server.WebServer").value
+TaskKey[Unit]("envinit") := (Compile / runMain).toTask("myproject.web.server.EnvInitBatch").value
 
 libraryDependencies ++= Seq(
   // Application configuration
@@ -62,3 +63,4 @@ libraryDependencies ++= Seq(
 
   // Views
   "com.lihaoyi"                      %% "scalatags"               % "0.6.7")
+

@@ -5,8 +5,10 @@ import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
 import myproject.Config
-import myproject.database.ApplicationDatabase
+import myproject.common.FutureImplicits._
+import myproject.database.{ApplicationDatabase, SlickConfig}
 import org.slf4j.LoggerFactory
+import slick.jdbc.H2Profile
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -22,8 +24,8 @@ object WebServer extends App {
   val iface = Config.server.interface
   val port = Config.server.port
 
-  if(Config.server.envInitAtStartup)
-    EnvInit.initEnv
+  if(Config.server.h2EnvInitAtStartup && SlickConfig.driver==H2Profile)
+    EnvInit.initEnv.futureValue
 
   Http().bindAndHandle(Routes.httpRoutes, iface, port)
 

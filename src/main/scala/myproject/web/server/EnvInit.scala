@@ -2,7 +2,6 @@ package myproject.web.server
 
 import java.util.UUID
 
-import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.database.DatabaseInterface
 import myproject.iam.Authorization.VoidIAMAccessChecker
@@ -75,6 +74,6 @@ object EnvInit {
       _ <- createUser(groupUser2)
     } yield Unit
 
-    initFuture.futureValue
+    initFuture
   }
 }
