@@ -80,7 +80,7 @@ object JsonRPC {
         case Success(res: RPCResponseError) =>
           logger.error(s"[${clientIp.getOrElse("-")}] [${user.login}] [${execTime}ms] [failed] [${req.method}] error:${res.error.message}")
         case Success(_: RPCResponseSuccess) =>
-          logger.info(s"[${clientIp.getOrElse("-")}] [${user.login})] [${execTime}ms] [success] [${req.method}]")
+          logger.info(s"[${clientIp.getOrElse("-")}] [${user.login}] [${execTime}ms] [success] [${req.method}]")
       }
     }
   }
