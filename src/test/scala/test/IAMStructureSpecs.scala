@@ -48,6 +48,10 @@ class IAMStructureSpecs extends DatabaseSpec {
     an [IllegalOperationException] shouldBe thrownBy(Groups.CRUD.updateGroup(groupInChannel1.id, g => g.copy(parentId = Some(groupInChannel2.id))).futureValue)
   }
 
+  it should "not allow to move a group across channels" in {
+    an [IllegalOperationException] shouldBe thrownBy(Groups.CRUD.updateGroup(groupInChannel1.id, g => g.copy(channelId = channel2.id)).futureValue)
+  }
+
   it should "not allow to change a user's level" in {
     an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(platformUser.id, u => u.copy(level = UserLevel.Channel)).futureValue)
     an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(channelUserInChannel1.id, u => u.copy(level = UserLevel.Group)).futureValue)
@@ -72,5 +76,16 @@ class IAMStructureSpecs extends DatabaseSpec {
   it should "not allow to move a user from his group to another" in {
     val upd: UserUpdate = u => u.copy(groupId = Some(groupInChannel2.id))
     an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(groupUserInGroupChannel1.id, upd).futureValue)
+  }
+
+  it should "not allow to move a channel user across channels" in {
+    val upd: UserUpdate = u => u.copy(channelId = Some(channel2.id))
+    an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(channelUserInChannel1.id, upd).futureValue)
+  }
+
+  it should "not allow to set a channel id on a group or platform user" in {
+    val upd: UserUpdate = u => u.copy(channelId = Some(channel1.id))
+    an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(groupUserInGroupChannel1.id, upd).futureValue)
+    an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(platformUser.id, upd).futureValue)
   }
 }

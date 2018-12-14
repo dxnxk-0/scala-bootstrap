@@ -132,11 +132,16 @@ object Groups {
     }
 
     def updateGroup(id: UUID, upd: GroupUpdate)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO) = {
-      def filter(existing: Group, candidate: Group) = existing.copy(
-        name = candidate.name,
-        parentId = candidate.parentId,
-        status = candidate.status,
-        lastUpdate = Some(TimeManagement.getCurrentDateTime))
+      def filter(existing: Group, candidate: Group) = {
+        if(existing.channelId!=candidate.channelId)
+          throw IllegalOperationException(s"attempt to move user: operation is not supported")
+
+        existing.copy(
+          name = candidate.name,
+          parentId = candidate.parentId,
+          status = candidate.status,
+          lastUpdate = Some(TimeManagement.getCurrentDateTime))
+      }
 
       def processAuthz(existing: Group, target: Group, channel: Channel, parents: List[Group]) =
         if(existing.status != target.status || existing.parentId != target.parentId) authz.canAdminGroup(channel, target)
