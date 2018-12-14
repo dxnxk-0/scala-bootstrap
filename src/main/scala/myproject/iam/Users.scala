@@ -166,32 +166,14 @@ object Users {
 
   private object UserValidator extends Validator[User] {
 
-    val platformUserValidator = (u: User) => u match {
-      case _ if u.level!= UserLevel.Platform => OK
-      case User(_, UserLevel.Platform, _, _, _, _, _, None, None, None, _, _, _) => OK
-      case _ => NOK(InvalidPlatformUser)
-    }
-
-    val channelUserValidator = (u: User) => u match {
-      case _ if u.level!= UserLevel.Channel => OK
-      case User(_, UserLevel.Channel, _, _, _, _, _, Some(_), None, _, _, _, _) => OK
-      case _ => NOK(InvalidChannelUser)
-    }
-
-    val groupUserValidator = (u: User) => u match {
-      case _ if u.level!= UserLevel.Group => OK
-      case User(_, UserLevel.Group, _, _, _, _, _, None, Some(_), _, _, _, _) => OK
-      case _ => NOK(InvalidGroupUser)
-    }
-
-    val simpleUserValidator = (u: User) => u match {
-      case _ if u.level!= UserLevel.NoLevel => OK
-      case User(_, UserLevel.NoLevel, _,  _, _ , _, _, None, None, None, _, _, _) => OK
-      case _ => NOK(InvalidSimpleUser)
-    }
-
     override val validators = List(
-      platformUserValidator, channelUserValidator, groupUserValidator, simpleUserValidator,
+      (u: User) => u match {
+        case User(_, UserLevel.Platform, _, _, _, _, _, None, None, None, _, _, _) => OK
+        case User(_, UserLevel.Channel, _, _, _, _, _, Some(_), None, _, _, _, _) => OK
+        case User(_, UserLevel.Group, _, _, _, _, _, None, Some(_), _, _, _, _) => OK
+        case User(_, UserLevel.NoLevel, _,  _, _ , _, _, None, None, None, _, _, _) => OK
+        case _ => NOK(InvalidPlatformUser)
+      },
       (u: User) => {
         def invalidLogin = {
           Option(u.login).isEmpty || !isAlphaNumericString(u.login) || u.login=="" || u.login!=u.login.trim || u.login!=u.login.toLowerCase
@@ -252,14 +234,14 @@ object Users {
     private def loginUser(user: User) = (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive)))
 
     def createUser(user: User)(implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) = {
-      val validateUser = UserValidator.validate(user.copy(
+      def initUser = user.copy(
         password = BCrypt.hashPassword(user.password),
         created = Some(getCurrentDateTime),
         login = user.login.toLowerCase,
-        email = EmailAddress(user.email.value.toLowerCase)))
+        email = EmailAddress(user.email.value.toLowerCase))
 
       for {
-        validated <- validateUser.toFuture
+        validated <- UserValidator.validate(initUser).toFuture
         _         <- checkEmailOwnership(validated)
         _         <- checkLoginOwnership(validated)
         checked   <- user.level match {
@@ -273,13 +255,21 @@ object Users {
     }
 
     def updateUser(id: UUID, upd: UserUpdate)(implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) = {
-      def filter(existing: User, candidate: User) = existing.copy(
-        login = candidate.login.toLowerCase,
-        password = if(existing.password!=candidate.password) BCrypt.hashPassword(candidate.password) else existing.password,
-        email = EmailAddress(candidate.email.value.toLowerCase),
-        groupRole = candidate.groupRole,
-        status = candidate.status,
-        lastUpdate = Some(TimeManagement.getCurrentDateTime))
+      def filter(existing: User, candidate: User) = {
+        if(existing.groupId!=candidate.groupId || existing.channelId!=candidate.channelId)
+          throw IllegalOperationException(s"attempt to move user: operation is not supported")
+
+        if(existing.level!=candidate.level)
+          throw IllegalOperationException(s"attempt to change the user level: operation is not supported")
+
+        existing.copy(
+          login = candidate.login.toLowerCase,
+          password = if(existing.password!=candidate.password) BCrypt.hashPassword(candidate.password) else existing.password,
+          email = EmailAddress(candidate.email.value.toLowerCase),
+          groupRole = candidate.groupRole,
+          status = candidate.status,
+          lastUpdate = Some(TimeManagement.getCurrentDateTime))
+      }
 
       def requireAdminPrivileges(existing: User, target: User) =
         if(existing.status!=target.status || existing.groupRole!=target.groupRole) true else false
