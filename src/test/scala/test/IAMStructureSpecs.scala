@@ -2,8 +2,8 @@ package test
 
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
-import myproject.common.{Done, IllegalOperationException, ValidationErrorException}
-import myproject.iam.Authorization.VoidIAMAccessChecker
+import myproject.common.{AccessRefusedException, Done, IllegalOperationException, ValidationErrorException}
+import myproject.iam.Authorization.{DefaultIAMAccessChecker, VoidIAMAccessChecker}
 import myproject.iam.Users.{UserLevel, UserUpdate}
 import myproject.iam.{Channels, Groups, Users}
 import org.scalatest.DoNotDiscover
@@ -88,4 +88,24 @@ class IAMStructureSpecs extends DatabaseSpec {
     an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(groupUserInGroupChannel1.id, upd).futureValue)
     an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(platformUser.id, upd).futureValue)
   }
+
+  it should "not allow the group admin to move his group" in {
+    val group = Groups.CRUD.createGroup(IAMTestDataFactory.getGroup(channel1.id).copy(parentId = Some(groupInChannel1.id))).futureValue
+    val admin = Users.CRUD.createUser(IAMTestDataFactory.getGroupAdmin(groupInChannel1.id)).futureValue
+
+    an [AccessRefusedException] shouldBe thrownBy(Groups.CRUD.updateGroup(groupInChannel1.id, g => g.copy(parentId = Some(group.id)))(new DefaultIAMAccessChecker(admin), db).futureValue)
+  }
+
+//TODO: Enhanced group admin capabilities
+//  it should "allow a group admin to create a child group" in {
+//
+//  }
+//
+//  it should "allow a group admin to move a child within the organization" in {
+//
+//  }
+//
+//  it should "not allow a group admin to move a group outside his organization" in {
+//
+//  }
 }
