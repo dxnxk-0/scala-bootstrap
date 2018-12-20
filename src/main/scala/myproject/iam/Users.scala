@@ -71,10 +71,28 @@ object Users {
 
   case object InvalidLogin extends ValidationError
   case object InvalidEmail extends ValidationError
-  case object InvalidPlatformUser extends ValidationError
-  case object InvalidChannelUser extends ValidationError
-  case object InvalidGroupUser extends ValidationError
-  case object InvalidSimpleUser extends ValidationError
+  case object InvalidUser extends ValidationError
+
+  private object UserValidator extends Validator[User] {
+
+    override val validators = List(
+      {
+        case User(_, UserLevel.Platform, _, _, _, _, _, None, None, None, _, _, _) => OK
+        case User(_, UserLevel.Channel, _, _, _, _, _, Some(_), None, _, _, _, _) => OK
+        case User(_, UserLevel.Group, _, _, _, _, _, None, Some(_), _, _, _, _) => OK
+        case User(_, UserLevel.NoLevel, _, _, _, _, _, None, None, None, _, _, _) => OK
+        case _ => NOK(InvalidUser)
+      },
+      (u: User) => {
+        def invalidLogin = {
+          Option(u.login).isEmpty || !isAlphaNumericString(u.login) || u.login=="" || u.login!=u.login.trim || u.login!=u.login.toLowerCase
+        }
+        if(invalidLogin) NOK(InvalidLogin) else OK
+      },
+      (u: User) =>
+        if(u.email.value.toLowerCase!=u.email.value) NOK(InvalidEmail) else OK
+    )
+  }
 
   type UserUpdate = User => User
 
@@ -162,27 +180,6 @@ object Users {
     def getPlatformUsers: Future[List[User]]
     def getChannelUsers(id: UUID): Future[List[User]]
     def getGroupUsers(groupId: UUID): Future[List[User]]
-  }
-
-  private object UserValidator extends Validator[User] {
-
-    override val validators = List(
-      (u: User) => u match {
-        case User(_, UserLevel.Platform, _, _, _, _, _, None, None, None, _, _, _) => OK
-        case User(_, UserLevel.Channel, _, _, _, _, _, Some(_), None, _, _, _, _) => OK
-        case User(_, UserLevel.Group, _, _, _, _, _, None, Some(_), _, _, _, _) => OK
-        case User(_, UserLevel.NoLevel, _,  _, _ , _, _, None, None, None, _, _, _) => OK
-        case _ => NOK(InvalidPlatformUser)
-      },
-      (u: User) => {
-        def invalidLogin = {
-          Option(u.login).isEmpty || !isAlphaNumericString(u.login) || u.login=="" || u.login!=u.login.trim || u.login!=u.login.toLowerCase
-        }
-        if(invalidLogin) NOK(InvalidLogin) else OK
-      },
-      (u: User) =>
-        if(u.email.value.toLowerCase!=u.email.value) NOK(InvalidEmail) else OK
-    )
   }
 
   object CRUD {
