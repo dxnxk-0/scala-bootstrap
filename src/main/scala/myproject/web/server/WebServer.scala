@@ -6,9 +6,8 @@ import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
 import myproject.Config
 import myproject.common.DataInitializer
-import myproject.database.{ApplicationDatabase, SlickConfig}
+import myproject.database.{ApplicationDatabase, DatabaseType}
 import org.slf4j.LoggerFactory
-import slick.jdbc.H2Profile
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -25,7 +24,7 @@ object WebServer extends App {
   val port = Config.server.port
 
   // H2 DB creation
-  if(SlickConfig.driver==H2Profile) {
+  if(db.dbType==DatabaseType.H2) {
     db.reset
 
     // Data initialization if required

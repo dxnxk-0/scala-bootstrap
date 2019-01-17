@@ -1,6 +1,7 @@
 package myproject.database
 
 import myproject.Config
+import myproject.database.DatabaseType.DatabaseType
 import myproject.iam.Channels.ChannelDAO
 import myproject.iam.Groups.GroupDAO
 import myproject.iam.Tokens.TokenDAO
@@ -11,7 +12,7 @@ trait ApplicationDatabase
     with UserDAO
     with TokenDAO
     with GroupDAO
-    with ChannelDAO
+    with ChannelDAO { val dbType: DatabaseType }
 
 object ApplicationDatabase {
   val currentDatabaseImpl = Class.forName(Config.database.implClassName).newInstance.asInstanceOf[ApplicationDatabase]

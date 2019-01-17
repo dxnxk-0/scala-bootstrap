@@ -113,6 +113,8 @@ object Serializers {
       val common = Map(
         "user_id" -> user.id.serialize,
         "login" -> user.login.serialize,
+        "first_name" -> user.firstName.serialize,
+        "last_name" -> user.lastName.serialize,
         "level" -> user.level.serialize,
         "email" -> user.email.serialize,
         "status" -> user.status.serialize,

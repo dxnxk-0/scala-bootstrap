@@ -1,16 +1,15 @@
 package myproject.common
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import myproject.Config
 import myproject.common.Runtime.ec
+import myproject.common.security.BCrypt
 import myproject.database.ApplicationDatabase
 import myproject.iam.Authorization.VoidIAMAccessChecker
-import myproject.iam.Channels.CRUD.createChannel
 import myproject.iam.Channels.Channel
-import myproject.iam.Groups.CRUD.createGroup
 import myproject.iam.Groups.Group
-import myproject.iam.Users.CRUD.createUser
 import myproject.iam.Users._
 import uk.gov.hmrc.emailaddress.EmailAddress
 
@@ -28,15 +27,32 @@ class DefaultDataInitializer extends DataInitializer {
 
   def initialize(implicit db: ApplicationDatabase) = {
     val root =
-      User(UUID.fromString("00000000-0000-0000-0000-000000000000"), UserLevel.Platform, "root", "", "", EmailAddress("root@nowhere"), "Kondor_123")
+      User(
+        id = UUID.fromString("00000000-0000-0000-0000-000000000000"),
+        UserLevel.Platform,
+        login = "root",
+        firstName = "",
+        lastName = "",
+        email = EmailAddress("root@nowhere"),
+        password = BCrypt.hashPassword("Kondor_123"),
+        created = Some(LocalDateTime.parse("1970-01-01T00:00:00")))
 
-    val channel = Channel(UUID.fromString("14526b8d-050a-4b7b-a70b-903a1eb025cc"), "demo channel")
+    val channel = Channel(UUID.fromString("14526b8d-050a-4b7b-a70b-903a1eb025cc"), "demo channel", created = Some(TimeManagement.getCurrentDateTime))
 
     val channelAdmin =
-      User(UUID.randomUUID, UserLevel.Channel, "channel-admin", "bob", "the admin", EmailAddress("admin@channel.com"), "Kondor_123", Some(channel.id))
+      User(
+        id = UUID.randomUUID,
+        level = UserLevel.Channel,
+        login = "channel-admin",
+        firstName = "bob",
+        lastName = "the admin",
+        email = EmailAddress("admin@channel.com"),
+        password = BCrypt.hashPassword("Kondor_123"),
+        channelId = Some(channel.id),
+        created = Some(TimeManagement.getCurrentDateTime))
 
     val group =
-      Group(UUID.fromString("e1f4579e-fc83-4741-b533-772830f84cf9"), "demo group", channel.id)
+      Group(UUID.fromString("e1f4579e-fc83-4741-b533-772830f84cf9"), "demo group", channel.id, created = Some(TimeManagement.getCurrentDateTime))
 
     val groupAdmin =
       User(
@@ -46,9 +62,10 @@ class DefaultDataInitializer extends DataInitializer {
         firstName = "John",
         lastName = "Doe1",
         email = EmailAddress("admin@group.com"),
-        password = "Kondor_123",
+        password = BCrypt.hashPassword("Kondor_123"),
         groupId = Some(group.id),
-        groupRole = Some(GroupRole.Admin))
+        groupRole = Some(GroupRole.Admin),
+        created = Some(TimeManagement.getCurrentDateTime))
 
     val groupUser1 =
       User(
@@ -58,8 +75,9 @@ class DefaultDataInitializer extends DataInitializer {
         firstName = "John",
         lastName = "Doe2",
         email = EmailAddress("user-1@group.com"),
-        password = "Kondor_123",
-        groupId = Some(group.id))
+        password = BCrypt.hashPassword("Kondor_123"),
+        groupId = Some(group.id),
+        created = Some(TimeManagement.getCurrentDateTime))
 
     val groupUser2 =
       User(
@@ -69,19 +87,20 @@ class DefaultDataInitializer extends DataInitializer {
         firstName = "John",
         lastName = "Doe3",
         email = EmailAddress("user-2@group.com"),
-        password = "Kondor_123",
-        groupId = Some(group.id))
+        password = BCrypt.hashPassword("Kondor_123"),
+        groupId = Some(group.id),
+        created = Some(TimeManagement.getCurrentDateTime))
 
     implicit val authz = VoidIAMAccessChecker
 
     val initFuture = for {
-      _ <- createUser(root)
-      _ <- createChannel(channel)
-      _ <- createUser(channelAdmin)
-      _ <- createGroup(group)
-      _ <- createUser(groupAdmin)
-      _ <- createUser(groupUser1)
-      _ <- createUser(groupUser2)
+      _ <- db.insert(root)
+      _ <- db.insert(channel)
+      _ <- db.insert(channelAdmin)
+      _ <- db.insert(group)
+      _ <- db.insert(groupAdmin)
+      _ <- db.insert(groupUser1)
+      _ <- db.insert(groupUser2)
     } yield Done
 
     initFuture
