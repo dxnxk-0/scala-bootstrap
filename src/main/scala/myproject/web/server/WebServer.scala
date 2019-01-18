@@ -5,8 +5,7 @@ import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
 import myproject.Config
-import myproject.common.DataInitializer
-import myproject.database.{ApplicationDatabase, DatabaseType}
+import myproject.database.{ApplicationDatabase, DataLoader, DatabaseType}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
@@ -25,11 +24,11 @@ object WebServer extends App {
 
   // H2 DB creation
   if(db.dbType==DatabaseType.H2) {
-    db.reset
+    db.init
 
     // Data initialization if required
     if (Config.datainit.enabled) {
-      DataInitializer.Instance.initialize
+      DataLoader.instanceFromConfig.load
     }
   }
 

@@ -14,7 +14,7 @@ object Config {
   }
 
   object datainit {
-    private val dataInitConfig = config.getConfig("data-init")
+    private val dataInitConfig = config.getConfig("data-loading")
     val clazz = dataInitConfig.getString("class")
     val enabled = dataInitConfig.getBoolean("enabled")
   }

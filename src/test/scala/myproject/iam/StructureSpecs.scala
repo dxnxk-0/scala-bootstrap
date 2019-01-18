@@ -1,16 +1,15 @@
-package test
+package myproject.iam
 
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common._
-import myproject.database.SlickH2ApplicationDatabase
 import myproject.iam.Authorization.{DefaultIAMAccessChecker, VoidIAMAccessChecker}
 import myproject.iam.Users.{UserLevel, UserUpdate}
-import myproject.iam.{Channels, Groups, Users}
 import org.scalatest.DoNotDiscover
+import test.{DatabaseSpec, IAMTestDataFactory}
 
 @DoNotDiscover
-class IAMStructureSpecs extends DatabaseSpec {
+class StructureSpecs extends DatabaseSpec {
 
   implicit val authz = VoidIAMAccessChecker
 
@@ -95,12 +94,6 @@ class IAMStructureSpecs extends DatabaseSpec {
     val admin = Users.CRUD.createUser(IAMTestDataFactory.getGroupAdmin(groupInChannel1.id)).futureValue
 
     an [AccessRefusedException] shouldBe thrownBy(Groups.CRUD.updateGroup(groupInChannel1.id, g => g.copy(parentId = Some(group.id)))(new DefaultIAMAccessChecker(admin), db).futureValue)
-  }
-
-  it should "load the demo data" in {
-    val di = new DefaultDataInitializer
-    val db = new SlickH2ApplicationDatabase
-    di.initialize(db).futureValue shouldBe Done
   }
 
 //TODO: Enhanced group admin capabilities

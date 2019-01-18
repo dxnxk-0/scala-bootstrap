@@ -1,4 +1,4 @@
-package myproject.common
+package myproject.database
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -6,7 +6,7 @@ import java.util.UUID
 import myproject.Config
 import myproject.common.Runtime.ec
 import myproject.common.security.BCrypt
-import myproject.database.ApplicationDatabase
+import myproject.common.{Done, TimeManagement}
 import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.Group
@@ -15,17 +15,17 @@ import uk.gov.hmrc.emailaddress.EmailAddress
 
 import scala.concurrent.Future
 
-trait DataInitializer {
-  def initialize(implicit db: ApplicationDatabase): Future[Done]
+trait DataLoader {
+  def load(implicit db: ApplicationDatabase): Future[Done]
 }
 
-object DataInitializer {
-  lazy val Instance = Class.forName(Config.datainit.clazz).newInstance.asInstanceOf[DataInitializer]
+object DataLoader {
+  lazy val instanceFromConfig = Class.forName(Config.datainit.clazz).newInstance.asInstanceOf[DataLoader]
 }
 
-class DefaultDataInitializer extends DataInitializer {
+class DefaultDataLoader extends DataLoader {
 
-  def initialize(implicit db: ApplicationDatabase) = {
+  def load(implicit db: ApplicationDatabase) = {
     val root =
       User(
         id = UUID.fromString("00000000-0000-0000-0000-000000000000"),

@@ -18,13 +18,13 @@ trait SlickApplicationDatabaseBase
 
   import api._
   val schema = channels.schema ++ groups.schema ++ users.schema ++ tokens.schema
-  def reset = db.run(DBIO.seq(schema.drop.asTry, schema.create)).map(_ => Done)
+  def init = db.run(DBIO.seq(schema.drop.asTry, schema.create)).map(_ => Done)
   def close = Future(db.close()).map(_ => Done)
 }
 
 class SlickApplicationDatabase extends SlickApplicationDatabaseBase {
   import api._
-  lazy val db = Database.forConfig("database.slick")
+  val db = Database.forConfig("database.slick")
   override val dbType = Config.database.slick.driver match {
     case "org.postgresql.Driver" => DatabaseType.Postgresql
     case "org.h2.Driver" => DatabaseType.H2
@@ -35,6 +35,6 @@ class SlickApplicationDatabase extends SlickApplicationDatabaseBase {
 
 class SlickH2ApplicationDatabase extends SlickApplicationDatabaseBase {
   import api._
-  lazy val db = Database.forURL("jdbc:h2:mem:myproject")
+  val db = Database.forURL("jdbc:h2:mem:myproject;DB_CLOSE_DELAY=-1")
   override val dbType = DatabaseType.H2
 }
