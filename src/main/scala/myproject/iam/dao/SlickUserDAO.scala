@@ -6,16 +6,16 @@ import java.util.UUID
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.{Done, ObjectNotFoundException}
-import myproject.database.SlickDAO
+import myproject.database.{SlickDAO, SlickProfile}
 import myproject.iam.Users.GroupRole.GroupRole
 import myproject.iam.Users.UserLevel.UserLevel
 import myproject.iam.Users.UserStatus.UserStatus
 import myproject.iam.Users._
 import uk.gov.hmrc.emailaddress.EmailAddress
 
-trait SlickUserDAO extends UserDAO with SlickDAO { self: SlickGroupDAO with SlickChannelDAO =>
+trait SlickUserDAO extends UserDAO with SlickDAO { self: SlickProfile with SlickGroupDAO with SlickChannelDAO =>
 
-  import api._
+  import slickProfile.api._
 
   implicit def groupRoleMapper = MappedColumnType.base[GroupRole, Int](
     e => e.id,

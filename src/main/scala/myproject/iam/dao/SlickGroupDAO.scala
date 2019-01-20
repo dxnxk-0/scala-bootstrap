@@ -7,14 +7,14 @@ import java.util.UUID
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.{Done, ObjectNotFoundException}
-import myproject.database.SlickDAO
+import myproject.database.{SlickDAO, SlickProfile}
 import myproject.iam.Groups.GroupStatus.GroupStatus
 import myproject.iam.Groups.{Group, GroupDAO, GroupStatus}
 import slick.jdbc.{GetResult, PositionedParameters, SetParameter}
 
-trait SlickGroupDAO extends GroupDAO with SlickDAO { self: SlickChannelDAO with SlickUserDAO =>
+trait SlickGroupDAO extends GroupDAO with SlickDAO { self: SlickProfile with SlickChannelDAO with SlickUserDAO =>
 
-  import api._
+  import slickProfile.api._
 
   implicit val GetUUID: GetResult[UUID] = GetResult[UUID](_.nextObject().asInstanceOf[UUID])
 

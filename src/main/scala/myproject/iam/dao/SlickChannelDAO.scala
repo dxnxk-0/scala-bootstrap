@@ -6,12 +6,12 @@ import java.util.UUID
 import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.{Done, ObjectNotFoundException}
-import myproject.database.SlickDAO
+import myproject.database.{SlickDAO, SlickProfile}
 import myproject.iam.Channels.{Channel, ChannelDAO}
 
-trait SlickChannelDAO extends ChannelDAO with SlickDAO { self: SlickGroupDAO =>
+trait SlickChannelDAO extends ChannelDAO with SlickDAO { self: SlickProfile with SlickGroupDAO =>
 
-  import api._
+  import slickProfile.api._
 
   protected class ChannelsTable(tag: Tag) extends Table[Channel](tag, "CHANNELS") {
     def id = column[UUID]("CHANNEL_ID", O.PrimaryKey, O.SqlType("UUID"))

@@ -5,12 +5,11 @@ import java.time.{LocalDate, LocalDateTime}
 
 import myproject.common.Geography
 import myproject.common.Geography.Country
-import slick.jdbc.JdbcProfile
 import uk.gov.hmrc.emailaddress.EmailAddress
 
-trait SlickDAO extends JdbcProfile {
+trait SlickDAO { self: SlickProfile =>
 
-  import api._
+  import slickProfile.api._
 
   val db: Database
 
