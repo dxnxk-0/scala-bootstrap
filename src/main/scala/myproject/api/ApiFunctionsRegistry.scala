@@ -79,6 +79,7 @@ object ApiFunctionsRegistry {
   register(new UpdateUser)
   register(new DeleteUser)
   register(new LoginPassword)
+  register(new LoginToken)
   register(new GetUser)
   register(new SendMagicLink)
 }
