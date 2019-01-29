@@ -27,6 +27,9 @@
         <appender-ref ref="FILE"/>
     </root>
 
+    <logger name="org.postgresql" level="INFO"/>
+    <logger name="h2database" level="INFO"/>
+
     <logger name="slick.basic.BasicBackend.action"          level="${log.action:-info}" />
     <logger name="slick.basic.BasicBackend.stream"          level="${log.stream:-info}" />
     <logger name="slick.compiler"                           level="${log.qcomp:-info}" />

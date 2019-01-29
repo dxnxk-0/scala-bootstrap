@@ -60,6 +60,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick"               %% "slick-hikaricp"          % "3.2.3",
   "com.h2database"                   %  "h2"                      % "1.4.197",
   "org.postgresql"                   % "postgresql"               % "42.2.5",
+  "org.flywaydb"                     % "flyway-core"              % "5.2.4",
 
   // Views
   "com.lihaoyi"                      %% "scalatags"               % "0.6.7")

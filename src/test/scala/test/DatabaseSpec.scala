@@ -14,5 +14,5 @@ trait DatabaseSpec extends UnitSpec with BeforeAndAfter {
 }
 
 private object InitTestData {
-  lazy val init = currentDatabaseImpl.init.futureValue
+  lazy val init = currentDatabaseImpl.migrate.futureValue
 }

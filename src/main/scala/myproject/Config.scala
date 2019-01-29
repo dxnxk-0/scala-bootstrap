@@ -39,11 +39,9 @@ object Config {
   object DataLoading extends ConfigurationSection {
     private val dataInitConfig = config.getConfig("data-loading")
     val clazz = dataInitConfig.getString("class")
-    val enabled = dataInitConfig.getBoolean("enabled")
 
     override def dumpLog(implicit logger: Logger) = {
       logger.info(s"data-loading > class > $clazz")
-      logger.info(s"data-loading > enabled > $enabled")
     }
   }
 
@@ -58,13 +56,29 @@ object Config {
     object H2 extends ConfigurationSection {
       private val h2Config = databaseConfig.getConfig("h2")
       val startWebInterface = h2Config.getBoolean("start-web-interface")
+      val initAtStartup = h2Config.getBoolean("init-at-startup")
 
       override def dumpLog(implicit logger: Logger) = {
         logger.info(s"h2 > start web interface: $startWebInterface")
+        logger.info(s"h2 > init-at-startup > $initAtStartup")
       }
     }
 
     H2.dumpLog
+
+    object Flyway extends ConfigurationSection {
+      private val flywayConfig = databaseConfig.getConfig("flyway")
+
+      val cleanDisabled = Try(flywayConfig.getBoolean("clean-disabled")).toOption
+      val group = Try(flywayConfig.getBoolean("group")).toOption
+
+      override def dumpLog(implicit logger: Logger) = {
+        logger.info(s"database > flyway > clean-disabled > ${cleanDisabled.getOrElse("-")}")
+        logger.info(s"database > flyway > group > ${group.getOrElse("-")}")
+      }
+    }
+
+    Flyway.dumpLog
 
     object Slick extends ConfigurationSection {
       private val slickConfig = databaseConfig.getConfig("slick")
@@ -78,8 +92,8 @@ object Config {
       val poolName = Try(slickConfig.getString("poolName")).getOrElse("-")
 
       private val properties = Try(slickConfig.getConfig("properties")).toOption
-      val user = properties.map(_.getString("user")).getOrElse("-")
-      val password = "******"
+      val user = properties.map(_.getString("user"))
+      val password = properties.map(_.getString("password"))
 
       override def dumpLog(implicit logger: Logger) = {
         logger.info(s"slick > driver > $driver")
@@ -90,7 +104,7 @@ object Config {
         logger.info(s"slick > registerMbeans > $registerMbeans")
         logger.info(s"slick > poolName > $poolName")
         logger.info(s"slick > user > $user")
-        logger.info(s"slick > password > $password")
+        logger.info(s"slick > password > *****")
       }
     }
 
@@ -103,14 +117,14 @@ object Config {
     val port = serverConfig.getInt("port")
     val sessionDuration = serverConfig.getDuration("session-duration").toScala
     val uiBaseUrl = serverConfig.getString("ui-base-url")
-    val resetDbAtStartup = serverConfig.getBoolean("migrate-db-at-startup")
+    val migrateDbAtStartup = serverConfig.getBoolean("migrate-db-at-startup")
 
     override def dumpLog(implicit logger: Logger) = {
       logger.info(s"server > interface > $interface")
       logger.info(s"server > port > $port")
       logger.info(s"server > session duration > $sessionDuration")
       logger.info(s"server > ui base url > $uiBaseUrl")
-      logger.info(s"server > reset-db-at-startup > $resetDbAtStartup")
+      logger.info(s"server > migrate-db-at-startup > $migrateDbAtStartup")
     }
   }
 

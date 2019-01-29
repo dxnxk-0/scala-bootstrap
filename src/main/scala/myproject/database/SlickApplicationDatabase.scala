@@ -4,6 +4,7 @@ import myproject.Config
 import myproject.common.Runtime.ec
 import myproject.common.{Done, UnexpectedErrorException}
 import myproject.iam.dao.{SlickChannelDAO, SlickGroupDAO, SlickTokenDAO, SlickUserDAO}
+import org.flywaydb.core.Flyway
 import slick.jdbc.{H2Profile, JdbcProfile, MySQLProfile, PostgresProfile}
 
 import scala.concurrent.Future
@@ -16,9 +17,22 @@ trait SlickApplicationDatabaseBase
     with SlickTokenDAO { self: SlickProfile =>
 
   import slickProfile.api._
+
+  val flyway = {
+    import Config.Database.{Slick, Flyway => FlywayCfg}
+
+    val config = Flyway.configure().dataSource(Slick.url, Slick.user.getOrElse(""), Slick.password.getOrElse(""))
+    FlywayCfg.group.map(v => config.group(v))
+    FlywayCfg.cleanDisabled.map(v => config.cleanDisabled(v))
+    config.load()
+  }
+
   val schema = channels.schema ++ groups.schema ++ users.schema ++ tokens.schema
-  def init = db.run(DBIO.seq(schema.drop.asTry, schema.create)).map(_ => Done)
   def close = Future(db.close()).map(_ => Done)
+  def clean = Future(flyway.clean()).map(_ => Done)
+  def migrate = {
+    Future(flyway.migrate()).map(_ => Done)
+  }
 }
 
 trait SlickProfile {
@@ -40,7 +54,7 @@ trait SlickProfileFromConfig extends SlickProfile {
 
 class SlickApplicationDatabase extends SlickProfileFromConfig with SlickApplicationDatabaseBase {
   import slickProfile.api._
-  val db = Database.forConfig("database.slick")
+  val db = Database.forConfig(config = Config.config, path = "database.slick")
   override val dbType = slickProfile match {
     case PostgresProfile => DatabaseType.Postgresql
     case H2Profile => DatabaseType.H2

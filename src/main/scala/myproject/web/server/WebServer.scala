@@ -3,10 +3,10 @@ package myproject.web.server
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
+import com.typesafe.scalalogging.Logger
 import myproject.Config
 import myproject.common.FutureImplicits._
 import myproject.database.{ApplicationDatabase, DataLoader, DatabaseType}
-import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
@@ -27,20 +27,28 @@ object WebServer extends App {
   val port = Config.Server.port
 
   if(db.dbType==DatabaseType.H2) {
+    logger.info("H2 database detected")
     if(Config.Database.H2.startWebInterface) {
       val h2Server = org.h2.tools.Server.createWebServer()
       logger.info(s"started h2 web interface on ${h2Server.getURL}")
       h2Server.start()
     }
+
+    if(Config.Database.H2.initAtStartup) {
+      logger.info("cleaning database")
+      db.clean.futureValue
+      logger.info("done cleaning database")
+      logger.info("loading data into h2")
+      db.migrate.futureValue
+      DataLoader.instanceFromConfig.load.futureValue
+      logger.info("done loading data")
+    }
   }
 
-  if(Config.Server.resetDbAtStartup) {
-    logger.info("resetting database")
-    db.init.futureValue
-    if(Config.DataLoading.enabled) {
-      logger.info(s"load data using ${Config.DataLoading.clazz}")
-      DataLoader.instanceFromConfig.load.futureValue
-    }
+  if(Config.Server.migrateDbAtStartup) {
+    logger.info("migrating database")
+    db.migrate.futureValue
+    logger.info("done migrating database")
   }
 
   Http().bindAndHandle(Routes.httpRoutes, iface, port)
