@@ -103,12 +103,14 @@ object Config {
     val port = serverConfig.getInt("port")
     val sessionDuration = serverConfig.getDuration("session-duration").toScala
     val uiBaseUrl = serverConfig.getString("ui-base-url")
+    val resetDbAtStartup = serverConfig.getBoolean("migrate-db-at-startup")
 
     override def dumpLog(implicit logger: Logger) = {
       logger.info(s"server > interface > $interface")
       logger.info(s"server > port > $port")
       logger.info(s"server > session duration > $sessionDuration")
       logger.info(s"server > ui base url > $uiBaseUrl")
+      logger.info(s"server > reset-db-at-startup > $resetDbAtStartup")
     }
   }
 
