@@ -33,7 +33,7 @@ object DefaultMailer extends Mailer {
 
   private val logger = Logger(LoggerFactory.getLogger(this.getClass))
 
-  import myproject.Config.email.smtp._
+  import myproject.Config.Email.Smtp._
 
   def send(data: SimpleEmailData): Future[SendMailResult] = {
     val recipientsLog = data.recipients.mkString(",")

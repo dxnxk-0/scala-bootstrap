@@ -15,5 +15,5 @@ trait ApplicationDatabase
     with ChannelDAO { val dbType: DatabaseType }
 
 object ApplicationDatabase {
-  val currentDatabaseImpl = Class.forName(Config.database.implClassName).newInstance.asInstanceOf[ApplicationDatabase]
+  val currentDatabaseImpl = Class.forName(Config.Database.implClassName).newInstance.asInstanceOf[ApplicationDatabase]
 }

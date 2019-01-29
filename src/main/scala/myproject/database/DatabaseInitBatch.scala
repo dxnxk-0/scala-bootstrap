@@ -8,6 +8,6 @@ object DatabaseInitBatch extends App {
 
   db.init.futureValue
 
-  if(Config.datainit.enabled)
+  if(Config.DataLoading.enabled)
     DataLoader.instanceFromConfig.load.futureValue
 }

@@ -228,7 +228,7 @@ object Users {
         Future.failed(AccessRefusedException(s"user is not authorized to log in"))
     }
 
-    private def loginUser(user: User) = (user, JWT.createToken(user.login, user.id, Some(Config.security.jwtTimeToLive)))
+    private def loginUser(user: User) = (user, JWT.createToken(user.login, user.id, Some(Config.Security.jwtTimeToLive)))
 
     def createUser(user: User)(implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) = {
       def initUser = user.copy(
@@ -357,7 +357,7 @@ object Users {
           userId = u.id,
           role = TokenRole.Authentication,
           created = Some(now),
-          expires = Some(now.plusHours(Config.security.resetPasswordTokenValidity.toHours)))
+          expires = Some(now.plusHours(Config.Security.resetPasswordTokenValidity.toHours)))
 
         for {
           _ <- db.insert(token)

@@ -20,7 +20,7 @@ trait DataLoader {
 }
 
 object DataLoader {
-  lazy val instanceFromConfig = Class.forName(Config.datainit.clazz).newInstance.asInstanceOf[DataLoader]
+  lazy val instanceFromConfig = Class.forName(Config.DataLoading.clazz).newInstance.asInstanceOf[DataLoader]
 }
 
 class DefaultDataLoader extends DataLoader {

@@ -30,7 +30,7 @@ trait H2SlickProfile extends SlickProfile {
 }
 
 trait SlickProfileFromConfig extends SlickProfile {
-  override val slickProfile = Config.database.slick.driver match {
+  override val slickProfile = Config.Database.Slick.driver match {
     case "org.postgresql.Driver" => PostgresProfile
     case "org.h2.Driver" => H2Profile
     case "slick.driver.MySQL" => MySQLProfile
