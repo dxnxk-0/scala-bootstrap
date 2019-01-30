@@ -4,6 +4,7 @@
 
     <jmxConfigurator/>
     <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
 
     <property name="pattern" value="[%date] [%thread] %-5level [%logger{5}] %replace(%msg){'[\r\n]', ''}%n"/>
 
