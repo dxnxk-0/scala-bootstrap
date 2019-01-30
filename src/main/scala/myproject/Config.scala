@@ -26,6 +26,9 @@ object Config {
   def dumpLog() = {
     DataLoading.dumpLog
     Database.dumpLog
+    Database.H2.dumpLog
+    Database.Flyway.dumpLog
+    Database.Slick.dumpLog
     Server.dumpLog
     Security.dumpLog
     Email.dumpLog
@@ -64,8 +67,6 @@ object Config {
       }
     }
 
-    H2.dumpLog
-
     object Flyway extends ConfigurationSection {
       private val flywayConfig = databaseConfig.getConfig("flyway")
 
@@ -77,8 +78,6 @@ object Config {
         logger.info(s"database > flyway > group > ${group.getOrElse("-")}")
       }
     }
-
-    Flyway.dumpLog
 
     object Slick extends ConfigurationSection {
       private val slickConfig = databaseConfig.getConfig("slick")
@@ -107,8 +106,6 @@ object Config {
         logger.info(s"slick > password > *****")
       }
     }
-
-    Slick.dumpLog
   }
 
   object Server extends ConfigurationSection {
