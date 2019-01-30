@@ -10,7 +10,7 @@ trait DatabaseSpec extends UnitSpec with BeforeAndAfter {
   implicit val db = currentDatabaseImpl
 
   before {
-    Config.dumpLog
+    Config.dumpLog()
     InitTestData.init
   }
 }

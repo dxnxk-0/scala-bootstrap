@@ -19,7 +19,7 @@ object WebServer extends App {
 
   private implicit val logger = Logger(LoggerFactory.getLogger("web-server"))
 
-  Config.dumpLog
+  Config.dumpLog()
 
   implicit val db = ApplicationDatabase.currentDatabaseImpl
 

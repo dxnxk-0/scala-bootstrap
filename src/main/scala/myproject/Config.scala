@@ -23,7 +23,7 @@ object Config {
       ConfigFactory.load()
   }
 
-  def dumpLog = {
+  def dumpLog() = {
     DataLoading.dumpLog
     Database.dumpLog
     Server.dumpLog
@@ -103,7 +103,7 @@ object Config {
         logger.info(s"slick > numThreads > $numThreads")
         logger.info(s"slick > registerMbeans > $registerMbeans")
         logger.info(s"slick > poolName > $poolName")
-        logger.info(s"slick > user > $user")
+        logger.info(s"slick > user > ${user.getOrElse("-")}")
         logger.info(s"slick > password > *****")
       }
     }
