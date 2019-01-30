@@ -12,7 +12,13 @@ trait ApplicationDatabase
     with UserDAO
     with TokenDAO
     with GroupDAO
-    with ChannelDAO { val dbType: DatabaseType }
+    with ChannelDAO {
+
+  val dbType: DatabaseType
+  val url: String
+  val user: Option[String]
+  val password: Option[String]
+}
 
 object ApplicationDatabase {
   val currentDatabaseImpl = Class.forName(Config.Database.implClassName).newInstance.asInstanceOf[ApplicationDatabase]
