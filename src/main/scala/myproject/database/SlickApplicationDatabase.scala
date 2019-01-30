@@ -3,13 +3,10 @@ package myproject.database
 import java.util.UUID
 
 import myproject.Config
-import myproject.common.Runtime.ec
-import myproject.common.{Done, UnexpectedErrorException}
+import myproject.common.UnexpectedErrorException
 import myproject.iam.dao.{SlickChannelDAO, SlickGroupDAO, SlickTokenDAO, SlickUserDAO}
 import org.flywaydb.core.Flyway
 import slick.jdbc.{H2Profile, JdbcProfile, MySQLProfile, PostgresProfile}
-
-import scala.concurrent.Future
 
 trait SlickApplicationDatabaseBase
   extends ApplicationDatabase
@@ -30,11 +27,9 @@ trait SlickApplicationDatabaseBase
   }
 
   val schema = channels.schema ++ groups.schema ++ users.schema ++ tokens.schema
-  def close = Future(db.close()).map(_ => Done)
-  def clean = Future(flyway.clean()).map(_ => Done)
-  def migrate = {
-    Future(flyway.migrate()).map(_ => Done)
-  }
+  def close() = db.close()
+  def clean() = flyway.clean()
+  def migrate() = flyway.migrate()
 }
 
 trait SlickProfile {

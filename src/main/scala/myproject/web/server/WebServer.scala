@@ -36,10 +36,10 @@ object WebServer extends App {
 
     if(Config.Database.H2.initAtStartup) {
       logger.info("cleaning database")
-      db.clean.futureValue
+      db.clean()
       logger.info("done cleaning database")
       logger.info("loading data into h2")
-      db.migrate.futureValue
+      db.migrate()
       DataLoader.instanceFromConfig.load.futureValue
       logger.info("done loading data")
     }
@@ -47,7 +47,7 @@ object WebServer extends App {
 
   if(Config.Server.migrateDbAtStartup) {
     logger.info("migrating database")
-    db.migrate.futureValue
+    db.migrate()
     logger.info("done migrating database")
   }
 

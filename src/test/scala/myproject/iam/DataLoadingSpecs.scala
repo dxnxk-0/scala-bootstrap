@@ -11,8 +11,8 @@ class DataLoadingSpecs extends UnitSpec {
   it should "load the demo data" in {
     val dl = new DefaultDataLoader
     val h2 = new SlickH2ApplicationDatabase
-    h2.migrate.futureValue shouldBe Done
+    h2.migrate()
     dl.load(h2).futureValue shouldBe Done
-    h2.close
+    h2.close()
   }
 }
