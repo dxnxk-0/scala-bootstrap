@@ -1,6 +1,5 @@
 package myproject.database
 
-import myproject.Config
 import myproject.database.DatabaseType.DatabaseType
 import myproject.iam.Channels.ChannelDAO
 import myproject.iam.Groups.GroupDAO
@@ -21,5 +20,5 @@ trait ApplicationDatabase
 }
 
 object ApplicationDatabase {
-  val currentDatabaseImpl = Class.forName(Config.Database.implClassName).newInstance.asInstanceOf[ApplicationDatabase]
+  val currentDatabaseImpl = new SlickApplicationDatabase
 }

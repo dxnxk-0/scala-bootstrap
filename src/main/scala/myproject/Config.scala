@@ -50,11 +50,8 @@ object Config {
 
   object Database extends ConfigurationSection {
     private val databaseConfig = config.getConfig("database")
-    val implClassName = databaseConfig.getString("class")
 
-    override def dumpLog(implicit logger: Logger) = {
-      logger.info(s"database > class > $implClassName")
-    }
+    override def dumpLog(implicit logger: Logger) = {}
 
     object H2 extends ConfigurationSection {
       private val h2Config = databaseConfig.getConfig("h2")
