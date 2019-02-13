@@ -135,8 +135,10 @@ object JsonRPCApiController extends Controller {
     case RPCCode.ObjectNotFound          => StatusCodes.NotFound
     case RPCCode.Locked                  => StatusCodes.Locked
     case RPCCode.PasswordPolicyViolation => StatusCodes.BadRequest
-    case RPCCode.ImportError             => StatusCodes.BadRequest
     case RPCCode.TooManyLoginAttempts    => StatusCodes.TooManyRequests
+    case RPCCode.LoginAlreadyExists      => StatusCodes.BadRequest
+    case RPCCode.EmailAlreadyExists      => StatusCodes.BadRequest
+    case RPCCode.ValidationError         => StatusCodes.BadRequest
   }
 
   private def throwableToRPCResponse(req: RPCRequest): PartialFunction[Throwable, RPCResponse] = {
@@ -169,8 +171,12 @@ object JsonRPCApiController extends Controller {
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.InvalidRequest.id, msg))
     case UniquenessCheckException(msg) =>
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.InvalidRequest.id, msg))
+    case EmailAlreadyExistsException(msg) =>
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.EmailAlreadyExists.id, msg))
+    case LoginAlreadyExistsException(msg) =>
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.LoginAlreadyExists.id, msg))
     case ValidationErrorException(msg, errors) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.InvalidRequest.id, msg + ": " + errors.map(_.toString).mkString(",")))
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.ValidationError.id, msg + ": " + errors.map(_.toString).mkString(",")))
     case e: Exception =>
       logger.error(s"Cannot map RPC response from an unknown type $e: " + e.getClass + ": " + e.getMessage)
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.ServerError.id, "An error as occurred"))

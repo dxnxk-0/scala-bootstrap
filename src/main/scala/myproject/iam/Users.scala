@@ -183,16 +183,16 @@ object Users {
   }
 
   object CRUD {
-    private def checkUniqueUserProperty(user: User, get: => Future[Option[User]], msg: String) = get map {
+    private def checkUniqueUserProperty(user: User, get: => Future[Option[User]], exception: CustomException) = get map {
       case None => user
       case Some(u) if u.id == user.id => user
-      case _ => throw UniquenessCheckException(msg)
+      case _ => throw exception
     }
     private def checkEmailOwnership(u: User)(implicit db: UserDAO) = {
-      checkUniqueUserProperty(u, db.getUserByEmail(u.email), s"email `${u.email}` does already exist")
+      checkUniqueUserProperty(u, db.getUserByEmail(u.email), EmailAlreadyExistsException(s"email `${u.email}` does already exist"))
     }
     private def checkLoginOwnership(u: User)(implicit db: UserDAO) = {
-      checkUniqueUserProperty(u, db.getUserByLoginName(u.login), s"login name `${u.login}` does already exist")
+      checkUniqueUserProperty(u, db.getUserByLoginName(u.login), LoginAlreadyExistsException(s"login name `${u.login}` does already exist"))
     }
     private def checkPlatformUserAuthz(u: User, authz: User => AuthorizationCheck) = {
       authz(u).toFuture.map(_ => u)

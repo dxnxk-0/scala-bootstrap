@@ -41,7 +41,9 @@ object JsonRPC {
     val ObjectNotFound          = Value(-32096, "object_not_found")
     val Locked                  = Value(-32095, "locked")
     val PasswordPolicyViolation = Value(-32094, "password_policy_violation")
-    val ImportError             = Value(-32093, "import_error")
-    val TooManyLoginAttempts    = Value(-32092, "too_many_login_attempts")
+    val TooManyLoginAttempts    = Value(-32093, "too_many_login_attempts")
+    val LoginAlreadyExists      = Value(-32092, "login does already exists")
+    val EmailAlreadyExists      = Value(-32091, "email does already exists")
+    val ValidationError         = Value(-32090, "validation error")
   }
 }

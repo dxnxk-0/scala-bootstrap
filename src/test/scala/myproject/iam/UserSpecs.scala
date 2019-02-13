@@ -88,6 +88,28 @@ class UserSpecs extends DatabaseSpec {
     loginPassword(platformUser.login, platformUser.password).futureValue._1.id shouldBe platformUser.id
   }
 
+  it should "not update the user with an already existing email" in {
+    val otherUser = IAMTestDataFactory.getGroupUser(group.id)
+    createUser(otherUser).futureValue
+    a[EmailAlreadyExistsException] shouldBe thrownBy(updateUser(groupUser.id, u => u.copy(email = otherUser.email)).futureValue)
+  }
+
+  it should "not update the user with an already existing login" in {
+    val otherUser = IAMTestDataFactory.getGroupUser(group.id)
+    createUser(otherUser).futureValue
+    a[LoginAlreadyExistsException] shouldBe thrownBy(updateUser(groupUser.id, u => u.copy(login = otherUser.login)).futureValue)
+  }
+
+  it should "not create a user with an already existing email" in {
+    val otherUser = IAMTestDataFactory.getGroupUser(group.id)
+    a[EmailAlreadyExistsException] shouldBe thrownBy(createUser(otherUser.copy(email = groupUser.email)).futureValue)
+  }
+
+  it should "not create a user with an already existing login" in {
+    val otherUser = IAMTestDataFactory.getGroupUser(group.id)
+    a[LoginAlreadyExistsException] shouldBe thrownBy(createUser(otherUser.copy(login = groupUser.login)).futureValue)
+  }
+
   it should "update the user" in {
     updateUser(groupUser.id, u => u.copy(login = "SMITH")).futureValue
     val updated = getUser(groupUser.id).futureValue

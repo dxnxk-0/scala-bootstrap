@@ -17,6 +17,8 @@ case class AuthenticationFailedException(msg: String) extends CustomException(ms
 case class TokenExpiredException(msg: String) extends CustomException(msg)
 case class IllegalOperationException(msg: String) extends CustomException(msg)
 case class UniquenessCheckException(msg: String) extends CustomException(msg)
+case class LoginAlreadyExistsException(msg: String) extends CustomException(msg)
+case class EmailAlreadyExistsException(msg: String) extends CustomException(msg)
 case class ValidationErrorException(msg: String, errors: List[ValidationError]) extends CustomException(msg) {
   override def toString = "ValidationErrorException, errors: " + errors.mkString("/")
 }
