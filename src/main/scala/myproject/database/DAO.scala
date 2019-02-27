@@ -3,11 +3,33 @@ package myproject.database
 import java.sql.{Date, Timestamp}
 import java.time.{LocalDate, LocalDateTime}
 
-import myproject.common.Geography
 import myproject.common.Geography.Country
+import myproject.common.Runtime.ec
+import myproject.common.{DatabaseErrorException, Done, Geography}
+import slick.dbio.DBIO
 import uk.gov.hmrc.emailaddress.EmailAddress
 
-trait SlickDAO { self: SlickProfile =>
+object DAO {
+  object DBIOImplicits {
+    implicit class DBIOUpdateExtensions(dbio: DBIO[Int]) {
+      def doneUpdated(expected: Int) = dbio map {
+        case 1 => Done
+        case n => throw DatabaseErrorException(s"an error occured: 1 deletion expected got $n")
+      }
+
+      def doneSingleUpdate = doneUpdated(1)
+    }
+
+    implicit class DBIOBatchUpdateExtensions(dbio: DBIO[Option[Int]]) {
+      def doneUpdated(expected: Int) = dbio.map {
+        case Some(e) if e == expected => Done
+        case n => throw DatabaseErrorException(s"an error occured: expected Some($expected) got $n")
+      }
+    }
+  }
+}
+
+trait DAO { self: SlickProfile =>
 
   import slickProfile.api._
 

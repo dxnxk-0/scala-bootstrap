@@ -93,7 +93,7 @@ class DefaultDataLoader extends DataLoader {
 
     implicit val authz = VoidIAMAccessChecker
 
-    val initFuture = for {
+    val action = for {
       _ <- db.insert(root)
       _ <- db.insert(channel)
       _ <- db.insert(channelAdmin)
@@ -103,6 +103,6 @@ class DefaultDataLoader extends DataLoader {
       _ <- db.insert(groupUser2)
     } yield Done
 
-    initFuture
+    db.run(action)
   }
 }

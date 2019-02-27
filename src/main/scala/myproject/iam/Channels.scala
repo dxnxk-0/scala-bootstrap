@@ -4,15 +4,15 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import myproject.common.Authorization.{AccessChecker, AuthorizationCheck}
-import myproject.common.FutureImplicits._
+import myproject.common.OptionImplicits._
 import myproject.common.Runtime.ec
-import myproject.common.Validation.Validator
+import myproject.common.Validation.{Validator, ValidatorResultExtensions}
 import myproject.common.{Done, TimeManagement}
+import myproject.database.{DatabaseInterface, SlickProfile}
 import myproject.iam.Groups.Group
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
-import scala.language.reflectiveCalls
-import scala.util.Try
 
 object Channels {
 
@@ -56,61 +56,83 @@ object Channels {
   }
 
   trait ChannelDAO {
-    def insert(channel: Channel): Future[Channel]
-    def getChannel(id: UUID): Future[Option[Channel]]
-    def getChannelF(id: UUID): Future[Channel]
-    def getAllChannels: Future[List[Channel]]
-    def update(channel: Channel): Future[Channel]
-    def getChannelGroups(channelId: UUID): Future[List[Group]]
-    def deleteChannel(id: UUID): Future[Done]
+    def insert(channel: Channel): DBIO[Done]
+    def getChannel(id: UUID): DBIO[Option[Channel]]
+    def getAllChannels: DBIO[Seq[Channel]]
+    def update(channel: Channel): DBIO[Done]
+    def getChannelGroups(channelId: UUID): DBIO[Seq[Group]]
+    def deleteChannel(id: UUID): DBIO[Done]
   }
 
   object CRUD {
 
-    def getAllChannels(implicit authz: ChannelAccessChecker, db: ChannelDAO) = authz.canListChannels.toFuture flatMap (_ => db.getAllChannels)
-
-    def createChannel(channel: Channel)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = {
-      for {
-        _         <- authz.canCreateChannel(channel).toFuture
-        validated <- ChannelValidator.validate(channel.copy(created = Some(TimeManagement.getCurrentDateTime))).toFuture
-        saved     <- db.insert(validated)
-      } yield saved
+    def getAllChannels(implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface): Future[Seq[Channel]] = {
+      db.run(authz.canListChannels ifGranted db.getAllChannels)
     }
 
-    def getChannel(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = for {
-      channel <- db.getChannelF(id)
-      _       <- authz.canReadChannel(channel).toFuture
-    } yield channel
+    def createChannel(channel: Channel)(implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface with SlickProfile): Future[Channel] = {
+      val action = {
+        authz.canCreateChannel(channel) ifGranted {
+          ChannelValidator.validate {
+            channel.copy(created = Some(TimeManagement.getCurrentDateTime))
+          } ifValid { v =>
+            db.insert(v) map (_ => v)
+          }
+        }
+      }
 
-    def updateChannel(id: UUID, upd: ChannelUpdate)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = {
+      db.run(action)
+    }
+
+    def getChannel(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface): Future[Channel] = {
+      val action = {
+        db.getChannel(id).map(_.getOrNotFound(id)) map { channel =>
+          authz.canReadChannel(channel) ifGranted channel
+        }
+      }
+
+      db.run(action)
+    }
+
+    def updateChannel(id: UUID, upd: ChannelUpdate)(implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface): Future[Channel] = {
       def filter(existing: Channel, candidate: Channel) =
         existing.copy(
           name = candidate.name,
           lastUpdate = Some(TimeManagement.getCurrentDateTime))
 
-      for {
-        existing  <- db.getChannelF(id)
-        _         <- authz.canUpdateChannel(existing).toFuture
-        updated   <- Try(upd(existing)).map(candidate => filter(existing, candidate)).toFuture
-        validated <- ChannelValidator.validate(updated).toFuture
-        saved     <- db.update(validated)
-      } yield saved
+      val action = {
+        db.getChannel(id).map(_.getOrNotFound(id)) flatMap { existing =>
+          ChannelValidator.validate(filter(existing, upd(existing))) ifValid { v =>
+            authz.canUpdateChannel(existing) ifGranted {
+              db.update(v).map(_ => v)
+            }
+          }
+        }
+      }
+
+      db.run(action)
     }
 
-    def deleteChannel(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = {
-      for {
-        channel <- db.getChannelF(id)
-        _       <- authz.canDeleteChannel(channel).toFuture
-        _       <- db.deleteChannel(id)
-      } yield Done
+    def deleteChannel(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface): Future[Done] = {
+      val action = {
+        db.getChannel(id).map(_.getOrNotFound(id)) flatMap { channel =>
+          authz.canDeleteChannel(channel) ifGranted {
+            db.deleteChannel(id)
+          }
+        }
+      }
+
+      db.run(action)
     }
 
-    def getChannelGroups(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO) = {
-      for {
-        channel <- db.getChannelF(id)
-        _       <- authz.canListChannelGroups(channel).toFuture
-        groups  <- db.getChannelGroups(id)
-      } yield groups
+    def getChannelGroups(id: UUID)(implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface): Future[Seq[Group]] = {
+      val action = {
+        db.getChannel(id).map(_.getOrNotFound(id)) flatMap { channel =>
+          authz.canListChannelGroups(channel).ifGranted(db.getChannelGroups(id))
+        }
+      }
+
+      db.run(action)
     }
   }
 }

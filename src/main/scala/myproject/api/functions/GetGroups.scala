@@ -4,11 +4,12 @@ import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Channels.{CRUD, ChannelAccessChecker, ChannelDAO}
+import myproject.database.ApplicationDatabase
+import myproject.iam.Channels.{CRUD, ChannelAccessChecker}
 import myproject.iam.Users
 import myproject.iam.Users.User
 
-class GetGroups(implicit authz: User => ChannelAccessChecker, db: ChannelDAO) extends ApiFunction{
+class GetGroups(implicit authz: User => ChannelAccessChecker, db: ApplicationDatabase) extends ApiFunction{
   override val name = "get_groups"
   override val doc = ApiSummaryDoc(
     description = "get all groups in a given channel (requires at least channel admin rights)",

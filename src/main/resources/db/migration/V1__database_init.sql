@@ -1,52 +1,52 @@
-create table "CHANNELS"
+create table "channels"
 (
-  "CHANNEL_ID"  UUID      NOT NULL PRIMARY KEY,
-  "NAME"        VARCHAR   NOT NULL,
-  "CREATED"     TIMESTAMP NOT NULL,
-  "LAST_UPDATE" TIMESTAMP
+  "channel_id"  uuid      not null primary key,
+  "name"        varchar   not null,
+  "created"     timestamp not null,
+  "last_update" timestamp
 );
-create table "GROUPS"
+create table "groups"
 (
-  "GROUP_ID"    UUID      NOT NULL PRIMARY KEY,
-  "NAME"        VARCHAR   NOT NULL,
-  "CHANNEL_ID"  UUID      NOT NULL,
-  "STATUS"      INTEGER   NOT NULL,
-  "CREATED"     TIMESTAMP NOT NULL,
-  "LAST_UPDATE" TIMESTAMP,
-  "PARENT_ID"   UUID
+  "group_id"    uuid      not null primary key,
+  "name"        varchar   not null,
+  "channel_id"  uuid      not null,
+  "status"      integer   not null,
+  "created"     timestamp not null,
+  "last_update" timestamp,
+  "parent_id"   uuid
 );
-create table "USERS"
+create table "users"
 (
-  "USER_ID"     UUID      NOT NULL PRIMARY KEY,
-  "LEVEL"       INTEGER   NOT NULL,
-  "LOGIN"       VARCHAR   NOT NULL UNIQUE,
-  "FIRST_NAME"  VARCHAR   NOT NULL,
-  "LAST_NAME"   VARCHAR   NOT NULL,
-  "EMAIL"       VARCHAR   NOT NULL UNIQUE,
-  "PASSWORD"    VARCHAR   NOT NULL,
-  "CHANNEL_ID"  UUID,
-  "GROUP_ID"    UUID,
-  "GROUP_ROLE"  INTEGER,
-  "STATUS"      INTEGER   NOT NULL,
-  "CREATED"     TIMESTAMP NOT NULL,
-  "LAST_UPDATE" TIMESTAMP
+  "user_id"     uuid      not null primary key,
+  "level"       integer   not null,
+  "login"       varchar   not null unique,
+  "first_name"  varchar   not null,
+  "last_name"   varchar   not null,
+  "email"       varchar   not null unique,
+  "password"    varchar   not null,
+  "channel_id"  uuid,
+  "group_id"    uuid,
+  "group_role"  integer,
+  "status"      integer   not null,
+  "created"     timestamp not null,
+  "last_update" timestamp
 );
-create index "IDX_USERS_EMAIL" on "USERS" ("EMAIL");
-create index "IDX_USERS_GROUP_ID" on "USERS" ("GROUP_ID");
-create index "IDX_USERS_LOGIN" on "USERS" ("LOGIN");
-create table "TOKENS"
+create index "idx_users_email" on "users" ("email");
+create index "idx_users_group_id" on "users" ("group_id");
+create index "idx_users_login" on "users" ("login");
+create table "tokens"
 (
-  "TOKEN_ID" UUID      NOT NULL PRIMARY KEY,
-  "USER_ID"  UUID      NOT NULL,
-  "ROLE"     INTEGER   NOT NULL,
-  "CREATED"  TIMESTAMP NOT NULL,
-  "EXPIRES"  TIMESTAMP
+  "token_id" uuid      not null primary key,
+  "user_id"  uuid      not null,
+  "role"     integer   not null,
+  "created"  timestamp not null,
+  "expires"  timestamp
 );
-alter table "GROUPS"
-  add constraint "GROUP_CHANNEL_FK" foreign key ("CHANNEL_ID") references "CHANNELS" ("CHANNEL_ID") on update RESTRICT on delete CASCADE;
-alter table "USERS"
-  add constraint "USER_CHANNEL_FK" foreign key ("CHANNEL_ID") references "CHANNELS" ("CHANNEL_ID") on update RESTRICT on delete CASCADE;
-alter table "USERS"
-  add constraint "USER_GROUP_FK" foreign key ("GROUP_ID") references "GROUPS" ("GROUP_ID") on update RESTRICT on delete CASCADE;
-alter table "TOKENS"
-  add constraint "USER_FK" foreign key ("USER_ID") references "USERS" ("USER_ID") on update RESTRICT on delete CASCADE;
+alter table "groups"
+  add constraint "group_channel_fk" foreign key ("channel_id") references "channels" ("channel_id") on update restrict on delete cascade;
+alter table "users"
+  add constraint "user_channel_fk" foreign key ("channel_id") references "channels" ("channel_id") on update restrict on delete cascade;
+alter table "users"
+  add constraint "user_group_fk" foreign key ("group_id") references "groups" ("group_id") on update restrict on delete cascade;
+alter table "tokens"
+  add constraint "user_fk" foreign key ("user_id") references "users" ("user_id") on update restrict on delete cascade;

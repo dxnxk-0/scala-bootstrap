@@ -11,7 +11,7 @@ import scala.concurrent.Future
 
 object ApiFunctionsRegistry {
 
-  implicit val db = ApplicationDatabase.currentDatabaseImpl
+  implicit val db = ApplicationDatabase.fromConfig
   implicit val accessChecker = (u: User) => new ApiAccessChecker(u)
   implicit val notifier = DefaultNotifier
 

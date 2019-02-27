@@ -3,9 +3,11 @@ package myproject.iam
 import java.time.LocalDateTime
 import java.util.UUID
 
-import myproject.common.FutureImplicits._
+import myproject.common.OptionImplicits._
 import myproject.common.Runtime.ec
 import myproject.common.{Done, TimeManagement, TokenExpiredException}
+import myproject.database.DatabaseInterface
+import slick.dbio.DBIO
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -29,15 +31,36 @@ object Tokens {
   }
 
   trait TokenDAO {
-    def getToken(id: UUID): Future[Option[Token]]
-    def getTokenF(id: UUID): Future[Token]
-    def insert(token: Token): Future[Token]
-    def deleteToken(id: UUID): Future[Done]
+    def getToken(id: UUID): DBIO[Option[Token]]
+    def insert(token: Token): DBIO[Done]
+    def deleteToken(id: UUID): DBIO[Done]
   }
 
   object CRUD {
-    def createToken(token: Token)(implicit db: TokenDAO) = db.insert(token.copy(created = Some(TimeManagement.getCurrentDateTime)))
-    def getToken(id: UUID)(implicit db: TokenDAO) = db.getTokenF(id) flatMap (validateToken(_).toFuture)
-    def deleteToken(id: UUID)(implicit db: TokenDAO) = db.deleteToken(id)
+    def createToken(token: Token)(implicit db: TokenDAO with DatabaseInterface): Future[Token] = {
+      val action = {
+        val initialized = token.copy(created = Some(TimeManagement.getCurrentDateTime))
+        db.insert(initialized).map(_ => initialized)
+      }
+
+      db.run(action)
+    }
+
+    def getToken(id: UUID)(implicit db: TokenDAO with DatabaseInterface): Future[Token] = {
+      val action = {
+        db.getToken(id).map(_.getOrNotFound(id)) map { token =>
+          validateToken(token) match {
+            case Success(t) => t
+            case Failure(e) => throw e
+          }
+        }
+      }
+
+      db.run(action)
+    }
+
+    def deleteToken(id: UUID)(implicit db: TokenDAO with DatabaseInterface): Future[Done] = {
+      db.run(db.deleteToken(id))
+    }
   }
 }

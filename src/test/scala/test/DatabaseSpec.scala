@@ -1,19 +1,27 @@
 package test
 
 import myproject.Config
-import myproject.database.ApplicationDatabase.currentDatabaseImpl
+import myproject.database.{ApplicationDatabase, DatabaseInterface}
 import org.scalatest.BeforeAndAfter
 
 trait DatabaseSpec extends UnitSpec with BeforeAndAfter {
 
-  implicit val db = currentDatabaseImpl
+  implicit val db = ApplicationDatabase.fromConfig
 
   before {
     Config.dumpLog()
-    InitTestData.init
+    InitTestData.initOnce(db)
   }
 }
 
 private object InitTestData {
-  lazy val init = currentDatabaseImpl.migrate()
+  var initialized = false
+  def initOnce(db: DatabaseInterface) = {
+    if(initialized)
+      Unit
+    else {
+      db.migrate()
+      initialized = true
+    }
+  }
 }

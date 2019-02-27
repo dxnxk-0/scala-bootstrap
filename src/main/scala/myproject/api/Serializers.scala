@@ -153,4 +153,8 @@ object Serializers {
   implicit val doneTypeSerializer = new Serializer[Done.type] {
     def serialize(done: Done.type) = Unit
   }
+
+  implicit val doneSerializer = new Serializer[Done] {
+    def serialize(done: Done) = Unit
+  }
 }

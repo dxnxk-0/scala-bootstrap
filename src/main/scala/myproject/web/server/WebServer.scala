@@ -21,7 +21,7 @@ object WebServer extends App {
 
   Config.dumpLog()
 
-  implicit val db = ApplicationDatabase.currentDatabaseImpl
+  implicit val db = ApplicationDatabase.fromConfig
 
   val iface = Config.Server.interface
   val port = Config.Server.port

@@ -4,12 +4,12 @@ import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Channels.ChannelDAO
+import myproject.database.ApplicationDatabase
 import myproject.iam.Groups._
 import myproject.iam.Users
 import myproject.iam.Users.User
 
-class UpdateGroup(implicit authz: User => GroupAccessChecker, db: GroupDAO with ChannelDAO) extends ApiFunction {
+class UpdateGroup(implicit authz: User => GroupAccessChecker, db: ApplicationDatabase) extends ApiFunction {
   override val name = "admin_group"
   override val doc = ApiSummaryDoc(
     description = "this function allows higher privileges operations to be performed on a group by a platform or a channel administrator",

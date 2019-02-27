@@ -8,6 +8,13 @@ object Validation {
   type ValidatorPartialResult = Either[ValidationError, Done]
   type ValidatorResult[A] = Either[ValidationErrorException, A]
 
+  implicit class ValidatorResultExtensions[A](v: ValidatorResult[A]) {
+    def ifValid[B](op: A => B): B = v match {
+      case Right(value) => op(value)
+      case Left(e) => throw e
+    }
+  }
+
   trait Validator[A] {
 
     private val alphaNumericSequence = (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')).toSet ++ Set('_', '-')

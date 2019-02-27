@@ -1,8 +1,7 @@
 package myproject
 
-import myproject.database.ApplicationDatabase
 import myproject.iam.{StructureSpecs, _}
-import org.scalatest.{BeforeAndAfter, Suites}
+import org.scalatest.Suites
 
 class TestSuite extends Suites(
   new ChannelSpecs,
@@ -12,7 +11,4 @@ class TestSuite extends Suites(
   new OrganizationSpecs,
   new AuthorizationSpecs,
   new StructureSpecs,
-  new DataLoadingSpecs) with BeforeAndAfter {
-
-  after(ApplicationDatabase.currentDatabaseImpl.close)
-}
+  new DataLoadingSpecs)

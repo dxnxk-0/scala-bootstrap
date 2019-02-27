@@ -4,11 +4,10 @@ import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Channels.ChannelDAO
-import myproject.iam.Groups.GroupDAO
-import myproject.iam.Users.{CRUD, User, UserAccessChecker, UserDAO}
+import myproject.database.ApplicationDatabase
+import myproject.iam.Users.{CRUD, User, UserAccessChecker}
 
-class GetUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) extends ApiFunction {
+class GetUser(implicit authz: User => UserAccessChecker, db: ApplicationDatabase) extends ApiFunction {
   override val name = "get_user"
   override val doc = ApiSummaryDoc(
     description = "get an existing user's data (requires to be the user himself or to have higher privileges",

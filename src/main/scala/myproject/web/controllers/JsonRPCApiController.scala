@@ -27,7 +27,7 @@ object JsonRPCApiController extends Controller {
   private implicit val rpcBatchSerializer = getJsonUnmarshaller[Seq[RPCRequest]]
   private implicit val uuidUnmarshaller = getUUIDFromStringUnmarshaller
 
-  private implicit val db = ApplicationDatabase.currentDatabaseImpl
+  private implicit val db = ApplicationDatabase.fromConfig
 
   implicit private val logger = Logger(LoggerFactory.getLogger("jsonrpc-api"))
 
@@ -154,6 +154,8 @@ object JsonRPCApiController extends Controller {
     case ObjectNotFoundException(msg) =>
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.ObjectNotFound.id, msg))
     case UnexpectedErrorException(msg) =>
+      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.InternalError.id, msg))
+    case DatabaseErrorException(msg) =>
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.InternalError.id, msg))
     case AuthenticationFailedException(msg) =>
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.NeedAuthentication.id, msg))

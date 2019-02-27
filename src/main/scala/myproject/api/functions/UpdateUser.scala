@@ -4,11 +4,10 @@ import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Channels.ChannelDAO
-import myproject.iam.Groups.GroupDAO
+import myproject.database.ApplicationDatabase
 import myproject.iam.Users._
 
-class UpdateUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO)  extends ApiFunction {
+class UpdateUser(implicit authz: User => UserAccessChecker, db: ApplicationDatabase)  extends ApiFunction {
   override val name = "update_user"
   override val doc = ApiSummaryDoc(
     description = "fully update or patch a user regardless of his type (depending on which fields are updated, different authorization rules may be used)",

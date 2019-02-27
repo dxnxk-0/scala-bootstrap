@@ -4,11 +4,12 @@ import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Channels.{CRUD, ChannelAccessChecker, ChannelDAO}
+import myproject.database.ApplicationDatabase
+import myproject.iam.Channels.{CRUD, ChannelAccessChecker}
 import myproject.iam.Users
 import myproject.iam.Users.User
 
-class UpdateChannel(implicit authz: User => ChannelAccessChecker, db: ChannelDAO) extends ApiFunction {
+class UpdateChannel(implicit authz: User => ChannelAccessChecker, db: ApplicationDatabase) extends ApiFunction {
   override val name = "update_channel"
   override val doc = ApiSummaryDoc(
     description = "fully update or patch an existing channel",

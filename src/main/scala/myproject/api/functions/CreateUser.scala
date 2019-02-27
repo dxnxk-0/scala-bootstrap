@@ -6,8 +6,7 @@ import myproject.api.Serializers._
 import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
-import myproject.iam.Channels.ChannelDAO
-import myproject.iam.Groups.GroupDAO
+import myproject.database.ApplicationDatabase
 import myproject.iam.Users._
 
 trait CreateUserParameters {
@@ -20,7 +19,7 @@ trait CreateUserParameters {
   )
 }
 
-class CreatePlatformUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) extends ApiFunction with CreateUserParameters {
+class CreatePlatformUser(implicit authz: User => UserAccessChecker, db: ApplicationDatabase) extends ApiFunction with CreateUserParameters {
   override val name = "create_platform_user"
   override val doc = ApiSummaryDoc(
     description = "create a new platform user (platform users are defined at the highest possible level which is the platform) - "
@@ -39,7 +38,7 @@ class CreatePlatformUser(implicit authz: User => UserAccessChecker, db: UserDAO 
   }
 }
 
-class CreateChannelUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) extends ApiFunction with CreateUserParameters {
+class CreateChannelUser(implicit authz: User => UserAccessChecker, db: ApplicationDatabase) extends ApiFunction with CreateUserParameters {
   override val name = "create_channel_user"
   override val doc = ApiSummaryDoc(
     description = "create a new channel user (channel users are users defined at the channel level (platform>channels>groups>users)) ; "
@@ -59,7 +58,7 @@ class CreateChannelUser(implicit authz: User => UserAccessChecker, db: UserDAO w
   }
 }
 
-class CreateGroupUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) extends ApiFunction with CreateUserParameters {
+class CreateGroupUser(implicit authz: User => UserAccessChecker, db: ApplicationDatabase) extends ApiFunction with CreateUserParameters {
   override val name = "create_group_user"
   override val doc = ApiSummaryDoc(
     description = "create a new group user (group users are users defined at the group level (platform>channels>groups>users)) ; "
@@ -79,7 +78,7 @@ class CreateGroupUser(implicit authz: User => UserAccessChecker, db: UserDAO wit
   }
 }
 
-class CreateSimpleUser(implicit authz: User => UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO) extends ApiFunction with CreateUserParameters {
+class CreateSimpleUser(implicit authz: User => UserAccessChecker, db: ApplicationDatabase) extends ApiFunction with CreateUserParameters {
   override val name = "create_simple_user"
   override val doc = ApiSummaryDoc(
     description = "create a new simple user (TBD)",

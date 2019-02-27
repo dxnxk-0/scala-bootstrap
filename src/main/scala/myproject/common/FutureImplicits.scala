@@ -12,6 +12,7 @@ object FutureImplicits {
 
   implicit class BlockingFuture[A](f: Future[A]) {
     def futureValue(implicit timeout: Duration = defaultTimeout): A = Await.result(f, timeout)
+    def toDone: Future[Done] = f map(_ => Done)
   }
 
   implicit class TryToFuture[A](monad: Try[A]) {
