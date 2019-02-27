@@ -25,6 +25,7 @@ trait ApplicationDatabase
   val url: String
   val user: Option[String]
   val password: Option[String]
+  val db: Database
 
   def run[R](a: DBIOAction[R, NoStream, Nothing]): Future[R] = db.run(a)
 
@@ -50,8 +51,7 @@ object ApplicationDatabase {
     override val url = Config.Database.Slick.url
     override val user = Config.Database.Slick.user
     override val password = Config.Database.Slick.password
-
-    val db = Database.forConfig(config = Config.config, path = "database.slick")
+    override val db = Database.forConfig(config = Config.config, path = "database.slick")
 
     override val dbType = slickProfile match {
       case PostgresProfile => DatabaseType.Postgresql
@@ -83,7 +83,7 @@ class H2ApplicationDatabase(dbName: Option[String] = None) extends H2SlickProfil
       maxConnections = maxConnections)
   }
 
-  lazy val db = Database.forURL(
+  override val db = Database.forURL(
     url = s"jdbc:h2:mem:$name;DB_CLOSE_DELAY=-1",
     driver="org.h2.Driver",
     executor = executor)

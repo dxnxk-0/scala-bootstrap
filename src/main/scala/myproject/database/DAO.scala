@@ -33,8 +33,6 @@ trait DAO { self: SlickProfile =>
 
   import slickProfile.api._
 
-  val db: Database
-
   implicit val localDateMapper = MappedColumnType.base[LocalDate, Date](
     l => Date.valueOf(l),
     d => d.toLocalDate)

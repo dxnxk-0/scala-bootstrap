@@ -3,8 +3,6 @@ package myproject.iam.dao
 import java.time.LocalDateTime
 import java.util.UUID
 
-import myproject.common.FutureImplicits._
-import myproject.common.ObjectNotFoundException
 import myproject.database.DAO.DBIOImplicits._
 import myproject.database.{DAO, SlickProfile}
 import myproject.iam.Tokens.TokenRole.TokenRole
@@ -31,7 +29,6 @@ trait DefaultTokenDAO extends TokenDAO with DAO { self: SlickProfile with Defaul
   protected lazy val tokens = TableQuery[TokensTable]
 
   def getToken(id: UUID) = tokens.filter(_.id===id).result.headOption
-  def getTokenF(id: UUID) = db.run(getToken(id)).getOrFail(ObjectNotFoundException(s"token with id $id was not found"))
   def insert(token: Token) = (tokens += token).doneSingleUpdate
   def deleteToken(id: UUID) = tokens.filter(_.id===id).delete.doneSingleUpdate
 }
