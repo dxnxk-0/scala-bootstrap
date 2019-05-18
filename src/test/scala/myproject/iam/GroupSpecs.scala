@@ -3,10 +3,10 @@ package myproject.iam
 import myproject.common.Done
 import myproject.common.FutureImplicits._
 import myproject.iam.Authorization.VoidIAMAccessChecker
-import myproject.iam.Channels.CRUD._
 import myproject.iam.Groups.CRUD._
+import myproject.iam.Groups.GroupUpdate
 import org.scalatest.DoNotDiscover
-import test.{DatabaseSpec, IAMTestDataFactory}
+import test.{DatabaseSpec, IAMHelpers, IAMTestDataFactory}
 
 @DoNotDiscover
 class GroupSpecs extends DatabaseSpec {
@@ -16,8 +16,8 @@ class GroupSpecs extends DatabaseSpec {
   implicit val authz = VoidIAMAccessChecker
   
   it should "create a group" in {
-    createChannel(channel).futureValue
-    createGroup(group).futureValue.name shouldBe group.name
+    IAMHelpers.createChannel(channel).futureValue
+    IAMHelpers.createGroup(group).futureValue.name shouldBe group.name
   }
 
   it should "get a group" in {
@@ -25,7 +25,7 @@ class GroupSpecs extends DatabaseSpec {
   }
 
   it should "update a group" in {
-    updateGroup(group.id, g => g.copy(name = "Death Star")).futureValue
+    updateGroup(group.id, GroupUpdate(name = Some("Death Star"))).futureValue
     val updated = getGroup(group.id).futureValue
     updated.name shouldBe "Death Star"
     updated.lastUpdate.isDefined shouldBe true

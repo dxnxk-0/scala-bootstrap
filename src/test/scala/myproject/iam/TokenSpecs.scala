@@ -5,8 +5,6 @@ import java.util.UUID
 import myproject.common.FutureImplicits._
 import myproject.common.{ObjectNotFoundException, TimeManagement, TokenExpiredException}
 import myproject.iam.Authorization.VoidIAMAccessChecker
-import myproject.iam.Channels.CRUD.createChannel
-import myproject.iam.Groups.CRUD.createGroup
 import myproject.iam.Tokens.CRUD._
 import myproject.iam.Tokens.{Token, TokenRole}
 import myproject.iam.Users.GroupRole
@@ -24,8 +22,8 @@ class TokenSpecs extends DatabaseSpec {
   implicit val authz = VoidIAMAccessChecker
   
   it should "create a token" in {
-    createChannel(channel)
-    createGroup(group)
+    IAMHelpers.createChannel(channel)
+    IAMHelpers.createGroup(group)
     IAMHelpers.createUser(user).futureValue
     createToken(expiredToken).futureValue.role shouldBe TokenRole.Authentication
     createToken(validToken).futureValue.role shouldBe TokenRole.Signup

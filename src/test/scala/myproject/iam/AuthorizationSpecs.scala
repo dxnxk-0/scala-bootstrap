@@ -3,7 +3,7 @@ package myproject.iam
 import myproject.common.AccessRefusedException
 import myproject.common.FutureImplicits._
 import myproject.iam.Authorization.DefaultIAMAccessChecker
-import myproject.iam.Groups.GroupStatus
+import myproject.iam.Groups.{GroupStatus, GroupUpdate}
 import myproject.iam.Users.{User, UserStatus, UserUpdate}
 import org.scalatest.DoNotDiscover
 import test.{DatabaseSpec, IAMHelpers, IAMTestDataFactory}
@@ -69,11 +69,11 @@ class AuthorizationSpecs extends DatabaseSpec {
   }
 
   it should "allow the right people to create/update the channels" in {
-    accessShouldBeRefused(Channels.CRUD.createChannel(channel1)(using(user1Channel1), db))
-    accessShouldBeRefused(Channels.CRUD.createChannel(channel1)(using(user1group1Channel1), db))
+    accessShouldBeRefused(IAMHelpers.createChannel(channel1)(using(user1Channel1), db))
+    accessShouldBeRefused(IAMHelpers.createChannel(channel1)(using(user1group1Channel1), db))
 
-    accessShouldBeGranted(Channels.CRUD.createChannel(channel1)(using(platformUser), db))
-    accessShouldBeGranted(Channels.CRUD.createChannel(channel2)(using(platformUser), db))
+    accessShouldBeGranted(IAMHelpers.createChannel(channel1)(using(platformUser), db))
+    accessShouldBeGranted(IAMHelpers.createChannel(channel2)(using(platformUser), db))
   }
 
   it should "allow the right people to create/update the channel users" in {
@@ -89,28 +89,23 @@ class AuthorizationSpecs extends DatabaseSpec {
   }
 
   it should "allow the right people to create/update the groups" in {
-    accessShouldBeRefused(Groups.CRUD.createGroup(group1Channel1)(using(user1Channel2), db))
-    accessShouldBeGranted(Groups.CRUD.createGroup(group1Channel1)(using(user1Channel1), db))
-    accessShouldBeGranted(Groups.CRUD.createGroup(group2Channel1)(using(platformUser), db))
+    accessShouldBeRefused(IAMHelpers.createGroup(group1Channel1)(using(user1Channel2), db))
+    accessShouldBeGranted(IAMHelpers.createGroup(group1Channel1)(using(user1Channel1), db))
+    accessShouldBeGranted(IAMHelpers.createGroup(group2Channel1)(using(platformUser), db))
 
-    accessShouldBeRefused(Groups.CRUD.createGroup(group1Channel2)(using(user1Channel1), db))
-    accessShouldBeGranted(Groups.CRUD.createGroup(group1Channel2)(using(user1Channel2), db))
-    accessShouldBeGranted(Groups.CRUD.createGroup(group2Channel2)(using(platformUser), db))
+    accessShouldBeRefused(IAMHelpers.createGroup(group1Channel2)(using(user1Channel1), db))
+    accessShouldBeGranted(IAMHelpers.createGroup(group1Channel2)(using(user1Channel2), db))
+    accessShouldBeGranted(IAMHelpers.createGroup(group2Channel2)(using(platformUser), db))
 
-    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, g => g)(using(adminGroup1Channel2), db))
-    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, g => g)(using(adminGroup2Channel2), db))
-    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, g => g)(using(platformUser), db))
-    accessShouldBeGranted(Groups.CRUD.updateGroup(group1Channel2.id, g => g)(using(user1Channel2), db))
+    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate())(using(adminGroup1Channel2), db))
+    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate())(using(adminGroup2Channel2), db))
+    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate())(using(platformUser), db))
+    accessShouldBeGranted(Groups.CRUD.updateGroup(group1Channel2.id, GroupUpdate())(using(user1Channel2), db))
 
-    accessShouldBeRefused(Groups.CRUD.updateGroup(group2Channel2.id, g => g.copy(status = GroupStatus.Inactive))(using(adminGroup1Channel2), db))
-    accessShouldBeRefused(Groups.CRUD.updateGroup(group2Channel2.id, g => g.copy(status = GroupStatus.Inactive))(using(adminGroup2Channel2), db))
-    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, g => g.copy(status = GroupStatus.Inactive))(using(user1Channel2), db))
-    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, g => g.copy(status = GroupStatus.Inactive))(using(platformUser), db))
-
-    accessShouldBeRefused(Groups.CRUD.updateGroup(group2Channel2.id, g => g.copy(parentId = None))(using(adminGroup1Channel2), db))
-    accessShouldBeRefused(Groups.CRUD.updateGroup(group2Channel2.id, g => g.copy(parentId = None))(using(adminGroup2Channel2), db))
-    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, g => g.copy(parentId = None))(using(user1Channel2), db))
-    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, g => g.copy(parentId = Some(group1Channel2.id)))(using(platformUser), db))
+    accessShouldBeRefused(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate(status = Some(GroupStatus.Inactive)))(using(adminGroup1Channel2), db))
+    accessShouldBeRefused(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate(status = Some(GroupStatus.Inactive)))(using(adminGroup2Channel2), db))
+    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate(status = Some(GroupStatus.Inactive)))(using(user1Channel2), db))
+    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate(status = Some(GroupStatus.Inactive)))(using(platformUser), db))
   }
 
   it should "allow the right people to create/update the group users" in {

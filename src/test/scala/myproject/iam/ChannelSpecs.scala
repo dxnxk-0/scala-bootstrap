@@ -4,7 +4,7 @@ import myproject.common.Done
 import myproject.common.FutureImplicits._
 import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.CRUD._
-import myproject.iam.Groups.CRUD._
+import myproject.iam.Channels.ChannelUpdate
 import org.scalatest.DoNotDiscover
 import test.{DatabaseSpec, IAMHelpers, IAMTestDataFactory}
 
@@ -17,8 +17,8 @@ class ChannelSpecs extends DatabaseSpec {
   implicit val authz = VoidIAMAccessChecker
 
   it should "create a channel" in {
-    createChannel(channel).futureValue.name shouldBe channel.name
-    createGroup(group).futureValue
+    IAMHelpers.createChannel(channel).futureValue.name shouldBe channel.name
+    IAMHelpers.createGroup(group).futureValue
     IAMHelpers.createUser(user).futureValue
   }
 
@@ -27,7 +27,7 @@ class ChannelSpecs extends DatabaseSpec {
   }
 
   it should "update a channel" in {
-    updateChannel(channel.id, c => c.copy(name = "SPECS")).futureValue
+    updateChannel(channel.id, ChannelUpdate(name = Some("SPECS"))).futureValue
     val updated = getChannel(channel.id).futureValue
     updated.name shouldBe "SPECS"
     updated.lastUpdate.isDefined shouldBe true

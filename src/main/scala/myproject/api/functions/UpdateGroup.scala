@@ -24,10 +24,7 @@ class UpdateGroup(implicit authz: User => GroupAccessChecker, db: ApplicationDat
     implicit val checker = authz(user)
 
     checkParamAndProcess(groupId, name, parentId, status) {
-      CRUD.updateGroup(groupId.get, g => g.copy(
-        parentId = parentId.get.getOrElse(g.parentId),
-        name = name.get.getOrElse(g.name),
-        status = status.get.getOrElse(g.status))) map (_.serialize)
+      CRUD.updateGroup(groupId.get, GroupUpdate(name = name.get, status = status.get)) map (_.serialize)
     }
   }
 }

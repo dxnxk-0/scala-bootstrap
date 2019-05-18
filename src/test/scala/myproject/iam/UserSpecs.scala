@@ -4,9 +4,8 @@ import myproject.common.FutureImplicits._
 import myproject.common._
 import myproject.common.security.JWT
 import myproject.iam.Authorization.VoidIAMAccessChecker
-import myproject.iam.Channels.CRUD._
-import myproject.iam.Groups.CRUD.{createGroup, _}
-import myproject.iam.Groups.GroupStatus
+import myproject.iam.Groups.CRUD._
+import myproject.iam.Groups.{GroupStatus, GroupUpdate}
 import myproject.iam.Users.CRUD._
 import myproject.iam.Users.{GroupRole, UserStatus, UserUpdate}
 import org.scalatest.DoNotDiscover
@@ -26,8 +25,8 @@ class UserSpecs extends DatabaseSpec {
   implicit val authz = VoidIAMAccessChecker
 
   it should "create the organization" in {
-    createChannel(channel).futureValue
-    createGroup(group).futureValue
+    IAMHelpers.createChannel(channel).futureValue
+    IAMHelpers.createGroup(group).futureValue
   }
 
   it should "not create a user with an invalid login" in {
@@ -71,11 +70,11 @@ class UserSpecs extends DatabaseSpec {
   }
 
   it should "should not log in the user if its group is locked or inactive" in {
-    updateGroup(group.id, g => g.copy(status = GroupStatus.Inactive)).futureValue
+    updateGroup(group.id, GroupUpdate(status = Some(GroupStatus.Inactive))).futureValue
     an[AccessRefusedException] shouldBe thrownBy(loginPassword(groupUser.login,groupUser.password).futureValue)
-    updateGroup(group.id, g => g.copy(status = GroupStatus.Locked)).futureValue
+    updateGroup(group.id, GroupUpdate(status = Some(GroupStatus.Locked))).futureValue
     an[AccessRefusedException] shouldBe thrownBy(loginPassword(groupUser.login,groupUser.password).futureValue)
-    updateGroup(group.id, g => g.copy(status = GroupStatus.Active)).futureValue
+    updateGroup(group.id, GroupUpdate(status = Some(GroupStatus.Active))).futureValue
   }
 
   it should "log in the user" in {

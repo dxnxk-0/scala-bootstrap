@@ -6,8 +6,7 @@ import java.util.UUID
 import myproject.common.Authorization.{AccessChecker, AuthorizationCheck}
 import myproject.common.OptionImplicits._
 import myproject.common.Runtime.ec
-import myproject.common.Validation.{Validator, ValidatorResultExtensions}
-import myproject.common.{Done, TimeManagement}
+import myproject.common.{Done, InvalidParametersException, TimeManagement}
 import myproject.database.{DatabaseInterface, SlickProfile}
 import myproject.iam.Groups.Group
 import slick.dbio.DBIO
@@ -16,13 +15,9 @@ import scala.concurrent.Future
 
 object Channels {
 
+  case class ChannelUpdate(name: Option[String] = None)
+
   case class Channel(id: UUID, name: String, created: Option[LocalDateTime] = None, lastUpdate: Option[LocalDateTime] = None)
-
-  private object ChannelValidator extends Validator[Channel] {
-    override val validators = Nil
-  }
-
-  type ChannelUpdate = Channel => Channel
 
   trait ChannelAccessChecker extends AccessChecker {
     def canCreateChannel(implicit target: Channel): AuthorizationCheck
@@ -64,20 +59,38 @@ object Channels {
     def deleteChannel(id: UUID): DBIO[Done]
   }
 
+  object Pure {
+
+    def createChannel(channelId: UUID, update: ChannelUpdate) = {
+      def missingParam(p: String) = throw InvalidParametersException(s"$p is missing", Nil)
+      Channel(
+        id = channelId,
+        name = update.name.getOrElse(missingParam("channel name")),
+        created = Some(TimeManagement.getCurrentDateTime), None)
+    }
+
+    def updateChannel(channel: Channel, update: ChannelUpdate) = {
+      channel.copy(
+        name = update.name.getOrElse(channel.name),
+        lastUpdate = Some(TimeManagement.getCurrentDateTime))
+    }
+
+    def toChannelUpdate(channel: Channel) = ChannelUpdate(name = Some(channel.name))
+  }
+
   object CRUD {
 
     def getAllChannels(implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface): Future[Seq[Channel]] = {
       db.run(authz.canListChannels ifGranted db.getAllChannels)
     }
 
-    def createChannel(channel: Channel)(implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface with SlickProfile): Future[Channel] = {
+    def createChannel(channelId: UUID, update: ChannelUpdate)
+      (implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface with SlickProfile): Future[Channel] = {
+
       val action = {
+        val channel = Pure.createChannel(channelId, update)
         authz.canCreateChannel(channel) ifGranted {
-          ChannelValidator.validate {
-            channel.copy(created = Some(TimeManagement.getCurrentDateTime))
-          } ifValid { v =>
-            db.insert(v) map (_ => v)
-          }
+          db.insert(channel) map (_ => channel)
         }
       }
 
@@ -94,19 +107,13 @@ object Channels {
       db.run(action)
     }
 
-    def updateChannel(id: UUID, upd: ChannelUpdate)(implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface): Future[Channel] = {
-      def filter(existing: Channel, candidate: Channel) =
-        existing.copy(
-          name = candidate.name,
-          lastUpdate = Some(TimeManagement.getCurrentDateTime))
-
+    def updateChannel(id: UUID, update: ChannelUpdate)(implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface): Future[Channel] = {
       val action = {
         db.getChannel(id).map(_.getOrNotFound(id)) flatMap { existing =>
-          ChannelValidator.validate(filter(existing, upd(existing))) ifValid { v =>
+            val updated = Pure.updateChannel(existing, update)
             authz.canUpdateChannel(existing) ifGranted {
-              db.update(v).map(_ => v)
+              db.update(updated).map(_ => updated)
             }
-          }
         }
       }
 

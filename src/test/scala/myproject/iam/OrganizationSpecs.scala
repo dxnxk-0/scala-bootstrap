@@ -3,14 +3,13 @@ package myproject.iam
 import java.util.UUID
 
 import myproject.common.FutureImplicits._
-import myproject.common.{IllegalOperationException, ValidationErrorException}
+import myproject.common.{IllegalOperationException, InvalidParametersException}
 import myproject.iam.Authorization.VoidIAMAccessChecker
-import myproject.iam.Channels.CRUD._
 import myproject.iam.Channels.Channel
 import myproject.iam.Groups.CRUD._
 import myproject.iam.Groups.Group
 import org.scalatest.DoNotDiscover
-import test.DatabaseSpec
+import test.{DatabaseSpec, IAMHelpers}
 
 @DoNotDiscover
 class OrganizationSpecs extends DatabaseSpec {
@@ -29,16 +28,16 @@ class OrganizationSpecs extends DatabaseSpec {
   val g9 = Group(UUID.randomUUID, "group 9", channel.id, parentId = Some(g3.id))
 
   it should "create all groups" in {
-    createChannel(channel).futureValue
-    createGroup(g1).futureValue
-    createGroup(g2).futureValue
-    createGroup(g3).futureValue
-    createGroup(g4).futureValue
-    createGroup(g5).futureValue
-    createGroup(g6).futureValue
-    createGroup(g7).futureValue
-    createGroup(g8).futureValue
-    createGroup(g9).futureValue
+    IAMHelpers.createChannel(channel).futureValue
+    IAMHelpers.createGroup(g1).futureValue
+    IAMHelpers.createGroup(g2).futureValue
+    IAMHelpers.createGroup(g3).futureValue
+    IAMHelpers.createGroup(g4).futureValue
+    IAMHelpers.createGroup(g5).futureValue
+    IAMHelpers.createGroup(g6).futureValue
+    IAMHelpers.createGroup(g7).futureValue
+    IAMHelpers.createGroup(g8).futureValue
+    IAMHelpers.createGroup(g9).futureValue
   }
 
   it should "return the correct children for 1" in {
@@ -167,14 +166,16 @@ class OrganizationSpecs extends DatabaseSpec {
     val g10 = Group(UUID.randomUUID, "group 10", channel.id)
     val otherChannel = Channel(UUID.randomUUID, "another organization channel")
     val g11 = Group(UUID.randomUUID, "group 11", otherChannel.id, parentId = Some(g10.id))
-    createChannel(otherChannel).futureValue
-    createGroup(g10).futureValue
-    an[ IllegalOperationException] shouldBe thrownBy(createGroup(g11).futureValue)
+    IAMHelpers.createChannel(otherChannel).futureValue
+    IAMHelpers.createGroup(g10).futureValue
+    an[ IllegalOperationException] shouldBe thrownBy(IAMHelpers.createGroup(g11).futureValue)
   }
 
   it should "not attach a group to itself" in {
     val id = UUID.randomUUID
-    val g12 = Group(id, "group 12", channel.id, parentId = Some(id))
-    a[ValidationErrorException] shouldBe thrownBy(createGroup(g12).futureValue)
+    a[InvalidParametersException] shouldBe thrownBy {
+      val g12 = Group(id, "group 12", channel.id, parentId = Some(id))
+      IAMHelpers.createGroup(g12).futureValue
+    }
   }
 }

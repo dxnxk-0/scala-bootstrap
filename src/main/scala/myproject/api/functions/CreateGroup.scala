@@ -7,7 +7,7 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.database.ApplicationDatabase
-import myproject.iam.Groups.{CRUD, Group, GroupAccessChecker}
+import myproject.iam.Groups.{CRUD, GroupAccessChecker, GroupStatus, GroupUpdate}
 import myproject.iam.Users
 import myproject.iam.Users.User
 
@@ -25,8 +25,7 @@ class CreateGroup(implicit authz: User => GroupAccessChecker, db: ApplicationDat
     implicit val checker = authz(user)
 
     checkParamAndProcess(groupName, channelId, parentId) {
-      val group = Group(UUID.randomUUID, groupName.get, channelId.get, parentId = parentId.get)
-      CRUD.createGroup(group) map (_.serialize)
+      CRUD.createGroup(UUID.randomUUID, channelId.get, parentId = parentId.get, GroupUpdate(Some(groupName.get), Some(GroupStatus.Active))) map (_.serialize)
     }
   }
 }

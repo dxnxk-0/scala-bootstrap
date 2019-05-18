@@ -7,7 +7,7 @@ import myproject.api.{ApiFunction, ApiSummaryDoc}
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper
 import myproject.common.serialization.OpaqueData.ReifiedDataWrapper._
 import myproject.database.ApplicationDatabase
-import myproject.iam.Channels.{CRUD, Channel, ChannelAccessChecker}
+import myproject.iam.Channels.{CRUD, ChannelAccessChecker, ChannelUpdate}
 import myproject.iam.Users
 import myproject.iam.Users.User
 
@@ -23,8 +23,7 @@ class CreateChannel(implicit authz: User => ChannelAccessChecker, db: Applicatio
     implicit val checker = authz(user)
 
     checkParamAndProcess(channelName) {
-      val channel = Channel(UUID.randomUUID, channelName.get)
-      CRUD.createChannel(channel) map (_.serialize)
+      CRUD.createChannel(UUID.randomUUID, ChannelUpdate(Some(channelName.get))) map (_.serialize)
     }
   }
 }

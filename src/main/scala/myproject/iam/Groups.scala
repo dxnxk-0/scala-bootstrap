@@ -6,9 +6,7 @@ import java.util.UUID
 import myproject.common.Authorization._
 import myproject.common.OptionImplicits._
 import myproject.common.Runtime.ec
-import myproject.common.TimeManagement.getCurrentDateTime
-import myproject.common.Validation.{ValidationError, Validator, _}
-import myproject.common.{Done, IllegalOperationException, TimeManagement}
+import myproject.common.{Done, IllegalOperationException, InvalidParametersException, TimeManagement}
 import myproject.database.DatabaseInterface
 import myproject.iam.Channels.{Channel, ChannelDAO}
 import myproject.iam.Groups.GroupStatus.GroupStatus
@@ -26,6 +24,10 @@ object Groups {
     val Inactive = Value("inactive")
   }
 
+  case class GroupUpdate(
+    name: Option[String] = None,
+    status: Option[GroupStatus] = None)
+
   case class Group(
       id: UUID,
       name: String,
@@ -33,17 +35,7 @@ object Groups {
       status: GroupStatus = GroupStatus.Active,
       created: Option[LocalDateTime] = None,
       lastUpdate: Option[LocalDateTime] = None,
-      parentId: Option[UUID] = None)
-
-  case object InvalidParentId extends ValidationError
-
-  private object GroupValidator extends Validator[Group] {
-    override val validators = List(
-      (g: Group) => if(g.parentId.contains(g.id)) NOK(InvalidParentId) else OK
-    )
-  }
-
-  type GroupUpdate = Group => Group
+      parentId: Option[UUID] = None) { if(parentId.contains(id)) throw InvalidParametersException(s"parent group cannot be the group itself", Nil) }
 
   trait GroupAccessChecker extends AccessChecker {
     def canCreateGroup(implicit channel: Channel, target: Group): AuthorizationCheck
@@ -99,7 +91,32 @@ object Groups {
     def getGroupChildren(groupId: UUID): DBIO[Seq[Group]]
     def getGroupParents(groupId: UUID): DBIO[Seq[Group]]
   }
-  
+
+  object Pure {
+
+    def createGroup(groupId: UUID, channelId: UUID, parentId: Option[UUID], update: GroupUpdate) = {
+      def missingParam(p: String) = throw InvalidParametersException(s"$p is mandatory", Nil)
+
+      Group(
+        id = groupId,
+        name = update.name.getOrElse(missingParam("group name")),
+        channelId = channelId,
+        status = update.status.getOrElse(missingParam("group status")),
+        created = Some(TimeManagement.getCurrentDateTime),
+        parentId = parentId)
+    }
+
+    def updateGroup(group: Group, update: GroupUpdate) = {
+      group.copy(
+        name = update.name.getOrElse(group.name),
+        status = update.status.getOrElse(group.status),
+        lastUpdate = Some(TimeManagement.getCurrentDateTime)
+      )
+    }
+
+    def toGroupUpdate(group: Group) = GroupUpdate(name = Some(group.name), status = Some(group.status))
+  }
+
   object CRUD {
 
     private def checkParentGroup(group: Group)(implicit db: GroupDAO with DatabaseInterface) = {
@@ -112,16 +129,19 @@ object Groups {
       }
     }
 
-    def createGroup(group: Group)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO with DatabaseInterface): Future[Group] = {
+    def createGroup(id: UUID, channelId: UUID, parentId: Option[UUID], update: GroupUpdate)
+      (implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO with DatabaseInterface): Future[Group] = {
+
       val action = {
-        db.getChannel(group.channelId).map(_.getOrNotFound(group.channelId)) flatMap { channel =>
+        db.getChannel(channelId).map(_.getOrNotFound(channelId)) flatMap { channel =>
+
+          val group = Pure.createGroup(id, channelId, parentId, update)
+
           authz.canCreateGroup(channel, group) ifGranted {
-            GroupValidator.validate(group.copy(created = Some(getCurrentDateTime))) ifValid { g =>
-              for {
-                _ <- checkParentGroup(g)
-                _ <- db.insert(g)
-              } yield g
-            }
+            for {
+              _ <- checkParentGroup(group)
+              _ <- db.insert(group)
+            } yield group
           }
         }
       }
@@ -143,22 +163,12 @@ object Groups {
       db.run(action)
     }
 
-    def updateGroup(id: UUID, upd: GroupUpdate)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO with DatabaseInterface): Future[Group] = {
-      def filter(existing: Group, candidate: Group) = {
-        if(existing.channelId!=candidate.channelId)
-          throw IllegalOperationException(s"attempt to move user: operation is not supported")
+    def updateGroup(id: UUID, update: GroupUpdate)(implicit authz: GroupAccessChecker, db: GroupDAO with ChannelDAO with DatabaseInterface): Future[Group] = {
 
-        existing.copy(
-          name = candidate.name,
-          parentId = candidate.parentId,
-          status = candidate.status,
-          lastUpdate = Some(TimeManagement.getCurrentDateTime))
-      }
-
-      def processAuthz(existing: Group, target: Group, channel: Channel, parents: List[Group]) =
-        if(existing.status != target.status || existing.parentId != target.parentId) authz.canAdminGroup(channel, target)
+      def processAuthz(existing: Group, target: Group, channel: Channel, parents: List[Group]) ={
+        if(update.status.exists(s => s!=existing.status)) authz.canAdminGroup(channel, target)
         else authz.canUpdateGroup(channel, existing, parents)
-
+      }
 
       val action = {
         val dependencies = for {
@@ -168,15 +178,13 @@ object Groups {
         } yield (existing, channel, parents)
 
         dependencies flatMap { case (existing, channel, parents) =>
-          val updated = filter(existing, upd(existing))
+          val updated = Pure.updateGroup(existing, update)
 
           processAuthz(existing, updated, channel, parents.toList) ifGranted {
-            GroupValidator.validate(updated) ifValid { g =>
-              for {
-                _ <- checkParentGroup(g)
-                _ <- db.update(g)
-              } yield g
-            }
+            for {
+              _ <- checkParentGroup(updated)
+              _ <- db.update(updated)
+            } yield updated
           }
         }
       }
