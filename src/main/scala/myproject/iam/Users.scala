@@ -329,13 +329,15 @@ object Users {
     def updateUser(id: UUID, update: UserUpdate)
                   (implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO with DatabaseInterface): Future[User] = {
 
-      def requireAdminPrivileges = if(update.status.isDefined || update.groupRole.isDefined) true else false
+      def requireAdminPrivileges(existing: User) = {
+        if(update.status.exists(s => s!=existing.status) || update.groupRole.exists(r => r != existing.groupRole)) true else false
+      }
 
-      def checkAuthzAction(target: User) = target.level match {
-        case UserLevel.Platform => checkPlatformUserAuthz(target, authz.canOperatePlatformUser(_))
-        case UserLevel.Channel => checkChannelUserAuthz(target, authz.canOperateChannelUser(_, _))
-        case UserLevel.Group if requireAdminPrivileges => checkGroupUserAuthz3(target, authz.canAdminGroupUser(_, _, _, _))
-        case UserLevel.Group => checkGroupUserAuthz3(target, authz.canUpdateGroupUser(_, _, _, _))
+      def checkAuthzAction(existing: User) = existing.level match {
+        case UserLevel.Platform => checkPlatformUserAuthz(existing, authz.canOperatePlatformUser(_))
+        case UserLevel.Channel => checkChannelUserAuthz(existing, authz.canOperateChannelUser(_, _))
+        case UserLevel.Group if requireAdminPrivileges(existing) => checkGroupUserAuthz3(existing, authz.canAdminGroupUser(_, _, _, _))
+        case UserLevel.Group => checkGroupUserAuthz3(existing, authz.canUpdateGroupUser(_, _, _, _))
         case _ => ???
       }
 
