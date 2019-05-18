@@ -75,7 +75,6 @@ object ApiFunctionsRegistry {
   register(new CreatePlatformUser)
   register(new CreateChannelUser)
   register(new CreateGroupUser)
-  register(new CreateSimpleUser)
   register(new UpdateUser)
   register(new DeleteUser)
   register(new LoginPassword)

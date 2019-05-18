@@ -5,9 +5,8 @@ import myproject.common.FutureImplicits._
 import myproject.iam.Authorization.VoidIAMAccessChecker
 import myproject.iam.Channels.CRUD._
 import myproject.iam.Groups.CRUD._
-import myproject.iam.Users.CRUD._
 import org.scalatest.DoNotDiscover
-import test.{DatabaseSpec, IAMTestDataFactory}
+import test.{DatabaseSpec, IAMHelpers, IAMTestDataFactory}
 
 @DoNotDiscover
 class ChannelSpecs extends DatabaseSpec {
@@ -20,7 +19,7 @@ class ChannelSpecs extends DatabaseSpec {
   it should "create a channel" in {
     createChannel(channel).futureValue.name shouldBe channel.name
     createGroup(group).futureValue
-    createUser(user).futureValue
+    IAMHelpers.createUser(user).futureValue
   }
 
   it should "get a channel" in {

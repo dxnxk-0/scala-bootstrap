@@ -10,13 +10,15 @@ import myproject.database.ApplicationDatabase
 import myproject.iam.Users._
 
 trait CreateUserParameters {
-  def getCommonParameters(implicit p: ReifiedDataWrapper) = (
-    required(p.nonEmptyString("login")),
-    required(p.nonEmptyString("password")),
-    required(p.email("email")),
-    required(p.email("first_name")),
-    required(p.email("last_name"))
-  )
+  def getCommonParameters(implicit p: ReifiedDataWrapper) = {
+    val login = required(p.nonEmptyString("login"))
+    val password = required(p.nonEmptyString("password"))
+    val email = required(p.email("email"))
+    val fn = required(p.email("first_name"))
+    val ln = required(p.email("last_name"))
+
+    UserUpdate(Some(login.get), Some(email.get), Some(fn.get), Some(ln.get), Some(password.get), Some(UserStatus.Active))
+  }
 }
 
 class CreatePlatformUser(implicit authz: User => UserAccessChecker, db: ApplicationDatabase) extends ApiFunction with CreateUserParameters {
@@ -27,14 +29,10 @@ class CreatePlatformUser(implicit authz: User => UserAccessChecker, db: Applicat
     `return` = "an object containing the newly created user's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User) = {
-    val (login, password, email, fn, ln) = getCommonParameters
 
     implicit val checker = authz(user)
-
-    checkParamAndProcess(login, password, email, fn, ln) {
-      val user = User(UUID.randomUUID, UserLevel.Platform, login.get, fn.get, ln.get, email.get, password.get)
-      CRUD.createUser(user) map (_.serialize)
-    }
+    val update = getCommonParameters
+    CRUD.createPlatformUser(UUID.randomUUID, update) map (_.serialize)
   }
 }
 
@@ -46,14 +44,13 @@ class CreateChannelUser(implicit authz: User => UserAccessChecker, db: Applicati
     `return` = "an object containing the newly created user's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User) = {
-    val (login, password, email, fn, ln) = getCommonParameters
     val channelId = required(p.uuid("channel_id"))
 
     implicit val checker = authz(user)
 
-    checkParamAndProcess(login, password, email, channelId, fn, ln) {
-      val user = User(UUID.randomUUID, UserLevel.Channel, login.get, fn.get, ln.get, email.get, password.get, Some(channelId.get))
-      CRUD.createUser(user) map (_.serialize)
+    checkParamAndProcess(channelId) {
+      val update = getCommonParameters
+      CRUD.createChannelUser(UUID.randomUUID, channelId.get, update) map (_.serialize)
     }
   }
 }
@@ -66,32 +63,14 @@ class CreateGroupUser(implicit authz: User => UserAccessChecker, db: Application
     `return` = "an object containing the newly created user's data")
 
   override def process(implicit p: ReifiedDataWrapper, user: User) = {
-    val (login, password, email, fn, ln) = getCommonParameters
+
     val (groupId, groupRole) = (required(p.uuid("group_id")), nullable(p.enumString("group_role", GroupRole)))
 
     implicit val checker = authz(user)
 
-    checkParamAndProcess(login, email, password, groupId, groupRole, fn, ln) {
-      val user = User(UUID.randomUUID, UserLevel.Group, login.get, fn.get, ln.get, email.get, password.get, None, Some(groupId.get), groupRole.get)
-      CRUD.createUser(user) map (_.serialize)
-    }
-  }
-}
-
-class CreateSimpleUser(implicit authz: User => UserAccessChecker, db: ApplicationDatabase) extends ApiFunction with CreateUserParameters {
-  override val name = "create_simple_user"
-  override val doc = ApiSummaryDoc(
-    description = "create a new simple user (TBD)",
-    `return` = "an object containing the newly created user's data")
-
-  override def process(implicit p: ReifiedDataWrapper, user: User) = {
-    val (login, password, email, fn, ln) = getCommonParameters
-
-    implicit val checker = authz(user)
-
-    checkParamAndProcess(login, password, email, fn, ln) {
-      val user = User(UUID.randomUUID, UserLevel.NoLevel, login.get, fn.get, ln.get, email.get, password.get)
-      CRUD.createUser(user) map (_.serialize)
+    checkParamAndProcess(groupId, groupRole) {
+      val update = getCommonParameters
+      CRUD.createGroupUser(UUID.randomUUID, groupId.get, update) map (_.serialize)
     }
   }
 }

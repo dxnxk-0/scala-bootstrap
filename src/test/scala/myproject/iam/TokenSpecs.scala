@@ -9,10 +9,9 @@ import myproject.iam.Channels.CRUD.createChannel
 import myproject.iam.Groups.CRUD.createGroup
 import myproject.iam.Tokens.CRUD._
 import myproject.iam.Tokens.{Token, TokenRole}
-import myproject.iam.Users.CRUD._
 import myproject.iam.Users.GroupRole
 import org.scalatest.DoNotDiscover
-import test.{DatabaseSpec, IAMTestDataFactory}
+import test.{DatabaseSpec, IAMHelpers, IAMTestDataFactory}
 
 @DoNotDiscover
 class TokenSpecs extends DatabaseSpec {
@@ -27,7 +26,7 @@ class TokenSpecs extends DatabaseSpec {
   it should "create a token" in {
     createChannel(channel)
     createGroup(group)
-    createUser(user).futureValue
+    IAMHelpers.createUser(user).futureValue
     createToken(expiredToken).futureValue.role shouldBe TokenRole.Authentication
     createToken(validToken).futureValue.role shouldBe TokenRole.Signup
   }

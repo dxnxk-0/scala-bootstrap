@@ -24,13 +24,13 @@ class UpdateUser(implicit authz: User => UserAccessChecker, db: ApplicationDatab
     implicit val checker = authz(user)
 
     checkParamAndProcess(userId, email, password, login, groupRole, status) {
-      CRUD.updateUser(userId.get, u =>
-        u.copy(
-          login = login.get.getOrElse(u.login),
-          email = email.get.getOrElse(u.email),
-          password = password.get.getOrElse(u.password),
-          status = status.get.getOrElse(u.status),
-          groupRole = groupRole.get.getOrElse(u.groupRole))) map (_.serialize)
+      CRUD.updateUser(userId.get,
+        UserUpdate(
+          login = login.get,
+          email = email.get,
+          password = password.get,
+          status = status.get,
+          groupRole = groupRole.get)) map (_.serialize)
     }
   }
 }

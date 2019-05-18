@@ -8,9 +8,9 @@ import myproject.iam.Channels.CRUD._
 import myproject.iam.Groups.CRUD.{createGroup, _}
 import myproject.iam.Groups.GroupStatus
 import myproject.iam.Users.CRUD._
-import myproject.iam.Users.{GroupRole, UserStatus}
+import myproject.iam.Users.{GroupRole, UserStatus, UserUpdate}
 import org.scalatest.DoNotDiscover
-import test.{DatabaseSpec, IAMTestDataFactory}
+import test.{DatabaseSpec, IAMHelpers, IAMTestDataFactory}
 import uk.gov.hmrc.emailaddress.EmailAddress
 
 import scala.concurrent.Future
@@ -31,19 +31,19 @@ class UserSpecs extends DatabaseSpec {
   }
 
   it should "not create a user with an invalid login" in {
-    a [ValidationErrorException] shouldBe thrownBy(createUser(channelUser.copy(login = "")).futureValue)
-    a [ValidationErrorException] shouldBe thrownBy(createUser(channelUser.copy(login = "foo bar")).futureValue)
-    a [ValidationErrorException] shouldBe thrownBy(createUser(channelUser.copy(login = "foo\tbar")).futureValue)
-    a [ValidationErrorException] shouldBe thrownBy(createUser(channelUser.copy(login = "foo\rbar")).futureValue)
-    a [ValidationErrorException] shouldBe thrownBy(createUser(channelUser.copy(login = "foo\nbar")).futureValue)
+    a [ValidationErrorException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "")).futureValue)
+    a [ValidationErrorException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo bar")).futureValue)
+    a [ValidationErrorException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo\tbar")).futureValue)
+    a [ValidationErrorException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo\rbar")).futureValue)
+    a [ValidationErrorException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo\nbar")).futureValue)
   }
 
   it should "create a user and silently put the email and login in lower case" in {
-    createUser(
+    IAMHelpers.createUser(
       groupUser.copy(email = EmailAddress(groupUser.email.value.toUpperCase), login = groupUser.login.toUpperCase)
     ).futureValue.login shouldBe groupUser.login
-    createUser(channelUser).futureValue.id shouldBe channelUser.id
-    createUser(platformUser).futureValue.id shouldBe platformUser.id
+    IAMHelpers.createUser(channelUser).futureValue.id shouldBe channelUser.id
+    IAMHelpers.createUser(platformUser).futureValue.id shouldBe platformUser.id
   }
 
   it should "get the created user by id" in {
@@ -61,13 +61,13 @@ class UserSpecs extends DatabaseSpec {
   }
 
   it should "should not log in the user if he is not active" in {
-    updateUser(groupUser.id, u => u.copy(status = UserStatus.Locked)).futureValue
+    updateUser(groupUser.id, UserUpdate(status = Some(UserStatus.Locked))).futureValue
     an[AccessRefusedException] shouldBe thrownBy(loginPassword(groupUser.login,groupUser.password).futureValue)
-    updateUser(groupUser.id, u => u.copy(status = UserStatus.Inactive)).futureValue
+    updateUser(groupUser.id, UserUpdate(status = Some(UserStatus.Inactive))).futureValue
     an[AccessRefusedException] shouldBe thrownBy(loginPassword(groupUser.login,groupUser.password).futureValue)
-    updateUser(groupUser.id, u => u.copy(status = UserStatus.PendingActivation)).futureValue
+    updateUser(groupUser.id, UserUpdate(status = Some(UserStatus.PendingActivation))).futureValue
     an[AccessRefusedException] shouldBe thrownBy(loginPassword(groupUser.login,groupUser.password).futureValue)
-    updateUser(groupUser.id, u => u.copy(status = UserStatus.Active)).futureValue
+    updateUser(groupUser.id, UserUpdate(status = Some(UserStatus.Active))).futureValue
   }
 
   it should "should not log in the user if its group is locked or inactive" in {
@@ -90,35 +90,35 @@ class UserSpecs extends DatabaseSpec {
 
   it should "not update the user with an already existing email" in {
     val otherUser = IAMTestDataFactory.getGroupUser(group.id)
-    createUser(otherUser).futureValue
-    a[EmailAlreadyExistsException] shouldBe thrownBy(updateUser(groupUser.id, u => u.copy(email = otherUser.email)).futureValue)
+    IAMHelpers.createUser(otherUser).futureValue
+    a[EmailAlreadyExistsException] shouldBe thrownBy(updateUser(groupUser.id, UserUpdate(email = Some(otherUser.email))).futureValue)
   }
 
   it should "not update the user with an already existing login" in {
     val otherUser = IAMTestDataFactory.getGroupUser(group.id)
-    createUser(otherUser).futureValue
-    a[LoginAlreadyExistsException] shouldBe thrownBy(updateUser(groupUser.id, u => u.copy(login = otherUser.login)).futureValue)
+    IAMHelpers.createUser(otherUser).futureValue
+    a[LoginAlreadyExistsException] shouldBe thrownBy(updateUser(groupUser.id, UserUpdate(login = Some(otherUser.login))).futureValue)
   }
 
   it should "not create a user with an already existing email" in {
     val otherUser = IAMTestDataFactory.getGroupUser(group.id)
-    a[EmailAlreadyExistsException] shouldBe thrownBy(createUser(otherUser.copy(email = groupUser.email)).futureValue)
+    a[EmailAlreadyExistsException] shouldBe thrownBy(IAMHelpers.createUser(otherUser.copy(email = groupUser.email)).futureValue)
   }
 
   it should "not create a user with an already existing login" in {
     val otherUser = IAMTestDataFactory.getGroupUser(group.id)
-    a[LoginAlreadyExistsException] shouldBe thrownBy(createUser(otherUser.copy(login = groupUser.login)).futureValue)
+    a[LoginAlreadyExistsException] shouldBe thrownBy(IAMHelpers.createUser(otherUser.copy(login = groupUser.login)).futureValue)
   }
 
   it should "update the user" in {
-    updateUser(groupUser.id, u => u.copy(login = "SMITH")).futureValue
+    updateUser(groupUser.id, UserUpdate(login = Some("SMITH"))).futureValue
     val updated = getUser(groupUser.id).futureValue
     updated.login shouldBe "smith"
     updated.lastUpdate.isDefined shouldBe true
   }
 
   it should "update the password" in {
-    updateUser(groupUser.id, u => u.copy(password = "new password"))
+    updateUser(groupUser.id, UserUpdate(password = Some("new password")))
     loginPassword(groupUser.login, "new password")
   }
 

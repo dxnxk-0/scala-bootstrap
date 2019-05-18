@@ -4,9 +4,9 @@ import myproject.common.AccessRefusedException
 import myproject.common.FutureImplicits._
 import myproject.iam.Authorization.DefaultIAMAccessChecker
 import myproject.iam.Groups.GroupStatus
-import myproject.iam.Users.{User, UserStatus}
+import myproject.iam.Users.{User, UserStatus, UserUpdate}
 import org.scalatest.DoNotDiscover
-import test.{DatabaseSpec, IAMTestDataFactory}
+import test.{DatabaseSpec, IAMHelpers, IAMTestDataFactory}
 
 import scala.concurrent.Future
 
@@ -63,9 +63,9 @@ class AuthorizationSpecs extends DatabaseSpec {
   }
 
   it should "allow the right people to create/update platform users" in {
-    accessShouldBeRefused(Users.CRUD.createUser(platformUser)(using(user1Channel1), db))
-    accessShouldBeRefused(Users.CRUD.createUser(platformUser)(using(user1group1Channel1), db))
-    accessShouldBeGranted(Users.CRUD.createUser(platformUser)(using(platformUser), db))
+    accessShouldBeRefused(IAMHelpers.createUser(platformUser)(using(user1Channel1), db))
+    accessShouldBeRefused(IAMHelpers.createUser(platformUser)(using(user1group1Channel1), db))
+    accessShouldBeGranted(IAMHelpers.createUser(platformUser)(using(platformUser), db))
   }
 
   it should "allow the right people to create/update the channels" in {
@@ -77,15 +77,15 @@ class AuthorizationSpecs extends DatabaseSpec {
   }
 
   it should "allow the right people to create/update the channel users" in {
-    accessShouldBeRefused(Users.CRUD.createUser(user1Channel1)(using(user1Channel2), db))
+    accessShouldBeRefused(IAMHelpers.createUser(user1Channel1)(using(user1Channel2), db))
 
-    accessShouldBeGranted(Users.CRUD.createUser(user1Channel1)(using(user2Channel1), db))
-    accessShouldBeGranted(Users.CRUD.createUser(user2Channel1)(using(platformUser), db))
-    accessShouldBeGranted(Users.CRUD.createUser(user1Channel2)(using(platformUser), db))
-    accessShouldBeGranted(Users.CRUD.createUser(user2Channel2)(using(platformUser), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user1Channel1)(using(user2Channel1), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user2Channel1)(using(platformUser), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user1Channel2)(using(platformUser), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user2Channel2)(using(platformUser), db))
 
-    accessShouldBeRefused(Users.CRUD.updateUser(user1Channel1.id, u => u)(using(user1Channel2), db))
-    accessShouldBeGranted(Users.CRUD.updateUser(user1Channel1.id, u => u)(using(user2Channel1), db))
+    accessShouldBeRefused(Users.CRUD.updateUser(user1Channel1.id, UserUpdate())(using(user1Channel2), db))
+    accessShouldBeGranted(Users.CRUD.updateUser(user1Channel1.id, UserUpdate())(using(user2Channel1), db))
   }
 
   it should "allow the right people to create/update the groups" in {
@@ -114,34 +114,34 @@ class AuthorizationSpecs extends DatabaseSpec {
   }
 
   it should "allow the right people to create/update the group users" in {
-    accessShouldBeRefused(Users.CRUD.createUser(adminGroup1Channel1)(using(user1Channel2), db))
-    accessShouldBeGranted(Users.CRUD.createUser(adminGroup1Channel1)(using(platformUser), db))
-    accessShouldBeGranted(Users.CRUD.createUser(user1group1Channel1)(using(user1Channel1), db))
-    accessShouldBeGranted(Users.CRUD.createUser(user2group1Channel1)(using(adminGroup1Channel1), db))
+    accessShouldBeRefused(IAMHelpers.createUser(adminGroup1Channel1)(using(user1Channel2), db))
+    accessShouldBeGranted(IAMHelpers.createUser(adminGroup1Channel1)(using(platformUser), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user1group1Channel1)(using(user1Channel1), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user2group1Channel1)(using(adminGroup1Channel1), db))
 
-    accessShouldBeRefused(Users.CRUD.createUser(adminGroup2Channel1)(using(adminGroup1Channel1), db))
-    accessShouldBeGranted(Users.CRUD.createUser(adminGroup2Channel1)(using(platformUser), db))
-    accessShouldBeGranted(Users.CRUD.createUser(user1group2Channel1)(using(user1Channel1), db))
-    accessShouldBeGranted(Users.CRUD.createUser(user2group2Channel1)(using(adminGroup2Channel1), db))
+    accessShouldBeRefused(IAMHelpers.createUser(adminGroup2Channel1)(using(adminGroup1Channel1), db))
+    accessShouldBeGranted(IAMHelpers.createUser(adminGroup2Channel1)(using(platformUser), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user1group2Channel1)(using(user1Channel1), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user2group2Channel1)(using(adminGroup2Channel1), db))
 
-    accessShouldBeRefused(Users.CRUD.createUser(adminGroup2Channel2)(using(adminGroup1Channel1), db))
-    accessShouldBeRefused(Users.CRUD.createUser(user1group1Channel2)(using(user2Channel1), db))
-    accessShouldBeGranted(Users.CRUD.createUser(adminGroup1Channel2)(using(user1Channel2), db))
-    accessShouldBeGranted(Users.CRUD.createUser(user1group1Channel2)(using(platformUser), db))
-    accessShouldBeGranted(Users.CRUD.createUser(user2group1Channel2)(using(user1Channel2), db))
+    accessShouldBeRefused(IAMHelpers.createUser(adminGroup2Channel2)(using(adminGroup1Channel1), db))
+    accessShouldBeRefused(IAMHelpers.createUser(user1group1Channel2)(using(user2Channel1), db))
+    accessShouldBeGranted(IAMHelpers.createUser(adminGroup1Channel2)(using(user1Channel2), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user1group1Channel2)(using(platformUser), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user2group1Channel2)(using(user1Channel2), db))
 
-    accessShouldBeGranted(Users.CRUD.createUser(adminGroup2Channel2)(using(adminGroup1Channel2), db))
-    accessShouldBeGranted(Users.CRUD.createUser(user1group2Channel2)(using(platformUser), db))
-    accessShouldBeGranted(Users.CRUD.createUser(user2group2Channel2)(using(adminGroup2Channel2), db))
+    accessShouldBeGranted(IAMHelpers.createUser(adminGroup2Channel2)(using(adminGroup1Channel2), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user1group2Channel2)(using(platformUser), db))
+    accessShouldBeGranted(IAMHelpers.createUser(user2group2Channel2)(using(adminGroup2Channel2), db))
 
-    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, u => u)(using(user1group2Channel2), db))
-    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, u => u)(using(adminGroup1Channel2), db))
-    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, u => u)(using(adminGroup2Channel2), db))
-    accessShouldBeRefused(Users.CRUD.updateUser(user1group2Channel2.id, u => u.copy(status = UserStatus.Locked))(using(user1group2Channel1), db))
-    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, u => u.copy(status = UserStatus.Locked))(using(adminGroup1Channel2), db))
-    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, u => u.copy(status = UserStatus.Inactive))(using(adminGroup2Channel2), db))
-    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, u => u.copy(status = UserStatus.PendingActivation))(using(user1Channel2), db))
-    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, u => u.copy(status = UserStatus.Active))(using(platformUser), db))
+    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate())(using(user1group2Channel2), db))
+    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate())(using(adminGroup1Channel2), db))
+    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate())(using(adminGroup2Channel2), db))
+    accessShouldBeRefused(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(status = Some(UserStatus.Locked)))(using(user1group2Channel1), db))
+    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(status = Some(UserStatus.Locked)))(using(adminGroup1Channel2), db))
+    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(status = Some(UserStatus.Inactive)))(using(adminGroup2Channel2), db))
+    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(status = Some(UserStatus.PendingActivation)))(using(user1Channel2), db))
+    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(status = Some(UserStatus.Active)))(using(platformUser), db))
   }
 
   it should "allow the right people to read objects" in {

@@ -51,6 +51,15 @@ object Users {
     val PendingActivation = Value("pending_activation")
   }
 
+  case class UserUpdate(
+    login: Option[String] = None,
+    email: Option[EmailAddress] = None,
+    firstName: Option[String] = None,
+    lastName: Option[String] = None,
+    password: Option[String] = None,
+    status: Option[UserStatus] = None,
+    groupRole: Option[Option[GroupRole]] = None)
+
   case class User(
       id: UUID,
       level: UserLevel,
@@ -95,8 +104,6 @@ object Users {
         if(u.email.value.toLowerCase!=u.email.value) NOK(InvalidEmail) else OK
     )
   }
-
-  type UserUpdate = User => User
 
   trait UserAccessChecker extends AccessChecker {
     def canReadGroupUser(implicit channel: Channel, group: Group, parents: List[Group], children: List[Group], target: User): AuthorizationCheck
@@ -181,7 +188,47 @@ object Users {
     def getGroupUsers(groupId: UUID): DBIO[Seq[User]]
   }
 
+  object Pure {
+
+    def updateUser(user: User, update: UserUpdate) = {
+      val updated = user.copy(
+        login = update.login.map(_.toLowerCase).getOrElse(user.login),
+        firstName = update.firstName.getOrElse(user.firstName),
+        lastName = update.lastName.getOrElse(user.lastName),
+        email = update.email.map(em => EmailAddress(em.value.toLowerCase)).getOrElse(user.email),
+        password = update.password.map(BCrypt.hashPassword).getOrElse(user.password),
+        status = update.status.getOrElse(user.status),
+        lastUpdate = Some(getCurrentDateTime))
+
+      if(user.level==UserLevel.Group) updated.copy(groupRole = update.groupRole.getOrElse(user.groupRole)) else updated
+    }
+
+    def createPlatformUser(userId: UUID, update: UserUpdate) = createUser(userId, UserLevel.Platform, update)
+    def createChannelUser(userId: UUID, channelId: UUID, update: UserUpdate) = createUser(userId, UserLevel.Channel, update).copy(channelId = Some(channelId))
+    def createGroupUser(userId: UUID, groupId: UUID, update: UserUpdate) = createUser(userId, UserLevel.Group, update).copy(groupId = Some(groupId))
+
+    private def createUser(userId: UUID, userLevel: UserLevel, update: UserUpdate) = {
+      def missingParam(p: String) = throw InvalidParametersException(s"$p is mandatory", Nil)
+
+      User(
+        id = userId,
+        level = userLevel,
+        login = update.login.map(_.toLowerCase).getOrElse(missingParam("password")),
+        firstName = update.firstName.getOrElse(missingParam("first name")),
+        lastName = update.lastName.getOrElse(missingParam("last name")),
+        email = update.email.map(em => EmailAddress(em.value.toLowerCase)).getOrElse(missingParam("email")),
+        password = update.password.map(BCrypt.hashPassword).getOrElse(missingParam("password")),
+        created = Some(getCurrentDateTime),
+        groupRole = if(userLevel==UserLevel.Group) update.groupRole.getOrElse(missingParam("group role")) else None)
+    }
+
+    def toUserUpdate(user: User) = {
+      UserUpdate(Some(user.login), Some(user.email), Some(user.firstName), Some(user.firstName), Some(user.password), Some(user.status), Some(user.groupRole))
+    }
+  }
+
   object CRUD {
+
     private def checkUniqueUserProperty(user: User, get: => DBIO[Option[User]], exception: CustomException)(implicit db: UserDAO with DatabaseInterface) = {
       get map {
         case None => user
@@ -240,69 +287,64 @@ object Users {
       _ <- checkLoginOwnership(user)
     } yield Done
 
-    def createUser(user: User)(implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO with DatabaseInterface): Future[User] = {
-      def initUser = user.copy(
-        password = BCrypt.hashPassword(user.password),
-        created = Some(getCurrentDateTime),
-        login = user.login.toLowerCase,
-        email = EmailAddress(user.email.value.toLowerCase))
+    private def createUserActionWithValidation(user: User)(implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO with DatabaseInterface) = {
+      UserValidator.validate(user) ifValid { validated =>
 
-      val checkAuthzAction = user.level match {
-        case UserLevel.Platform => checkPlatformUserAuthz(_: User, authz.canOperatePlatformUser(_))
-        case UserLevel.Channel => checkChannelUserAuthz(_: User, authz.canOperateChannelUser(_, _))
-        case UserLevel.Group => checkGroupUserAuthz3(_: User, authz.canCreateGroupUser(_, _, _, _))
-        case _ => ???
-      }
-
-      val action = {
-        UserValidator.validate(initUser) ifValid { validated =>
-          for {
-            _ <- checkEmailAndLogin(validated)
-            _ <- checkAuthzAction(validated)
-            _ <- db.insert(validated)
-          } yield validated
+        val authorizationCheck = user.level match {
+          case UserLevel.Platform => checkPlatformUserAuthz(user, authz.canOperatePlatformUser(_))
+          case UserLevel.Channel => checkChannelUserAuthz(user, authz.canOperateChannelUser(_, _))
+          case UserLevel.Group => checkGroupUserAuthz3(user, authz.canCreateGroupUser(_, _, _, _))
+          case _ => ???
         }
-      }
 
-      db.run(action)
+        for {
+          _ <- checkEmailAndLogin(validated)
+          _ <- authorizationCheck
+          _ <- db.insert(validated)
+        } yield validated
+      }
     }
 
-    def updateUser(id: UUID, upd: UserUpdate)
+    def createPlatformUser(userId: UUID, update: UserUpdate)
+      (implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO with DatabaseInterface): Future[User] = {
+
+      val user = Pure.createPlatformUser(userId, update)
+      db.run(createUserActionWithValidation(user))
+    }
+
+    def createChannelUser(userId: UUID, channelId: UUID, update: UserUpdate)
+      (implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO with DatabaseInterface): Future[User] = {
+
+      val user = Pure.createChannelUser(userId, channelId, update)
+      db.run(createUserActionWithValidation(user))
+    }
+
+    def createGroupUser(userId: UUID, groupId: UUID, update: UserUpdate)
+      (implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO with DatabaseInterface): Future[User] = {
+
+      val user = Pure.createGroupUser(userId, groupId, update)
+      db.run(createUserActionWithValidation(user))
+    }
+
+    def updateUser(id: UUID, update: UserUpdate)
                   (implicit authz: UserAccessChecker, db: UserDAO with GroupDAO with ChannelDAO with DatabaseInterface): Future[User] = {
 
-      def filter(existing: User, candidate: User) = {
-        if(existing.groupId!=candidate.groupId || existing.channelId!=candidate.channelId)
-          throw IllegalOperationException(s"attempt to move user: operation is not supported")
+      def requireAdminPrivileges = if(update.status.isDefined || update.groupRole.isDefined) true else false
 
-        if(existing.level!=candidate.level)
-          throw IllegalOperationException(s"attempt to change the user level: operation is not supported")
-
-        existing.copy(
-          login = candidate.login.toLowerCase,
-          password = if(existing.password!=candidate.password) BCrypt.hashPassword(candidate.password) else existing.password,
-          email = EmailAddress(candidate.email.value.toLowerCase),
-          groupRole = candidate.groupRole,
-          status = candidate.status,
-          lastUpdate = Some(TimeManagement.getCurrentDateTime))
-      }
-
-      def requireAdminPrivileges(existing: User, target: User) =
-        if(existing.status!=target.status || existing.groupRole!=target.groupRole) true else false
-
-      def checkAuthzAction(existing: User, updated: User) = updated.level match {
-        case UserLevel.Platform => checkPlatformUserAuthz(updated, authz.canOperatePlatformUser(_))
-        case UserLevel.Channel => checkChannelUserAuthz(updated, authz.canOperateChannelUser(_, _))
-        case UserLevel.Group if requireAdminPrivileges(existing, updated) => checkGroupUserAuthz3(updated, authz.canAdminGroupUser(_, _, _, _))
-        case UserLevel.Group => checkGroupUserAuthz3(updated, authz.canUpdateGroupUser(_, _, _, _))
+      def checkAuthzAction(target: User) = target.level match {
+        case UserLevel.Platform => checkPlatformUserAuthz(target, authz.canOperatePlatformUser(_))
+        case UserLevel.Channel => checkChannelUserAuthz(target, authz.canOperateChannelUser(_, _))
+        case UserLevel.Group if requireAdminPrivileges => checkGroupUserAuthz3(target, authz.canAdminGroupUser(_, _, _, _))
+        case UserLevel.Group => checkGroupUserAuthz3(target, authz.canUpdateGroupUser(_, _, _, _))
         case _ => ???
       }
 
       val action = {
         db.getUserById(id).map(_.getOrNotFound(id)) flatMap { existing =>
-          UserValidator.validate(filter(existing, upd(existing))).ifValid { validated =>
+          UserValidator.validate(Pure.updateUser(existing, update)) ifValid { validated =>
             for {
               _  <- checkEmailAndLogin(validated)
-              _  <- checkAuthzAction(existing, validated)
+              _  <- checkAuthzAction(existing)
               _  <- db.update(validated)
             } yield validated
           }

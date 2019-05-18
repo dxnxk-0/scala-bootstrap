@@ -4,9 +4,8 @@ import myproject.common.FutureImplicits._
 import myproject.common.Runtime.ec
 import myproject.common._
 import myproject.iam.Authorization.{DefaultIAMAccessChecker, VoidIAMAccessChecker}
-import myproject.iam.Users.{UserLevel, UserUpdate}
 import org.scalatest.DoNotDiscover
-import test.{DatabaseSpec, IAMTestDataFactory}
+import test.{DatabaseSpec, IAMHelpers, IAMTestDataFactory}
 
 @DoNotDiscover
 class StructureSpecs extends DatabaseSpec {
@@ -25,15 +24,15 @@ class StructureSpecs extends DatabaseSpec {
 
   it should "create the multi-tenant database" in {
     val createFuture = for {
-      _ <- Users.CRUD.createUser(platformUser)
+      _ <- IAMHelpers.createUser(platformUser)
       _ <- Channels.CRUD.createChannel(channel1)
       _ <- Channels.CRUD.createChannel(channel2)
-      _ <- Users.CRUD.createUser(channelUserInChannel1)
-      _ <- Users.CRUD.createUser(channelUserInChannel2)
+      _ <- IAMHelpers.createUser(channelUserInChannel1)
+      _ <- IAMHelpers.createUser(channelUserInChannel2)
       _ <- Groups.CRUD.createGroup(groupInChannel1)
       _ <- Groups.CRUD.createGroup(groupInChannel2)
-      _ <- Users.CRUD.createUser(groupUserInGroupChannel1)
-      _ <- Users.CRUD.createUser(groupUserInGroupChannel2)
+      _ <- IAMHelpers.createUser(groupUserInGroupChannel1)
+      _ <- IAMHelpers.createUser(groupUserInGroupChannel2)
     } yield Done
 
     createFuture.futureValue shouldBe Done
@@ -52,46 +51,9 @@ class StructureSpecs extends DatabaseSpec {
     an [IllegalOperationException] shouldBe thrownBy(Groups.CRUD.updateGroup(groupInChannel1.id, g => g.copy(channelId = channel2.id)).futureValue)
   }
 
-  it should "not allow to change a user's level" in {
-    an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(platformUser.id, u => u.copy(level = UserLevel.Channel)).futureValue)
-    an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(channelUserInChannel1.id, u => u.copy(level = UserLevel.Group)).futureValue)
-    an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(groupUserInGroupChannel1.id, u => u.copy(level = UserLevel.Channel)).futureValue)
-  }
-
-  it should "not allow to create an inconsistent user" in {
-    val invalidUsers = List(
-      //IAMTestDataFactory.getGroupUser(groupInChannel1.id).copy(level = UserLevel.Platform),
-      IAMTestDataFactory.getGroupUser(groupInChannel1.id).copy(level = UserLevel.Channel),
-      IAMTestDataFactory.getGroupUser(groupInChannel1.id).copy(groupId = None),
-      IAMTestDataFactory.getPlatformUser.copy(groupId = Some(groupInChannel1.id)),
-      IAMTestDataFactory.getPlatformUser.copy(channelId = Some(channel1.id)),
-      IAMTestDataFactory.getChannelUser(channel1.id).copy(groupId = Some(groupInChannel1.id))
-    )
-
-    invalidUsers foreach { u =>
-      a [ValidationErrorException] shouldBe thrownBy(Users.CRUD.createUser(u).futureValue)
-    }
-  }
-
-  it should "not allow to move a user from his group to another" in {
-    val upd: UserUpdate = u => u.copy(groupId = Some(groupInChannel2.id))
-    an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(groupUserInGroupChannel1.id, upd).futureValue)
-  }
-
-  it should "not allow to move a channel user across channels" in {
-    val upd: UserUpdate = u => u.copy(channelId = Some(channel2.id))
-    an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(channelUserInChannel1.id, upd).futureValue)
-  }
-
-  it should "not allow to set a channel id on a group or platform user" in {
-    val upd: UserUpdate = u => u.copy(channelId = Some(channel1.id))
-    an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(groupUserInGroupChannel1.id, upd).futureValue)
-    an [IllegalOperationException] shouldBe thrownBy(Users.CRUD.updateUser(platformUser.id, upd).futureValue)
-  }
-
   it should "not allow the group admin to move his group" in {
     val group = Groups.CRUD.createGroup(IAMTestDataFactory.getGroup(channel1.id).copy(parentId = Some(groupInChannel1.id))).futureValue
-    val admin = Users.CRUD.createUser(IAMTestDataFactory.getGroupAdmin(groupInChannel1.id)).futureValue
+    val admin = IAMHelpers.createUser(IAMTestDataFactory.getGroupAdmin(groupInChannel1.id)).futureValue
 
     an [AccessRefusedException] shouldBe thrownBy(Groups.CRUD.updateGroup(groupInChannel1.id, g => g.copy(parentId = Some(group.id)))(new DefaultIAMAccessChecker(admin), db).futureValue)
   }
