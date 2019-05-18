@@ -69,7 +69,7 @@ class CreateGroupUser(implicit authz: User => UserAccessChecker, db: Application
     implicit val checker = authz(user)
 
     checkParamAndProcess(groupId, groupRole) {
-      val update = getCommonParameters
+      val update = getCommonParameters.copy(groupRole = Some(groupRole.get))
       CRUD.createGroupUser(UUID.randomUUID, groupId.get, update) map (_.serialize)
     }
   }

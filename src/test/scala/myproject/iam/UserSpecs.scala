@@ -30,16 +30,18 @@ class UserSpecs extends DatabaseSpec {
   }
 
   it should "not create a user with an invalid login" in {
-    a [ValidationErrorException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "")).futureValue)
-    a [ValidationErrorException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo bar")).futureValue)
-    a [ValidationErrorException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo\tbar")).futureValue)
-    a [ValidationErrorException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo\rbar")).futureValue)
-    a [ValidationErrorException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo\nbar")).futureValue)
+    a [InvalidParametersException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "")).futureValue)
+    a [InvalidParametersException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo bar")).futureValue)
+    a [InvalidParametersException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo\tbar")).futureValue)
+    a [InvalidParametersException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo\rbar")).futureValue)
+    a [InvalidParametersException] shouldBe thrownBy(IAMHelpers.createUser(channelUser.copy(login = "foo\nbar")).futureValue)
   }
 
   it should "create a user and silently put the email and login in lower case" in {
-    IAMHelpers.createUser(
-      groupUser.copy(email = EmailAddress(groupUser.email.value.toUpperCase), login = groupUser.login.toUpperCase)
+    Users.CRUD.createGroupUser(
+      groupUser.id,
+      group.id,
+      Users.Pure.toUserUpdate(groupUser).copy(email = Some(EmailAddress(groupUser.email.value.toUpperCase)), login = Some(groupUser.login.toUpperCase))
     ).futureValue.login shouldBe groupUser.login
     IAMHelpers.createUser(channelUser).futureValue.id shouldBe channelUser.id
     IAMHelpers.createUser(platformUser).futureValue.id shouldBe platformUser.id

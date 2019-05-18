@@ -62,17 +62,15 @@ object Channels {
   object Pure {
 
     def createChannel(channelId: UUID, update: ChannelUpdate) = {
-      def missingParam(p: String) = throw InvalidParametersException(s"$p is missing", Nil)
+      def missingParam(p: String) = throw InvalidParametersException(s"$p is missing")
       Channel(
         id = channelId,
-        name = update.name.getOrElse(missingParam("channel name")),
-        created = Some(TimeManagement.getCurrentDateTime), None)
+        name = update.name.getOrElse(missingParam("channel name")))
     }
 
     def updateChannel(channel: Channel, update: ChannelUpdate) = {
       channel.copy(
-        name = update.name.getOrElse(channel.name),
-        lastUpdate = Some(TimeManagement.getCurrentDateTime))
+        name = update.name.getOrElse(channel.name))
     }
 
     def toChannelUpdate(channel: Channel) = ChannelUpdate(name = Some(channel.name))
@@ -88,7 +86,7 @@ object Channels {
       (implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface with SlickProfile): Future[Channel] = {
 
       val action = {
-        val channel = Pure.createChannel(channelId, update)
+        val channel = Pure.createChannel(channelId, update).copy(created = Some(TimeManagement.getCurrentDateTime))
         authz.canCreateChannel(channel) ifGranted {
           db.insert(channel) map (_ => channel)
         }
@@ -110,7 +108,7 @@ object Channels {
     def updateChannel(id: UUID, update: ChannelUpdate)(implicit authz: ChannelAccessChecker, db: ChannelDAO with DatabaseInterface): Future[Channel] = {
       val action = {
         db.getChannel(id).map(_.getOrNotFound(id)) flatMap { existing =>
-            val updated = Pure.updateChannel(existing, update)
+            val updated = Pure.updateChannel(existing, update).copy(lastUpdate = Some(TimeManagement.getCurrentDateTime))
             authz.canUpdateChannel(existing) ifGranted {
               db.update(updated).map(_ => updated)
             }

@@ -177,8 +177,6 @@ object JsonRPCApiController extends Controller {
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.EmailAlreadyExists.id, msg))
     case LoginAlreadyExistsException(msg) =>
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.LoginAlreadyExists.id, msg))
-    case ValidationErrorException(msg, errors) =>
-      RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.ValidationError.id, msg + ": " + errors.map(_.toString).mkString(",")))
     case e: Exception =>
       logger.error(s"Cannot map RPC response from an unknown type $e: " + e.getClass + ": " + e.getMessage)
       RPCResponseError(id = req.id, error = RPCErrorInfo(RPCCode.ServerError.id, "An error as occurred"))

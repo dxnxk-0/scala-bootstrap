@@ -22,8 +22,8 @@ class TokenSpecs extends DatabaseSpec {
   implicit val authz = VoidIAMAccessChecker
   
   it should "create a token" in {
-    IAMHelpers.createChannel(channel)
-    IAMHelpers.createGroup(group)
+    IAMHelpers.createChannel(channel).futureValue
+    IAMHelpers.createGroup(group).futureValue
     IAMHelpers.createUser(user).futureValue
     createToken(expiredToken).futureValue.role shouldBe TokenRole.Authentication
     createToken(validToken).futureValue.role shouldBe TokenRole.Signup

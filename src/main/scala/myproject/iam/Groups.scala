@@ -95,23 +95,20 @@ object Groups {
   object Pure {
 
     def createGroup(groupId: UUID, channelId: UUID, parentId: Option[UUID], update: GroupUpdate) = {
-      def missingParam(p: String) = throw InvalidParametersException(s"$p is mandatory", Nil)
+      def missingParam(p: String) = throw InvalidParametersException(s"$p is mandatory")
 
       Group(
         id = groupId,
         name = update.name.getOrElse(missingParam("group name")),
         channelId = channelId,
         status = update.status.getOrElse(missingParam("group status")),
-        created = Some(TimeManagement.getCurrentDateTime),
         parentId = parentId)
     }
 
     def updateGroup(group: Group, update: GroupUpdate) = {
       group.copy(
         name = update.name.getOrElse(group.name),
-        status = update.status.getOrElse(group.status),
-        lastUpdate = Some(TimeManagement.getCurrentDateTime)
-      )
+        status = update.status.getOrElse(group.status))
     }
 
     def toGroupUpdate(group: Group) = GroupUpdate(name = Some(group.name), status = Some(group.status))
@@ -135,7 +132,7 @@ object Groups {
       val action = {
         db.getChannel(channelId).map(_.getOrNotFound(channelId)) flatMap { channel =>
 
-          val group = Pure.createGroup(id, channelId, parentId, update)
+          val group = Pure.createGroup(id, channelId, parentId, update).copy(created = Some(TimeManagement.getCurrentDateTime))
 
           authz.canCreateGroup(channel, group) ifGranted {
             for {
@@ -178,7 +175,7 @@ object Groups {
         } yield (existing, channel, parents)
 
         dependencies flatMap { case (existing, channel, parents) =>
-          val updated = Pure.updateGroup(existing, update)
+          val updated = Pure.updateGroup(existing, update).copy(lastUpdate = Some(TimeManagement.getCurrentDateTime))
 
           processAuthz(existing, updated, channel, parents.toList) ifGranted {
             for {

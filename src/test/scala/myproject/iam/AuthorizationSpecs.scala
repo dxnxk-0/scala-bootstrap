@@ -4,7 +4,7 @@ import myproject.common.AccessRefusedException
 import myproject.common.FutureImplicits._
 import myproject.iam.Authorization.DefaultIAMAccessChecker
 import myproject.iam.Groups.{GroupStatus, GroupUpdate}
-import myproject.iam.Users.{User, UserStatus, UserUpdate}
+import myproject.iam.Users.{GroupRole, User, UserStatus, UserUpdate}
 import org.scalatest.DoNotDiscover
 import test.{DatabaseSpec, IAMHelpers, IAMTestDataFactory}
 
@@ -104,6 +104,7 @@ class AuthorizationSpecs extends DatabaseSpec {
 
     accessShouldBeRefused(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate(status = Some(GroupStatus.Inactive)))(using(adminGroup1Channel2), db))
     accessShouldBeRefused(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate(status = Some(GroupStatus.Inactive)))(using(adminGroup2Channel2), db))
+    accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate(status = Some(GroupStatus.Active)))(using(adminGroup2Channel2), db)) // No change
     accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate(status = Some(GroupStatus.Inactive)))(using(user1Channel2), db))
     accessShouldBeGranted(Groups.CRUD.updateGroup(group2Channel2.id, GroupUpdate(status = Some(GroupStatus.Inactive)))(using(platformUser), db))
   }
@@ -133,6 +134,11 @@ class AuthorizationSpecs extends DatabaseSpec {
     accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate())(using(adminGroup1Channel2), db))
     accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate())(using(adminGroup2Channel2), db))
     accessShouldBeRefused(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(status = Some(UserStatus.Locked)))(using(user1group2Channel1), db))
+    accessShouldBeRefused(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(status = Some(UserStatus.Locked)))(using(user1group2Channel2), db))
+    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(status = Some(UserStatus.Active)))(using(user1group2Channel2), db)) // No change
+    accessShouldBeRefused(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(groupRole = Some(None)))(using(user1group2Channel1), db)) // Even with no change it must fail
+    accessShouldBeRefused(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(groupRole = Some(Some(GroupRole.Admin))))(using(user1group2Channel2), db))
+    accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(groupRole = Some(None)))(using(user1group2Channel2), db)) // No change
     accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(status = Some(UserStatus.Locked)))(using(adminGroup1Channel2), db))
     accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(status = Some(UserStatus.Inactive)))(using(adminGroup2Channel2), db))
     accessShouldBeGranted(Users.CRUD.updateUser(user1group2Channel2.id, UserUpdate(status = Some(UserStatus.PendingActivation)))(using(user1Channel2), db))
